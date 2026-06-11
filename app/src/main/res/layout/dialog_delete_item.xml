@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_white_rounded"
+    android:padding="@dimen/_14sdp"
+    android:layout_gravity="center">
+
+    <!-- Icon -->
+    <ImageView
+        android:id="@+id/imgDeleteIcon"
+        android:layout_width="@dimen/_70sdp"
+        android:layout_height="@dimen/_70sdp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_delete_blue"
+        android:contentDescription="@string/delete" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvDeleteTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/delete_this_image"
+        android:gravity="center"
+        android:fontFamily="@font/sfprotextsemibold"
+        android:textStyle="bold"
+        android:textSize="@dimen/_14ssp"
+        android:textColor="@color/black"
+        android:layout_marginTop="14dp"/>
+
+    <!-- Description -->
+    <TextView
+        android:id="@+id/tvDeleteMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/delete_image_message"
+        android:gravity="center"
+        android:layout_marginBottom="@dimen/_14sdp"
+        android:textSize="@dimen/_11ssp"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:textColor="@color/grey_text"/>
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Share Button -->
+        <TextView
+            android:id="@+id/btnDelete"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/background_blue"
+            android:fontFamily="@font/sfprotextsemibold"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/_15sdp"
+            android:paddingVertical="@dimen/_6sdp"
+            android:text="@string/delete"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14ssp" />
+
+        <!-- Delete Button -->
+        <TextView
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/background_black"
+            android:fontFamily="@font/sfprotextsemibold"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/_15sdp"
+            android:paddingVertical="@dimen/_6sdp"
+            android:text="@string/cancel"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14ssp" />
+
+    </LinearLayout>
+</LinearLayout>

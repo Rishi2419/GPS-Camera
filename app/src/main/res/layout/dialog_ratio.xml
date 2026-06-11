@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_white_rounded"
+    android:layout_gravity="bottom">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/_6sdp">
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:fontFamily="@font/sfprotextsemibold"
+            android:text="@string/ratio"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_16sdp" />
+
+        <ImageView
+            android:id="@+id/btnCloseDialog"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?actionBarItemBackground"
+            android:padding="@dimen/_4sdp"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close" />
+
+    </RelativeLayout>
+
+    <!-- Timer Options -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_8sdp">
+
+        <!-- Off Option -->
+        <LinearLayout
+            android:id="@+id/layoutfull"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_38sdp"
+            android:orientation="horizontal"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/full"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_14ssp"
+                android:paddingHorizontal="@dimen/_4sdp"
+                android:fontFamily="@font/sfprotextregular" />
+
+            <RadioButton
+                android:id="@+id/radiofull"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:button="@null"
+                android:paddingHorizontal="@dimen/_4sdp"
+                android:background="@drawable/radio_selector" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/grey_layout" />
+
+        <!-- 3 Seconds Option -->
+        <LinearLayout
+            android:id="@+id/layout916"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_38sdp"
+            android:orientation="horizontal"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="9 : 16"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_14ssp"
+                android:paddingHorizontal="@dimen/_4sdp"
+                android:fontFamily="@font/sfprotextregular" />
+
+            <RadioButton
+                android:id="@+id/radio916"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:button="@null"
+                android:paddingHorizontal="@dimen/_4sdp"
+                android:background="@drawable/radio_selector" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/grey_layout" />
+
+        <!-- 5 Seconds Option -->
+        <LinearLayout
+            android:id="@+id/layout34"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_38sdp"
+            android:orientation="horizontal"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="3 : 4"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_14ssp"
+                android:paddingHorizontal="@dimen/_4sdp"
+                android:fontFamily="@font/sfprotextregular" />
+
+            <RadioButton
+                android:id="@+id/radio34"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:button="@null"
+                android:paddingHorizontal="@dimen/_4sdp"
+                android:background="@drawable/radio_selector" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/grey_layout" />
+
+    </LinearLayout>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_8sdp"
+        android:paddingEnd="@dimen/_8sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:weightSum="2"
+        android:layout_marginBottom="@dimen/_12sdp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/btnSaveRatio"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/background_blue"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="@string/save"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+
+        <TextView
+            android:id="@+id/btnCancelRatio"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/background_black"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="@string/cancel"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+
+    </LinearLayout>
+
+</LinearLayout>

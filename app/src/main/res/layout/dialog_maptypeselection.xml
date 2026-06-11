@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_white_rounded"
+    android:layout_gravity="bottom">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/_6sdp">
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:fontFamily="@font/sfprotextsemibold"
+            android:text="@string/maptype"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_16sdp" />
+
+        <ImageView
+            android:id="@+id/btnCloseDialog"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?actionBarItemBackground"
+            android:padding="@dimen/_4sdp"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close" />
+
+    </RelativeLayout>
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_8sdp">
+
+        <!-- Normal Map -->
+        <LinearLayout
+            android:id="@+id/llNormalMap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="@dimen/_8sdp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/normal_map"
+                android:textSize="@dimen/_12sdp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/sfprotextmedium" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_70sdp">
+
+                <ImageView
+                    android:id="@+id/imgNormalMap"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/map_normal_preview"
+                    android:scaleType="centerCrop"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg"/>
+
+
+                <!-- Dark overlay for selected state -->
+                <View
+                    android:id="@+id/vNormalOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg"
+                    android:visibility="gone" />
+
+                <!-- Check icon overlaid on map -->
+                <ImageView
+                    android:id="@+id/ivNormalCheck"
+                    android:layout_width="@dimen/_16sdp"
+                    android:layout_height="@dimen/_16sdp"
+                    android:src="@drawable/ic_white_tick"
+                    android:visibility="gone"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="@dimen/_4sdp" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llHybridMap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/_8sdp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/sfprotextmedium"
+                android:text="@string/hybrid_map"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_12sdp" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_70sdp">
+
+                <ImageView
+                    android:id="@+id/imgHybridMap"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg"
+                    android:src="@drawable/map_hybrid_preview" />
+
+                <!-- Dark overlay for selected state -->
+                <View
+                    android:id="@+id/vHybridOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg"
+                    android:visibility="gone" />
+
+                <!-- Check icon overlaid on map -->
+                <ImageView
+                    android:id="@+id/ivHybridCheck"
+                    android:layout_width="@dimen/_16sdp"
+                    android:layout_height="@dimen/_16sdp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="@dimen/_4sdp"
+                    android:src="@drawable/ic_white_tick"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llSatelliteMap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="@dimen/_8sdp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/satellite_map"
+                android:textSize="@dimen/_12sdp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/sfprotextmedium"/>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_70sdp">
+
+                <ImageView
+                    android:id="@+id/imgSatelliteMap"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/map_satellite_preview"
+                    android:scaleType="centerCrop"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg" />
+
+                <!-- Dark overlay for selected state -->
+                <View
+                    android:id="@+id/vSatelliteOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg"
+                    android:visibility="gone" />
+
+                <!-- Check icon overlaid on map -->
+                <ImageView
+                    android:id="@+id/ivSatelliteCheck"
+                    android:layout_width="@dimen/_16sdp"
+                    android:layout_height="@dimen/_16sdp"
+                    android:src="@drawable/ic_white_tick"
+                    android:visibility="gone"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="@dimen/_4sdp" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <!-- Terrain Map -->
+        <LinearLayout
+            android:id="@+id/llTerrainMap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/terrain_map"
+                android:textSize="@dimen/_12sdp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/sfprotextmedium" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_70sdp">
+
+                <ImageView
+                    android:id="@+id/imgTerrainMap"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/map_terrain_preview"
+                    android:scaleType="centerCrop"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg" />
+
+                <!-- Dark overlay for selected state -->
+                <View
+                    android:id="@+id/vTerrainOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToOutline="true"
+                    android:background="@drawable/rounded_bg"
+                    android:visibility="gone" />
+
+                <!-- Check icon overlaid on map -->
+                <ImageView
+                    android:id="@+id/ivTerrainCheck"
+                    android:layout_width="@dimen/_16sdp"
+                    android:layout_height="@dimen/_16sdp"
+                    android:src="@drawable/ic_white_tick"
+                    android:visibility="gone"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="@dimen/_4sdp" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_8sdp"
+        android:paddingEnd="@dimen/_8sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:weightSum="2"
+        android:layout_marginBottom="@dimen/_12sdp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/btnSaveMap"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/background_blue"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="@string/save"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+
+        <TextView
+            android:id="@+id/btnCancelMap"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/background_black"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="@string/cancel"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+
+    </LinearLayout>
+
+</LinearLayout>

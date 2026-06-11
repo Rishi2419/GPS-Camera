@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardBackround"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_5sdp"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_marginEnd="@dimen/_5sdp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:cardCornerRadius="@dimen/_7sdp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:backgroundTint="@color/grey_layout2">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/mapAddressLatlonWeather"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/_10sdp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardMap"
+                    android:layout_width="@dimen/_65sdp"
+                    android:layout_height="@dimen/_80sdp"
+                    app:cardCornerRadius="@dimen/_10sdp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:strokeColor="@color/blue_primary"
+                    app:strokeWidth="@dimen/_1sdp">
+
+                    <com.google.android.gms.maps.MapView
+                        android:id="@+id/mapView"
+                        android:layout_width="@dimen/_65sdp"
+                        android:layout_height="@dimen/_80sdp"
+                        app:cardCornerRadius="@dimen/_10sdp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:strokeColor="#d9d9d9"
+                        app:strokeWidth="@dimen/_1sdp" />
+                </com.google.android.material.card.MaterialCardView>
+
+
+                <LinearLayout
+                    android:id="@+id/llTitleAndIcon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/cardMap"
+                    app:layout_constraintTop_toTopOf="@+id/cardMap">
+
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ellipsize="middle"
+                        android:fontFamily="@font/sfprotextsemibold"
+                        android:text="@string/title"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/_12sdp" />
+
+                    <ImageView
+                        android:id="@+id/btnShare"
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:src="@drawable/ic_share"
+                        android:visibility="visible"
+                        android:layout_gravity="center_vertical" />
+
+                </LinearLayout>
+
+
+                <TextView
+                    android:id="@+id/tvAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:layout_marginVertical="@dimen/_3sdp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/sfprotextmedium"
+                    android:maxLines="3"
+                    android:text=""
+                    android:textColor="#000000"
+                    android:textSize="@dimen/_12sdp"
+                    app:layout_constraintBottom_toTopOf="@+id/tvLatLong"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/cardMap"
+                    app:layout_constraintTop_toBottomOf="@+id/llTitleAndIcon" />
+
+                <TextView
+                    android:id="@+id/tvLatLong"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_10sdp"
+                    android:fontFamily="@font/sfprotextregular"
+                    android:text=""
+                    android:layout_marginVertical="@dimen/_3sdp"
+                    android:textColor="@color/grey_text"
+                    android:textSize="@dimen/_10sdp"
+                    app:layout_constraintBottom_toTopOf="@+id/divider"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/cardMap"
+                    app:layout_constraintTop_toBottomOf="@+id/tvAddress" />
+
+                <View
+                    android:id="@+id/divider"
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:background="@color/grey_layout"
+                    app:layout_constraintBottom_toTopOf="@+id/timeComapss"
+                    app:layout_constraintEnd_toEndOf="@id/tvLatLong"
+                    app:layout_constraintStart_toStartOf="@id/tvLatLong"
+                    app:layout_constraintTop_toBottomOf="@+id/tvLatLong" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/timeComapss"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="@+id/buttonsLayout"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:layout_marginTop="@dimen/_3sdp"
+                    app:layout_constraintStart_toStartOf="@id/divider"
+                    app:layout_constraintTop_toBottomOf="@+id/divider">
+
+
+                    <ImageView
+                        android:id="@+id/ivSelectionIndicator"
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:visibility="gone"
+                        android:src="@drawable/unselect_bg_dot"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
+
+                    <!-- Keep your existing ivChose for backward compatibility if needed -->
+                    <ImageView
+                        android:id="@+id/ivChose"
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_blue_tick"
+                        android:visibility="gone"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
+
+
+                    <!-- Right-side check icon -->
+<!--                    <ImageView-->
+<!--                        android:id="@+id/ivChose"-->
+<!--                        android:layout_width="@dimen/_20sdp"-->
+<!--                        android:layout_height="@dimen/_20sdp"-->
+<!--                        android:src="@drawable/ic_blue_tick"-->
+<!--                        android:visibility="visible"-->
+<!--                        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--                        app:layout_constraintEnd_toEndOf="parent"-->
+<!--                        app:layout_constraintTop_toTopOf="parent" />-->
+
+                    <!-- TIME row -->
+                    <TextView
+                        android:id="@+id/tvTimeLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:text="Time:"
+                        android:textColor="@color/grey_text"
+                        android:textSize="@dimen/_10sdp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvTime"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_6sdp"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:maxLines="1"
+                        android:text="12:10:00 PM"
+                        android:textColor="@color/grey_text"
+                        android:textSize="@dimen/_10sdp"
+                        app:layout_constrainedWidth="true"
+                        app:layout_constraintBaseline_toBaselineOf="@id/tvTimeLabel"
+                        app:layout_constraintEnd_toStartOf="@id/ivChose"
+                        app:layout_constraintStart_toEndOf="@id/tvTimeLabel" />
+
+                    <!-- DATE row -->
+                    <TextView
+                        android:id="@+id/tvDateLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/_2sdp"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:text="Date:"
+                        android:textColor="@color/grey_text"
+                        android:textSize="@dimen/_10sdp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvTimeLabel" />
+
+                    <TextView
+                        android:id="@+id/tvDate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/_6sdp"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:maxLines="1"
+                        android:text="01 July-25, Tuesday"
+                        android:textColor="@color/grey_text"
+                        android:textSize="@dimen/_10sdp"
+                        app:layout_constrainedWidth="true"
+                        app:layout_constraintBaseline_toBaselineOf="@id/tvDateLabel"
+                        app:layout_constraintEnd_toStartOf="@id/ivChose"
+                        app:layout_constraintStart_toEndOf="@id/tvDateLabel" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+                <!-- New buttons layout below the map -->
+                <LinearLayout
+                    android:id="@+id/buttonsLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/_10sdp"
+                    app:layout_constraintStart_toStartOf="@+id/cardMap"
+                    app:layout_constraintEnd_toEndOf="@id/cardMap"
+                    app:layout_constraintTop_toBottomOf="@+id/cardMap">
+
+                    <ImageView
+                        android:id="@+id/btnCompass"
+                        android:layout_width="@dimen/_30sdp"
+                        android:layout_height="@dimen/_30sdp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_navigation"
+                        android:layout_marginEnd="@dimen/_3sdp" />
+
+                    <ImageView
+                        android:id="@+id/btnGoogleMaps"
+                        android:layout_width="@dimen/_30sdp"
+                        android:layout_height="@dimen/_30sdp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+
+                        android:src="@drawable/ic_google_maps" />
+
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

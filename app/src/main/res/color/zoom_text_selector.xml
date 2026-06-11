@@ -1,0 +1,4 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true" android:color="@color/blue_primary" /> <!-- Sky Blue for 1x -->
+    <item android:color="#FFFFFF" /> <!-- White for others -->
+</selector>

@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+
+
+    <!-- Main Container with rounded corners and dark background -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/rel_gps_stamp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_2sdp"
+        android:layout_marginStart="@dimen/_8sdp"
+        android:layout_marginEnd="@dimen/_8sdp"
+        android:layout_marginBottom="@dimen/_8sdp"
+        android:clipToOutline="true"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:cardCornerRadius="@dimen/_8sdp"
+        app:cardElevation="0dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="@dimen/_95sdp"
+                android:layout_height="match_parent"
+                app:cardCornerRadius="@dimen/_4sdp"
+                app:cardElevation="0dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:id="@+id/mapBackground"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/default_map"
+                        android:scaleType="centerCrop"
+                        android:contentDescription="@null" />
+
+                    <LinearLayout
+                        android:id="@+id/mapView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        android:background="@android:color/transparent">
+                    </LinearLayout>
+
+                </FrameLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+            <!-- Content Container -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_6sdp"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:orientation="vertical">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/appStamp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentEnd="true"
+                    android:clipToOutline="true"
+                    android:background="@color/bg_glass"
+                    android:layout_gravity="center"
+                    android:outlineProvider="background"
+                    android:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="@dimen/_10sdp"
+                        android:layout_height="@dimen/_10sdp"
+                        android:layout_marginVertical="@dimen/_3sdp"
+                        android:layout_marginStart="@dimen/_4sdp"
+                        android:layout_marginEnd="@dimen/_2sdp"
+                        android:src="@drawable/icon"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/appNameText"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/appNameText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_marginEnd="@dimen/_4sdp"
+                        android:gravity="center"
+                        android:text="@string/app_name"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/_6ssp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/txt_gps_stamp_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:background="@color/bg_glass"
+                    android:fontFamily="@font/sfprotextbold"
+                    android:maxLines="1"
+                    android:text="@string/title"
+                    android:textColor="@android:color/white"
+                    android:visibility="gone"
+                    android:layout_marginBottom="@dimen/_2sdp"
+                    android:paddingHorizontal="@dimen/_4sdp"
+                    android:textSize="@dimen/_13ssp" />
+
+                <!-- Location Address -->
+                <TextView
+                    android:id="@+id/txt_gps_stamp_location"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/sfprotextmedium"
+                    android:maxLines="2"
+                    android:padding="@dimen/_4sdp"
+                    android:background="@color/bg_glass"
+                    android:layout_marginBottom="@dimen/_2sdp"
+                    android:text="@string/lbl_default_address"
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/_12ssp" />
+
+
+
+
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+
+
+            <LinearLayout
+                android:id="@+id/latLongContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="@dimen/_4sdp"
+                android:layout_marginTop="@dimen/_6sdp"
+                android:background="@color/bg_glass"
+                android:weightSum="2">
+
+                <!-- Latitude Container -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/lbl_lat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_lat"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:layout_marginEnd="@dimen/_2sdp"
+                        android:textSize="@dimen/_12ssp" />
+
+                    <TextView
+                        android:id="@+id/txt_latitude"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/_12ssp" />
+                </LinearLayout>
+
+                <!-- Longitude Container -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/lbl_long"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_long"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:layout_marginEnd="@dimen/_2sdp"
+                        android:textSize="@dimen/_12ssp" />
+
+                    <TextView
+                        android:id="@+id/txt_longitude"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/_12ssp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Date & Time Row -->
+            <LinearLayout
+                android:id="@+id/dateTimeContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="@dimen/_4sdp"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:background="@color/bg_glass"
+                android:weightSum="2">
+
+                <!-- Date Container -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/lbl_date"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_date"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:layout_marginEnd="@dimen/_2sdp"
+                        android:textSize="@dimen/_12ssp" />
+
+                    <TextView
+                        android:id="@+id/txt_date"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/_12ssp" />
+                </LinearLayout>
+
+                <!-- GMT Time Container -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/lbl_gmt"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_time_gmt"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:layout_marginEnd="@dimen/_2sdp"
+                        android:textSize="@dimen/_12ssp"
+                        android:visibility="visible"/>
+
+                    <TextView
+                        android:id="@+id/txt_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:fontFamily="@font/sfprotextregular"
+                        android:textColor="@android:color/white"
+                        android:textSize="@dimen/_12ssp"
+                        android:visibility="visible"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- Legacy DateTime field for backward compatibility -->
+    <TextView
+        android:id="@+id/txt_gps_stamp_datetime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+
+</RelativeLayout>

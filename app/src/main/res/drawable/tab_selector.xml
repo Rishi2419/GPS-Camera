@@ -1,0 +1,35 @@
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<selector xmlns:android="http://schemas.android.com/apk/res/android">-->
+<!--    <item android:state_selected="true">-->
+<!--        <shape android:shape="rectangle">-->
+<!--            <solid android:color="@color/blue_primary" />-->
+<!--            <corners android:radius="@dimen/_8sdp" />-->
+<!--        </shape>-->
+<!--    </item>-->
+<!--    <item android:state_selected="false">-->
+<!--        <shape android:shape="rectangle">-->
+<!--            <solid android:color="@color/grey_layout2" />-->
+<!--            <corners android:radius="@dimen/_8sdp" />-->
+<!--        </shape>-->
+<!--    </item>-->
+<!--</selector>-->
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background with left and right margins -->
+    <item android:left="4dp" android:right="4dp">
+        <selector>
+            <item android:state_selected="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/blue_primary"/>
+                    <corners android:radius="@dimen/_8sdp"/>
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/grey_layout2"/>
+                    <corners android:radius="@dimen/_8sdp"/>
+                </shape>
+            </item>
+        </selector>
+    </item>
+</layer-list>

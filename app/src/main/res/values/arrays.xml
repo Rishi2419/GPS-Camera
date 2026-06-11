@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="time_formate_array">
+        <item>dd-MM-yyyy HH:mm:ss a</item>
+        <item>MM/dd/yyyy hh:mm aa</item>
+        <item>MM/dd/yyyy hh:mm:ss aa</item>
+        <item>dd/MM/yy</item>
+        <item>dd/MM/yy HH:mm</item>
+        <item>dd/MM/yy hh:mm aa</item>
+        <item>dd/MM/yy HH:mm:ss</item>
+        <item>dd/MM/yy hh:mm:ss aa</item>
+        <item>dd/MM/yyyy</item>
+        <item>dd/MM/yyyy HH:mm</item>
+        <item>dd/MM/yyyy hh:mm aa</item>
+        <item>dd/MM/yyyy HH:mm:ss</item>
+        <item>dd/MM/yyyy hh:mm:ss aa</item>
+        <item>MM/dd/yy</item>
+        <item>MM/dd/yy HH:mm</item>
+        <item>MM/dd/yy hh:mm aa</item>
+        <item>MM/dd/yy HH:mm:ss</item>
+        <item>MM/dd/yy hh:mm:ss aa</item>
+        <item>MM/dd/yyyy</item>
+        <item>MM/dd/yyyy HH:mm</item>
+        <item>MM/dd/yyyy HH:mm:ss</item>
+    </array>
+    <array name="font_name_array">
+        <item>SF Pro Display.otf</item>
+        <item>Roboto Regular.ttf</item>
+        <item>Adobe Caslon Pro.otf</item>
+        <item>Agency FB.ttf</item>
+        <item>Antipasto.otf</item>
+        <item>Arbutus Slab.ttf</item>
+        <item>Balthazar Regular.ttf</item>
+        <item>Brandon Grotesque Medium.otf</item>
+        <item>Cabo Rounded Regular.otf</item>
+        <item>Calibri.ttf</item>
+        <item>Cherry Swash.otf</item>
+        <item>Clarendon BT Roman.ttf</item>
+        <item>DINPro-Cond Medium.otf</item>
+        <item>Discognate.ttf</item>
+        <item>El Messiri Medium.otf</item>
+        <item>Academy Engraved LET Plain.ttf</item>
+        <item>Designio Bold.otf</item>
+        <item>Bodonitown.ttf</item>
+        <item>Bauhaus 93.ttf</item>
+        <item>Gabriela Regular.ttf</item>
+        <item>HookedUp.ttf</item>
+        <item>Poppins Medium.ttf</item>
+        <item>Cera Round Pro Medium.otf</item>
+        <item>Patrick Hand.ttf</item>
+        <item>Julee Regular.ttf</item>
+        <item>Tillana.ttf</item>
+        <item>OCR A Std.otf</item>
+        <item>Karla Regular.ttf</item>
+        <item>JasmineUPC.ttf</item>
+        <item>Yellowtail.ttf</item>
+        <item>Trebuchet MS.ttf</item>
+        <item>Reenie Beanie.ttf</item>
+        <item>Lakki Reddy.ttf</item>
+        <item>Krugmann Brush.ttf</item>
+        <item>Honey Moon Midnight Alt.otf</item>
+        <item>Alex Brush.ttf</item>
+        <item>Antonio Regular.ttf</item>
+        <item>Arvo.ttf</item>
+        <item>Bauhaus.ttf</item>
+        <item>Caviar Dreams.ttf</item>
+        <item>Dancing Script OT.otf</item>
+        <item>Digital-7 Mono.ttf</item>
+        <item>Glass Antiqua.ttf</item>
+        <item>Josefin Sans SemiBold.ttf</item>
+        <item>Kaushan Script.otf</item>
+        <item>Klein Slabserif.ttf</item>
+        <item>Lobster Two Italic.otf</item>
+        <item>Lobster Two.otf</item>
+        <item>Miriam Fixed.ttf</item>
+        <item>OCR-B 10 BT.ttf</item>
+        <item>Shruti.ttf</item>
+        <item>Helvetica Neue LT Std 35 Thin.otf</item>
+        <item>Felipa.ttf</item>
+        <item>Rubik Regular.ttf</item>
+        <item>Cookie Regular.ttf</item>
+        <item>DJB Letter Game Tiles 3.ttf</item>
+        <item>Outer Sider.ttf</item>
+    </array>
+</resources>

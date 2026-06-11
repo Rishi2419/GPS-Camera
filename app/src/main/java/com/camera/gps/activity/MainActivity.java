@@ -1,0 +1,3184 @@
+package com.camera.gps.activity;
+
+import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
+import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
+import static com.camera.gps.MyApplication.set_to_current_location;
+import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialShowing;
+
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.location.LocationManager;
+import android.media.MediaCodec;
+import android.media.MediaExtractor;
+import android.media.MediaFormat;
+import android.media.MediaMetadataRetriever;
+import android.media.MediaMuxer;
+import android.media.MediaScannerConnection;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Handler;
+import android.provider.Settings;
+import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.Size;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Chronometer;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.Switch;
+import android.widget.TextView;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresPermission;
+import androidx.appcompat.app.AlertDialog;
+import androidx.camera.core.CameraControl;
+import androidx.camera.core.VideoCapture;
+import androidx.camera.core.CameraInfo;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.Preview;
+import androidx.camera.core.UseCase;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import androidx.core.graphics.ColorUtils;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.viewpager.widget.ViewPager;
+
+import com.appizona.yehiahd.fastsave.FastSave;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.RequestManager;
+import com.camera.gps.MyApplication;
+import com.camera.gps.adsmanager.InterstitialAdManager;
+import com.camera.gps.adsmanager.OpenAdManager;
+import com.camera.gps.camerax.adapter.ViewPagerTitleAdapter;
+import com.camera.gps.camerax.controller.MainController;
+import com.camera.gps.camerax.util.SharedPrefsSettings;
+import com.camera.gps.camerax.util.UtilsX;
+import com.camera.gps.camerax.view.CameraGridLinesView;
+import com.camera.gps.data.GlobalViewModel;
+import com.camera.gps.data.GlobalViewModelFactory;
+import com.camera.gps.database.entity.MyLocation;
+import com.camera.gps.dialogs.DateTimeDialog;
+import com.camera.gps.dialogs.FontStyleDialog;
+import com.camera.gps.dialogs.FpsDialog;
+import com.camera.gps.dialogs.GridDialog;
+import com.camera.gps.dialogs.RatioDialog;
+import com.camera.gps.dialogs.TimerDialog;
+import com.camera.gps.dialogs.VideoResolutionDialog;
+import com.camera.gps.dialogs.VideoVolumeDialog;
+import com.camera.gps.listener.CameraReadyListener;
+import com.camera.gps.listener.OnDateTimeSelectedListener;
+import com.camera.gps.listener.OnFontSelectedListener;
+import com.camera.gps.listener.OnFpsSelectedListener;
+import com.camera.gps.listener.OnGridSelectedListener;
+import com.camera.gps.listener.OnRatioSelectedListener;
+import com.camera.gps.listener.OnResolutionSelectedListener;
+import com.camera.gps.listener.OnSoundSelectedListener;
+import com.camera.gps.listener.OnTimerSelectedListener;
+import com.camera.gps.model.DateFormatModel;
+import com.camera.gps.repositories.DateFormatRepository;
+import com.camera.gps.util.DirManager;
+import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.SP;
+import com.camera.gps.viewmodel.DateFormatViewModel;
+import com.camera.gps.viewmodel.FontStyleViewModel;
+import com.google.android.material.tabs.TabLayout;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.camera.gps.R;
+import com.camera.gps.database.entity.Photo;
+
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.os.Looper;
+
+import android.widget.Toast;
+
+import androidx.camera.core.*;
+import androidx.fragment.app.FragmentTransaction;
+
+import com.google.android.gms.location.*;
+import com.google.android.gms.maps.*;
+import com.google.android.gms.maps.model.*;
+
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+
+import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.FocusMeteringResult;
+import androidx.camera.core.MeteringPoint;
+import androidx.camera.core.MeteringPointFactory;
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
+
+import com.camera.gps.util.Utils.LogUtils;
+import com.camera.gps.util.Utils;
+
+
+import java.util.concurrent.TimeUnit;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+
+
+    //Permissions
+    private static final int REQ_ALL_PERMISSIONS = 110;
+    private static final String[] REQUIRED_PERMISSIONS;
+
+    static {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) { // Android 10 and below
+            REQUIRED_PERMISSIONS = new String[]{
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+            };
+        } else { // Android 11+
+            REQUIRED_PERMISSIONS = new String[]{
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                    // no storage permissions needed, handled by MediaStore
+            };
+        }
+    }
+
+    // Camera related variables
+    private PreviewView cameraPreview;
+    private FrameLayout cameraContainer;
+    private Camera camera;
+    @SuppressLint("RestrictedApi")
+    private VideoCapture videoCapture;
+    private ImageCapture imageCapture;
+    private CameraControl cameraControl;
+    private CameraInfo cameraInfo;
+    private CameraReadyListener cameraReadyListener;
+    private int lensFacingType = CameraSelector.LENS_FACING_BACK;
+    private int flashMode = ImageCapture.FLASH_MODE_OFF;
+    private float currentZoomRatio = 1.0f;
+    private boolean isSwitching = false;
+
+    //Horizontal menu
+    //Font selection
+    HelperClass mHelperClass = new HelperClass();
+    private LinearLayout btnFontStyle;
+    public String fontStyle;
+    private FontStyleDialog fontStyleDialog;
+    private FontStyleViewModel fontViewModel;
+    private DateFormatViewModel dateFormatViewModel;
+
+    //Time & Date selection
+    private LinearLayout btnDateTime;
+    private DateTimeDialog dateTimeDialog;
+    String format_Combined;
+    String format_Date;
+    String format_Time;
+
+    //Timer
+    private LinearLayout btnTimer;
+    private TextView txtCountDownTakePhoto;
+    private TimerDialog timerDialog;
+    private CountDownTimer countDownTimer;
+
+
+    //Exposure
+    private View layoutExposure;
+    private LinearLayout btnExposure;
+    private TextView btnExposure0;
+    private TextView btnExposure1;
+    private TextView btnExposure2;
+    private TextView btnExposure3;
+    private TextView btnExposure4;
+    private TextView btnExposure_1;
+    private TextView btnExposure_2;
+    private TextView btnExposure_3;
+    private TextView btnExposure_4;
+    private TextView arrowExposure_4, arrowExposure_3, arrowExposure_2, arrowExposure_1, arrowExposure0, arrowExposure1, arrowExposure2, arrowExposure3, arrowExposure4;
+
+    //RATIO
+    private LinearLayout btnRatio;
+    private RatioDialog ratioDialog;
+    private int currentRatioType = RatioDialog.RATIO_4_3;
+
+    //GRIDLINES
+    private LinearLayout btnGrid;
+    private GridDialog gridDialog;
+    private int currentGridType = GridDialog.GRID_OFF;
+    private CameraGridLinesView gridLinesView;
+
+    //WATERMARK
+    private LinearLayout btnWatermark;
+    private boolean showWatermark;
+    private ConstraintLayout appStamp;
+
+    //VIDEO RESOLUTION
+    private LinearLayout btnVideoresolution;
+    private VideoResolutionDialog videoResolutionDialog;
+
+    //FPS
+    private LinearLayout btnFps;
+    private FpsDialog fpsDialog;
+
+    //IMAGE QUALITY
+    private LinearLayout btnImgQuality;
+
+    //VIDEO VOLUME
+    private LinearLayout btnVideoVolume;
+    private VideoVolumeDialog videoVolumeDialog;
+
+
+    // UI Components
+    int current_map_type;
+    private ImageButton btnMap;
+    private ImageButton btnTemplate;
+    private ImageButton btnAddLocation;
+    private ActivityResultLauncher resultLauncher;
+    private ImageView imgFocus, imgCenterTakeAction, imgVideoRec;
+    private TabLayout tabLayout;
+    private ViewPager viewPagerSwitchAction;
+    private View layoutBottom;
+    private ImageButton btnFlash, btnSwitchCamera, btnTakeAction;
+    private LinearLayout zoomLayout;
+    private TextView btnZoom1x, btnZoom2x, btnZoom3x;
+    private boolean isMenuExpanded = false;
+    private LinearLayout layoutHorizontalMenu;
+    private ImageButton btnExpandMenu;
+    private ImageButton btnSettings;
+
+    // Flash overlay for front camera
+    private View flashOverlay;
+
+    // Location related variables
+    private FusedLocationProviderClient fusedLocationClient;
+    private LocationCallback locationCallback;
+    private LocationRequest locationRequest;
+    private double currentLatitude = 0.0;
+    private double currentLongitude = 0.0;
+    private String currentAddress = "Loading location...";
+    private String currentTitle;
+    private String savedDate;
+    private String savedTime;
+    private String lonDMS;
+    private String latDMS;
+    private boolean isCameraReady = false;
+    private boolean isLocationFetched = false;
+
+    // Stamp UI components
+    private RelativeLayout relBottomStamp;
+    private LinearLayout mapViewContainer;
+    private SupportMapFragment supportMapFragment;
+    private GoogleMap googleMap;
+    private int currentstamp_type, current_DateTimeColor, current_TextColor, current_StampBgColor;
+    private TextView txtLocation, txtDateTime, txtLatitude, txtLongitude, txtDate, txtTime, txtTitle, txt_lat_dms, txt_long_dms;
+    private LinearLayout dateTimeContainer, latLongContainer;
+    private CardView stampBg;
+    private TextView lbl_lat, lbl_long, lbl_date, lbl_gmt, lbl_type, lbl_degree, lbl_dms;
+    private SP msp;
+
+    // Date/Time updater
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable dateTimeUpdater;
+
+    //Take Action
+    private int timernew = 0;
+    private boolean isRecording = false;
+    private boolean isVideoRecordingPreparing = false;
+    private Animation animationRecVideo;
+    private Photo photo;
+    private String mediaFilePath;
+    private Chronometer chronometerVideo;
+    private File videoFile;
+    private ImageView ivMyCapture;
+
+
+    private GlobalViewModel viewModel;
+    private Photo photoOld;
+    private boolean isCapture = false;
+    private boolean isMapSetup = false;
+
+//
+//    private void updateLocationData(MyLocation location) {
+//        // Update current data with the latest from database
+
+//        currentAddress = location.getAddress();
+//        currentTitle = location.getTitle();
+//        currentLatitude = Double.parseDouble(location.getLatitude());
+//        currentLongitude = Double.parseDouble(location.getLongitude());
+//        savedDate = location.getDate();
+//        savedTime = location.getTime();
+//
+//        // Update UI
+//        updateStampContent();
+//    }
+
+    public MainActivity() {
+        Log.d("Rishi_MainActivity", "Inside mainacti");
+        resultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), (ActivityResultCallback<ActivityResult>) result -> {
+            Log.d("Rishi_MainActivity", "ResultLauncher callback triggered");
+            Log.d("Rishi_MainActivity", "Result code: " + result.getResultCode());
+
+            if (result.getResultCode() == Activity.RESULT_OK) {
+                Intent data = result.getData();
+                if (data != null) {
+                    Log.d("Rishi_MainActivity", "Data intent is not null");
+
+                    // Check if location data is present
+                    if (data.hasExtra(MyApplication.EXTRA_LOCATION)) {
+                        Log.d("Rishi_MainActivity", "Location extra found");
+
+                        Serializable locationExtra = data.getSerializableExtra(MyApplication.EXTRA_LOCATION);
+                        if (locationExtra instanceof MyLocation) {
+                            MyLocation receivedLocation = (MyLocation) locationExtra;
+                            Log.d("Rishi_MainActivity", "Received Location Details:");
+                            Log.d("Rishi_MainActivity", "ID: " + receivedLocation.getId());
+                            Log.d("Rishi_MainActivity", "Title: " + receivedLocation.getTitle());
+                            Log.d("Rishi_MainActivity", "Address: " + receivedLocation.getAddress());
+                            Log.d("Rishi_MainActivity", "Latitude: " + receivedLocation.getLatitude());
+                            Log.d("Rishi_MainActivity", "Longitude: " + receivedLocation.getLongitude());
+                            Log.d("Rishi_MainActivity", "Date: " + receivedLocation.getDate());
+                            Log.d("Rishi_MainActivity", "Time: " + receivedLocation.getTime());
+                            Log.d("Rishi_MainActivity", "Is Selected: " + receivedLocation.isSelected());
+
+                            currentAddress = receivedLocation.getAddress();
+                            currentTitle = receivedLocation.getTitle();
+                            currentLatitude = Double.parseDouble(receivedLocation.getLatitude());
+                            currentLongitude = Double.parseDouble(receivedLocation.getLongitude());
+                            savedDate = receivedLocation.getDate();
+                            savedTime = receivedLocation.getTime();
+                            updateStampContent();
+                            // Handle the received location data here
+                            // You can update your UI or perform other operations with the location
+
+                        } else {
+                            Log.d("Rishi_MainActivity", "Location extra is not MyLocation instance");
+                        }
+                    } else {
+                        Log.d("Rishi_MainActivity", "No location extra found in data");
+                    }
+                } else {
+                    Log.d("Rishi_MainActivity", "Data intent is null");
+                }
+            }
+            else {
+                Log.d("Rishi_MainActivity", "Result code is not RESULT_OK");
+                if (currentTitle != null && !currentTitle.trim().isEmpty() && set_to_current_location) {
+                    currentAddress = null;
+                    currentTitle = null;
+                    currentLatitude = 0.0;
+                    currentLongitude = 0.0;
+                    savedDate = null;
+                    savedTime = null;
+                    isLocationFetched = false;
+                    setupLocation();
+                    set_to_current_location = false;
+                    //initAfterPermissionsGranted();
+                    Log.d("Rishi_MainActivity", "Setting current location");
+                }
+
+                if (currentTitle != null && !currentTitle.trim().isEmpty()) {
+                    Log.d("Rishi_MainActivity", "Checking if location with title '" + currentTitle + "' still exists?");
+
+                    viewModel.getLocationByTitle(currentTitle).observe(this, location -> {
+                        if (location == null) {
+                            currentAddress = null;
+                            currentTitle = null;
+                            currentLatitude = 0.0;
+                            currentLongitude = 0.0;
+                            savedDate = null;
+                            savedTime = null;
+                            isLocationFetched = false;
+                            setupLocation();
+                            //initAfterPermissionsGranted();
+                            Log.d("Rishi_MainActivity", "Location with title '" + currentTitle + "' not exists");
+                        } else {
+                            Log.d("Rishi_MainActivity", "Location with title '" + currentTitle + "' still exists");
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Enable immersive mode - hide navigation buttons
+        enableImmersiveMode();
+        setContentView(R.layout.activity_main);
+        initializeViews();
+        initializePhotoObject();
+        viewModel = new ViewModelProvider(this, new GlobalViewModelFactory(getApplication())).get(GlobalViewModel.class);
+
+
+        // Check permissions first
+        if (hasAllPermissions()) {
+            initAfterPermissionsGranted();
+        } else {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQ_ALL_PERMISSIONS);
+        }
+
+//        if (!hasAllPermissions()) {
+//            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQ_ALL_PERMISSIONS);
+//        } else {
+//            initAfterPermissionsGranted();
+//        }
+
+//        if (!hasAllPermissions()) {
+//            Log.d("Rishi_permission", "Dont have permission");
+//            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQ_ALL_PERMISSIONS);
+//        } else {
+//            Log.d("Rishi_permission", "Have permission");
+//
+//            // Check Internet connectivity
+//            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+//            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+//            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+//
+//            if (isConnected) {
+//                Log.d("Rishi_chk", "Internet is ON");
+//            } else {
+//                Log.d("Rishi_chk", "Internet is OFF");
+//                new AlertDialog.Builder(this)
+//                        .setTitle("No Internet")
+//                        .setMessage("Oops! You're not connected to the internet. GPS Map Camera needs internet to show your location.")
+//                        .setCancelable(false)
+//                        .setPositiveButton("USE MOBILE DATA", (dialog, which) -> {
+//                            // Open Mobile Data settings
+//                            Intent intent = new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS);
+//                            startActivity(intent);
+//                        })
+//                        .setNegativeButton("CONNECT TO WI-FI", (dialog, which) -> {
+//                            // Open Wi-Fi settings
+//                            Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+//                            startActivity(intent);
+//                        })
+//                        .show();
+//            }
+//
+//            // Check if Location (GPS) is enabled
+//            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+//            boolean isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+//            boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+//
+//            if (isGpsEnabled || isNetworkEnabled) {
+//                Log.d("Rishi_chk", "Location is ON");
+//            } else {
+//                Log.d("Rishi_chk", "Location is OFF");
+//                new AlertDialog.Builder(this)
+//                        .setTitle("Location Disabled")
+//                        .setMessage("Please turn on Location (GPS) to continue.")
+//                        .setPositiveButton("Turn On", (dialog, which) -> {
+//                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+//                            startActivity(intent);
+//                        })
+//                        .setCancelable(false)
+//                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+//                        .show();
+//            }
+//
+//            // If everything is fine
+//            initAfterPermissionsGranted();
+//        }
+
+//        if (!hasAllPermissions()) {
+//            Log.d("Rishi_permission", "Dont have permission");
+//            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQ_ALL_PERMISSIONS);
+//        } else {
+//            Log.d("Rishi_permission", "Have permission");
+//            initAfterPermissionsGranted();
+//        }
+
+        //     initAfterPermissionsGranted();
+    }
+
+
+    // ========================== PERMISSIONS ==========================
+
+
+    private void initializePhotoObject() {
+        photo = new Photo();
+        photo.setSelected(false);
+    }
+
+    private boolean hasAllPermissions() {
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQ_ALL_PERMISSIONS) {
+            boolean allGranted = true;
+            boolean someDeniedForever = false;
+
+            for (int i = 0; i < grantResults.length; i++) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    allGranted = false;
+
+                    // Check if user ticked "Dont allow"
+                    if (!ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[i])) {
+                        someDeniedForever = true;
+                    }
+                }
+            }
+
+            if (allGranted) {
+                initAfterPermissionsGranted();
+            } else {
+                // User selected "Never ask again" → guide to settings
+                Toast.makeText(this, "Please enable permissions from Settings.", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.fromParts("package", getPackageName(), null));
+                startActivity(intent);
+                finish();
+            }
+        }
+    }
+
+
+//    private boolean hasAllPermissions() {
+//        for (String permission : REQUIRED_PERMISSIONS) {
+//            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
+
+//
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//
+//        if (requestCode == REQ_ALL_PERMISSIONS) {
+//            boolean allGranted = true;
+//            for (int result : grantResults) {
+//                if (result != PackageManager.PERMISSION_GRANTED) {
+//                    allGranted = false;
+//                    break;
+//                }
+//            }
+//
+//            if (allGranted) {
+//                initAfterPermissionsGranted();
+//            } else {
+//                Toast.makeText(this, "All permissions are required to continue.", Toast.LENGTH_LONG).show();
+//            }
+//        }
+//    }
+
+    private void initAfterPermissionsGranted() {
+//        initializeViews();
+        startCameraPreview();
+        chk_Location_Internet();
+
+        setCameraReadyListener(() -> {
+            getStampType();
+            setupLocation();
+            setupDateTimeUpdater();
+            setupEventListeners();
+            getStampFont();
+            getStampDateTime();
+            getStampBgColor();
+            getTextColor();
+            getDateTimeColor();
+        });
+    }
+
+
+    private void chk_Location_Internet() {
+        // Check Internet connectivity
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+        // Check if Location (GPS) is enabled
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        boolean isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        boolean isLocationOn = isGpsEnabled || isNetworkEnabled;
+
+
+        if (!isConnected && !isLocationOn) {
+            showInternetLocationDialog();
+        } else if (!isConnected) {
+            Log.d("Rishi_chk", "Internet is OFF");
+            showInternetDialog();
+        } else if (!isLocationOn) {
+            Log.d("Rishi_chk", "Location is OFF");
+            showLocationDialog();
+        }
+    }
+
+    private void enableImmersiveMode() {
+        // Remove fullscreen flag so status bar is visible
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        // Make the status bar transparent
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    }
+
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            enableImmersiveMode();
+        }
+    }
+
+    // ========================== INITIALIZATION METHODS ==========================
+
+    private void initializeViews() {
+        // Camera views
+        cameraPreview = findViewById(R.id.cameraPreview);
+        cameraContainer = findViewById(R.id.cameraContainer);
+        viewPagerSwitchAction = findViewById(R.id.viewPagerSwitchAction);
+        viewPagerSwitchAction.setAdapter(new ViewPagerTitleAdapter(getSupportFragmentManager(), MainController.getFragments(), MainController.getTitles()));
+
+        //Horizontal Menu
+        btnFontStyle = findViewById(R.id.btnFontStyle);
+        btnDateTime = findViewById(R.id.btnDateTime);
+        btnTimer = findViewById(R.id.btnTimer);
+        txtCountDownTakePhoto = findViewById(R.id.txtCountDownTakePhoto);
+        btnExposure = findViewById(R.id.btnExposure);
+        layoutExposure = findViewById(R.id.layoutExposure);
+        btnExposure_4 = findViewById(R.id.btnExposure_4);
+        btnExposure_3 = findViewById(R.id.btnExposure_3);
+        btnExposure_2 = findViewById(R.id.btnExposure_2);
+        btnExposure_1 = findViewById(R.id.btnExposure_1);
+        btnExposure0 = findViewById(R.id.btnExposure0);
+        btnExposure1 = findViewById(R.id.btnExposure1);
+        btnExposure2 = findViewById(R.id.btnExposure2);
+        btnExposure3 = findViewById(R.id.btnExposure3);
+        btnExposure4 = findViewById(R.id.btnExposure4);
+        arrowExposure_4 = findViewById(R.id.arrowExposure_4);
+        arrowExposure_3 = findViewById(R.id.arrowExposure_3);
+        arrowExposure_2 = findViewById(R.id.arrowExposure_2);
+        arrowExposure_1 = findViewById(R.id.arrowExposure_1);
+        arrowExposure0 = findViewById(R.id.arrowExposure0);
+        arrowExposure1 = findViewById(R.id.arrowExposure1);
+        arrowExposure2 = findViewById(R.id.arrowExposure2);
+        arrowExposure3 = findViewById(R.id.arrowExposure3);
+        arrowExposure4 = findViewById(R.id.arrowExposure4);
+        btnRatio = findViewById(R.id.btnRatio);
+        btnGrid = findViewById(R.id.btnGrid);
+        gridLinesView = findViewById(R.id.gridLinesView);
+        btnWatermark = findViewById(R.id.btnWatermark);
+        btnVideoresolution = findViewById(R.id.btnResolution);
+        btnFps = findViewById(R.id.btnFps);
+        btnImgQuality = findViewById(R.id.btnImageQuality);
+        btnVideoVolume = findViewById(R.id.btnVideoVolume);
+
+
+        // UI controls
+        imgFocus = findViewById(R.id.imgFocus);
+        tabLayout = findViewById(R.id.tabLayout);
+        imgCenterTakeAction = findViewById(R.id.imgCenterTakeAction);
+        imgVideoRec = findViewById(R.id.imgVideoRec);
+        layoutBottom = findViewById(R.id.layoutBottom);
+        btnFlash = findViewById(R.id.btnFlash);
+        btnSettings = findViewById(R.id.btnSettings);
+        btnSwitchCamera = findViewById(R.id.btnSwitchCamera);
+        btnTakeAction = findViewById(R.id.btnTakeAction);
+        btnMap = findViewById(R.id.btnMap);
+        btnAddLocation = findViewById(R.id.btnAddLocation);
+        btnTemplate = findViewById(R.id.btnTemplate);
+
+        // Zoom controls
+        zoomLayout = findViewById(R.id.zoomLayout);
+        btnZoom1x = findViewById(R.id.btnZoom1x);
+        btnZoom2x = findViewById(R.id.btnZoom2x);
+        btnZoom3x = findViewById(R.id.btnZoom3x);
+        zoomLayout.setVisibility(GONE);
+
+        // Menu controls
+        layoutHorizontalMenu = findViewById(R.id.layoutHorizontalMenu);
+        btnExpandMenu = findViewById(R.id.btnExpandMenu);
+
+        // Stamp container
+        relBottomStamp = findViewById(R.id.gallery_rel_bottom_stamp);
+
+        //take action
+        animationRecVideo = AnimationUtils.loadAnimation(getBaseContext(), R.anim.anim_recording);
+        chronometerVideo = findViewById(R.id.chronometerVideo);
+        ivMyCapture = findViewById(R.id.ivMyCapture);
+
+        // Create flash overlay for front camera flash
+        createFlashOverlay();
+
+        fontViewModel = new ViewModelProvider(this).get(FontStyleViewModel.class);
+        msp = new SP(this);
+        // Initialize Photo object
+        photo = new Photo();
+    }
+
+    private void createFlashOverlay() {
+        flashOverlay = new View(this);
+        flashOverlay.setBackgroundColor(Color.WHITE);
+        flashOverlay.setVisibility(GONE);
+
+        // Add to root layout
+        RelativeLayout rootLayout = findViewById(R.id.mainll);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        rootLayout.addView(flashOverlay, params);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void setupLocation() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        locationRequest = LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY).setInterval(5000L).setFastestInterval(2000L);
+
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult result) {
+                if (isLocationFetched) return;
+
+                Location location = result.getLastLocation();
+                if (location != null) {
+                    handleLocationUpdate(location);
+                }
+            }
+        };
+
+        requestLocationUpdates();
+    }
+
+    private void setupDateTimeUpdater() {
+        dateTimeUpdater = new Runnable() {
+            @Override
+            public void run() {
+                updateStampDateTime();
+                handler.postDelayed(this, 1000L);
+            }
+        };
+        handler.post(dateTimeUpdater);
+    }
+
+    private void setupEventListeners() {
+
+
+        setUpHorizontalMenuListeners();
+        setupZoomListeners();
+        setupCameraListeners();
+        setupTabListeners();
+        setupMenuListeners();
+        setUpTakeActionListeners();
+        setUpBottomTabListeners();
+    }
+
+    // ========================== TAKE ACTIONS ==========================
+
+    private void setUpTakeActionListeners() {
+        this.btnTakeAction.setOnClickListener(view -> {
+
+            if (!isCameraReady) {
+                Toast.makeText(this, "Camera is initializing...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!isLocationFetched) {
+                Toast.makeText(this, "Loading location...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            takeAction();
+        });
+    }
+
+    @SuppressLint("RestrictedApi")
+    private void takeAction() {
+        if (viewPagerSwitchAction.getCurrentItem() == 0) {
+            if (timernew == 0) {
+                takePhoto();
+                return;
+            }
+            btnTakeAction.setVisibility(GONE);
+            imgCenterTakeAction.setVisibility(GONE);
+            startCountDown(viewPagerSwitchAction.getCurrentItem());
+        } else if (isRecording) {
+            stopVideoRecording();
+        } else {
+            if (!isVideoRecordingPreparing) {
+                if (timernew == 0) {
+                    recordVideo();
+                    return;
+                }
+                btnTakeAction.setVisibility(GONE);
+                imgVideoRec.setVisibility(GONE);
+                startCountDown(viewPagerSwitchAction.getCurrentItem());
+            }
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
+    private void stopVideoRecording() {
+        if (videoCapture != null && isRecording) {
+            videoCapture.stopRecording();
+            UtilsX.playSound(R.raw.stop_recording_sound, getBaseContext());
+            MainController.stopRecAnimation(animationRecVideo);
+            MainController.stopChronometer(chronometerVideo);
+            isRecording = false;
+        }
+    }
+
+    // Update the takePhoto method
+    @SuppressLint("WrongConstant")
+    public void takePhoto() {
+        File mediaFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+        if (mediaFile == null) {
+            return;
+        }
+
+        // Handle front camera flash
+        if (lensFacingType == CameraSelector.LENS_FACING_FRONT && flashMode == ImageCapture.FLASH_MODE_ON) {
+            showFrontCameraFlash();
+        }
+
+        UtilsX.playSound(R.raw.take_photo_sound, this);
+        this.btnTakeAction.setEnabled(false);
+        UtilsX.animateBtnTakePhoto(this.btnTakeAction);
+        ImageCapture.OutputFileOptions build = new ImageCapture.OutputFileOptions.Builder(mediaFile).build();
+
+        this.imageCapture.setTargetRotation(UtilsX.getDisplayRotation(this));
+        this.imageCapture.setFlashMode(this.flashMode);
+        this.imageCapture.takePicture(build, ContextCompat.getMainExecutor(this), new ImageCapture.OnImageSavedCallback() {
+            @Override
+            public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+                MediaScannerConnection.scanFile(getBaseContext(), new String[]{mediaFile.toString()}, null, null);
+                Glide.with(getBaseContext()).load(mediaFile.toString()).into(ivMyCapture);
+
+                mediaFilePath = mediaFile.toString();
+                btnTakeAction.setEnabled(true);
+
+                // Set the capture flag to true
+                isCapture = true;
+
+                // Hide front camera flash overlay
+                if (flashOverlay.getVisibility() == VISIBLE) {
+                    hideFrontCameraFlash();
+                }
+            }
+
+            @Override
+            public void onError(@NonNull ImageCaptureException imageCaptureException) {
+                btnTakeAction.setEnabled(true);
+                Toast.makeText(getBaseContext(), "Error taking photo: " + imageCaptureException.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+
+                // Hide front camera flash overlay
+                if (flashOverlay.getVisibility() == VISIBLE) {
+                    hideFrontCameraFlash();
+                }
+            }
+        });
+    }
+
+    @SuppressLint({"RestrictedApi", "MissingPermission"})
+    private void recordVideo() {
+        if (isVideoRecordingPreparing || isRecording) {
+            return; // Prevent multiple calls
+        }
+
+        // Disable flash for front camera video recording
+        if (lensFacingType == CameraSelector.LENS_FACING_FRONT) {
+            disableFlashForFrontCamera();
+        }
+
+        videoFile = getOutputMediaFile(MEDIA_TYPE_VIDEO);
+        if (videoFile == null) {
+            Toast.makeText(this, "Failed to create video file", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        isVideoRecordingPreparing = true;
+
+        // Get sound setting
+        boolean soundEnabled = SharedPrefsSettings.getSoundStatus(getBaseContext());
+
+        VideoCapture.OutputFileOptions build = new VideoCapture.OutputFileOptions.Builder(videoFile).build();
+        this.videoCapture.setTargetRotation(UtilsX.getDisplayRotation(this));
+
+        // Check permissions and start recording based on sound setting
+        if (soundEnabled) {
+            // Sound enabled - require audio permission
+            if (ActivityCompat.checkSelfPermission(this, "android.permission.RECORD_AUDIO") == 0) {
+                startVideoRecording(build, soundEnabled);
+            } else {
+                isVideoRecordingPreparing = false;
+                Toast.makeText(this, "Audio permission required for video recording with sound", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            // Sound disabled - record without audio permission check
+            startVideoRecording(build, soundEnabled);
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    private void startVideoRecording(@SuppressLint("RestrictedApi") VideoCapture.OutputFileOptions outputOptions, boolean soundEnabled) {
+
+        this.videoCapture.startRecording(outputOptions, ContextCompat.getMainExecutor(this), new VideoCapture.OnVideoSavedCallback() {
+            @Override
+            public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
+                isVideoRecordingPreparing = false;
+                isRecording = false;
+
+                // Set the capture flag to true
+                isCapture = true;
+
+                // Update UI with captured video
+                if (outputFileResults.getSavedUri() != null) {
+                    Glide.with(getBaseContext()).load(outputFileResults.getSavedUri()).into(ivMyCapture);
+
+                    MediaScannerConnection.scanFile(getBaseContext(), new String[]{outputFileResults.getSavedUri().getPath()}, null, null);
+                    mediaFilePath = outputFileResults.getSavedUri().getPath();
+                } else if (videoFile.exists()) {
+                    // Fallback to file path
+                    Glide.with(getBaseContext()).load(videoFile).into(ivMyCapture);
+
+                    MediaScannerConnection.scanFile(getBaseContext(), new String[]{videoFile.getAbsolutePath()}, null, null);
+                    mediaFilePath = videoFile.getAbsolutePath();
+                }
+
+                // Post-process video to remove audio if sound is disabled
+                if (!soundEnabled && mediaFilePath != null) {
+                    // Since CameraX doesn't natively support disabling audio during recording,
+                    // we need to mute the audio track after recording
+                    muteVideoAudio(mediaFilePath);
+                }
+
+                // Log recording completion with settings used
+                Log.d("Rishi_Video", "Video recorded successfully with sound: " + soundEnabled);
+            }
+
+            @Override
+            public void onError(int i, @NonNull String str, Throwable th) {
+                isVideoRecordingPreparing = false;
+                isRecording = false;
+                MainController.stopChronometer(chronometerVideo);
+                MainController.stopRecAnimation(animationRecVideo);
+                Toast.makeText(getBaseContext(), "Error recording video: " + str, Toast.LENGTH_SHORT).show();
+                Log.e("Rishi_Video", "Video recording error: " + str, th);
+            }
+        });
+
+        // Start recording indicators
+        this.isRecording = true;
+        isVideoRecordingPreparing = false;
+        MainController.startRecAnimation(imgVideoRec, animationRecVideo);
+        MainController.startChronometer(chronometerVideo);
+    }
+
+    @SuppressLint("WrongConstant")
+    private void muteVideoAudio(String videoPath) {
+        try {
+            File originalFile = new File(videoPath);
+            File mutedFile = new File(originalFile.getParent(), "muted_" + originalFile.getName());
+
+            MediaExtractor extractor = new MediaExtractor();
+            extractor.setDataSource(videoPath);
+
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            retriever.setDataSource(videoPath);
+
+            String rotation = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+            int rotationDegrees = (rotation != null) ? Integer.parseInt(rotation) : 0;
+
+            MediaMuxer muxer = new MediaMuxer(mutedFile.getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+
+            muxer.setOrientationHint(rotationDegrees);
+
+            // Copy only video track
+            for (int i = 0; i < extractor.getTrackCount(); i++) {
+                MediaFormat format = extractor.getTrackFormat(i);
+                String mime = format.getString(MediaFormat.KEY_MIME);
+
+                if (mime.startsWith("video/")) {
+                    extractor.selectTrack(i);
+                    int trackIndex = muxer.addTrack(format);
+                    muxer.start();
+
+                    ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
+                    MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+
+                    while (true) {
+                        int sampleSize = extractor.readSampleData(buffer, 0);
+                        if (sampleSize < 0) break;
+
+                        info.offset = 0;
+                        info.size = sampleSize;
+                        info.presentationTimeUs = extractor.getSampleTime();
+                        info.flags = extractor.getSampleFlags();
+
+                        muxer.writeSampleData(trackIndex, buffer, info);
+                        extractor.advance();
+                    }
+                    break;
+                }
+            }
+
+            muxer.stop();
+            muxer.release();
+            extractor.release();
+            retriever.release();
+
+            // Replace original file with muted version
+            if (mutedFile.exists() && originalFile.delete()) {
+                mutedFile.renameTo(originalFile);
+                Log.d("Rishi_Video", "Audio successfully removed and rotation preserved");
+            }
+
+        } catch (Exception e) {
+            Log.e("Rishi_Video", "Error removing audio from video", e);
+        }
+    }
+
+    private void showFrontCameraFlash() {
+        flashOverlay.setVisibility(VISIBLE);
+        flashOverlay.setAlpha(1.0f);
+
+        // Auto-hide after a short duration
+        new Handler().postDelayed(this::hideFrontCameraFlash, 200);
+    }
+
+    private void hideFrontCameraFlash() {
+        flashOverlay.animate().alpha(0.0f).setDuration(100).withEndAction(() -> flashOverlay.setVisibility(GONE)).start();
+    }
+
+    private File getOutputMediaFile(int type) {
+        File generateFile = DirManager.Companion.generateFile();
+
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        Log.d("RishiDate", timeStamp);
+        File mediaFile;
+        if (type == MEDIA_TYPE_IMAGE)
+            mediaFile = new File(generateFile.getPath() + File.separator + "IMG_" + timeStamp + ".jpeg");
+        else if (type == MEDIA_TYPE_VIDEO)
+            mediaFile = new File(generateFile.getPath() + File.separator + "VID_" + timeStamp + ".mp4");
+        else return null;
+
+        try {
+            if (photo != null) {
+                photo.setImagePath(mediaFile.getAbsolutePath());
+                photo.setDateTimeTaken(timeStamp);
+                // IMPORTANT: Use the location data that was captured when the photo was taken
+                // Make sure we have valid location data
+                if (currentLatitude != 0.0 && currentLongitude != 0.0) {
+                    photo.setLatitude(String.valueOf(currentLatitude));
+                    photo.setLongitude(String.valueOf(currentLongitude));
+                    photo.setAddress(currentAddress);
+                } else {
+                    // Fallback values if location is not available
+                    photo.setLatitude("0.0");
+                    photo.setLongitude("0.0");
+                    photo.setAddress("Location not available");
+                }
+
+                if (savedDate != null && !savedDate.trim().isEmpty() && savedTime != null && !savedTime.trim().isEmpty()) {
+                    Log.d("Location_date", "If block");
+                    // Parse the saved date string "27-08-2025"
+                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                    Date parsedDate = inputDateFormat.parse(savedDate);
+
+                    // Convert to your required output format
+                    SimpleDateFormat stampFormat = new SimpleDateFormat(format_Date, Locale.getDefault());
+                    photo.setDate(stampFormat.format(parsedDate));
+
+                    // Parse the saved time string "00:00:46 am"
+                    SimpleDateFormat inputTimeFormat = new SimpleDateFormat("hh:mm:ss a", Locale.getDefault());
+                    Date parsedTime = inputTimeFormat.parse(savedTime);
+
+                    // Convert to your required output format
+                    SimpleDateFormat timeFormat = new SimpleDateFormat(format_Time, Locale.getDefault());
+                    photo.setTime(timeFormat.format(parsedTime));
+                } else {
+                    Log.d("Location_date", "Else block");
+                    SimpleDateFormat stampFormat = new SimpleDateFormat(format_Date, Locale.getDefault());
+                    photo.setDate(stampFormat.format(new Date()));
+                    SimpleDateFormat timeFormat = new SimpleDateFormat(format_Time, Locale.getDefault());
+                    photo.setTime(timeFormat.format(new Date()));
+                }
+
+                photo.setType(currentstamp_type);
+                photo.setTitle(currentTitle);
+                photo.setFontStyle(fontStyle);
+                photo.setMap_type(current_map_type);
+                photo.setShow_watermark(MyApplication.getShowWatermark());
+                photo.setLat_dms(latDMS);
+                photo.setLong_dms(lonDMS);
+                photo.setCurrent_bg_color(current_StampBgColor);
+                photo.setCurrent_text_color(current_TextColor);
+                photo.setCurrent_datetime_color(current_DateTimeColor);
+                photo.setRatio(currentRatioType);
+
+
+                // Log the data being saved for debugging
+                Log.d("PhotoCapture", "Saving photo with:");
+                Log.d("PhotoCapture", "Lat: " + photo.getLatitude());
+                Log.d("PhotoCapture", "Lng: " + photo.getLongitude());
+                Log.d("PhotoCapture", "Address: " + photo.getAddress());
+                Log.d("PhotoCapture", "Date: " + photo.getDate());
+                Log.d("PhotoCapture", "Time: " + photo.getTime());
+                Log.d("PhotoCapture", "FontStyle: " + photo.getFontStyle());
+                Log.d("PhotoCapture", "StampType: " + photo.getType());
+                Log.d("PhotoCapture", "MapType: " + photo.getMap_type());
+                Log.d("PhotoCapture", "DMS Lat: " + photo.getLat_dms());
+                Log.d("PhotoCapture", "DMS Long: " + photo.getLong_dms());
+                Log.d("PhotoCapture", "WaterMark: " + photo.getShow_watermark());
+                Log.d("PhotoCapture", "bg col: " + photo.getCurrent_bg_color());
+                Log.d("PhotoCapture", "txt col: " + photo.getCurrent_text_color());
+                Log.d("PhotoCapture", "datetime col: " + photo.getCurrent_datetime_color());
+                Log.d("PhotoCapture", "ratio " + photo.getRatio());
+
+                // Insert photo into database
+                insertPhoto();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return mediaFile;
+    }
+
+
+    public void insertPhoto() {
+        if (photo != null && photo.getImagePath() != null) {
+            // Show thumbnail immediately
+            RequestManager with = Glide.with(this);
+            RequestBuilder<Drawable> load = with.load(photo.getImagePath());
+            load.into(ivMyCapture);
+
+            // Insert into database
+            this.viewModel.insertPhoto(photo).observe(this, new Observer() {
+                @Override
+                public void onChanged(Object obj) {
+                    if (obj != null) {
+
+                        long insertedId = (long) obj;
+                        Log.d("PhotoCapture", "Photo inserted with ID: " + insertedId);
+
+                        photo.setId((int) insertedId);
+
+                        // Copy for photoOld
+                        photoOld = new Photo();
+                        photoOld.setId((int) insertedId);
+                        photoOld.setImagePath(photo.getImagePath());
+                        photoOld.setLatitude(photo.getLatitude());
+                        photoOld.setLongitude(photo.getLongitude());
+                        photoOld.setAddress(photo.getAddress());
+                        photoOld.setDate(photo.getDate());
+                        photoOld.setTime(photo.getTime());
+                        photoOld.setType(photo.getType());
+                        photoOld.setTitle(photo.getTitle());
+                        photoOld.setFontStyle(photo.getFontStyle());
+                        photoOld.setDateTimeTaken(photo.getDateTimeTaken());
+                        photoOld.setMap_type(photo.getMap_type());
+                        photoOld.setShow_watermark(photo.getShow_watermark());
+                        photoOld.setLong_dms(photo.getLong_dms());
+                        photoOld.setLat_dms(photo.getLat_dms());
+                        photoOld.setCurrent_datetime_color(photo.getCurrent_datetime_color());
+                        photoOld.setCurrent_bg_color(photo.getCurrent_bg_color());
+                        photoOld.setCurrent_text_color(photo.getCurrent_text_color());
+                        photoOld.setRatio(photo.getRatio());
+                        // Create a new photo object for next capture
+                        initializePhotoObject();
+                    } else {
+                        Log.e("PhotoCapture", "Failed to insert photo");
+                    }
+                }
+            });
+        }
+    }
+
+    // ========================== CAMERA METHODS ==========================
+
+    public void setCameraReadyListener(CameraReadyListener listener) {
+        this.cameraReadyListener = listener;
+    }
+
+    private void startCameraPreview() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        cameraProviderFuture.addListener(() -> {
+            try {
+                // initialize photo & video capture before binding
+                initImageCapture();
+                initVideoCapture();
+
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+               // cameraProvider.unbindAll();
+                bindCameraUseCases(cameraProvider);
+
+                if (cameraReadyListener != null) {
+                    runOnUiThread(() -> {
+                        isCameraReady = true;
+                        cameraReadyListener.onCameraReady();
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+
+    @SuppressLint("RestrictedApi")
+    private void initVideoCapture() {
+        int[] videoSizes = SharedPrefsSettings.getVideoSizes(getBaseContext());
+        int fps = SharedPrefsSettings.getFps(getBaseContext());
+        boolean soundEnabled = SharedPrefsSettings.getSoundStatus(getBaseContext());
+        Log.d("Rishi_Video", "Initializing VideoCapture with resolution: " + videoSizes[0] + "x" + videoSizes[1] + " at " + fps + " FPS" + soundEnabled + "sound");
+
+        this.videoCapture = new VideoCapture.Builder().setVideoFrameRate(fps).setMaxResolution(new Size(videoSizes[0], videoSizes[1])).build();
+
+//
+//        int width = 1280;   // 720p width
+//        int height = 720;   // 720p height
+//        int fps = 30;       // Standard frame rate
+//
+//        Log.d("Rishi_Video", "Initializing VideoCapture with resolution: "
+//                + width + "x" + height + " at " + fps + " FPS");
+//
+//        this.videoCapture = new VideoCapture.Builder()
+//                .setVideoFrameRate(fps)
+//                .setTargetResolution(new Size(1280, 720))
+//                .build();
+    }
+
+//    @SuppressLint("RestrictedApi")
+//    private void initVideoCapture() {
+//        int[] videoSizes = SharedPrefsSettings.getVideoSizes(getBaseContext());
+//        int fps = SharedPrefsSettings.getFps(getBaseContext());
+//        boolean soundEnabled = SharedPrefsSettings.getSoundStatus(getBaseContext());
+//
+//        Log.d("Rishi_Video", "Initializing VideoCapture with resolution: " + videoSizes[0] + "x" + videoSizes[1] + " at " + fps + " FPS");
+//
+//        // Add fallback logic for Android 10
+//        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+//            // Use more conservative settings for Android 10
+//            videoSizes = getSafeVideoSize(videoSizes);
+//            fps = 30; // Cap at 30 FPS for older devices
+//        }
+//
+//        this.videoCapture = new VideoCapture.Builder()
+//                .setVideoFrameRate(fps)
+//                .setMaxResolution(new Size(videoSizes[0], videoSizes[1]))
+//                .build();
+//    }
+
+    private int[] getSafeVideoSize(int[] requestedSize) {
+        // Common safe resolutions for Android 10
+        int[][] safeSizes = {
+                {1920, 1080}, // 1080p
+                {1280, 720},  // 720p
+                {640, 480}    // 480p fallback
+        };
+
+        for (int[] safeSize : safeSizes) {
+            if (requestedSize[0] <= safeSize[0] && requestedSize[1] <= safeSize[1]) {
+                return requestedSize;
+            }
+        }
+
+        // Return 720p as fallback
+        return new int[]{1280, 720};
+    }
+
+    private void initImageCapture() {
+        boolean isMaxQuality = SharedPrefsSettings.getImageMaxQuality(this);
+        int captureMode = isMaxQuality ? ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY : ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY;
+
+        Log.d("Rishi_Image", "Initializing ImageCapture | MaxQuality: " + isMaxQuality + " | CaptureMode: " + captureMode);
+
+        imageCapture = new ImageCapture.Builder().setCaptureMode(captureMode).build();
+    }
+
+
+    // ========================== RATIO AND STAMP HEIGHT SETTINGS ==========================
+
+    private void bindCameraUseCases(ProcessCameraProvider cameraProvider) {
+        cameraProvider.unbindAll();
+
+        Preview preview;
+
+        // Handle different aspect ratios based on currentRatioType
+        switch (currentRatioType) {
+            case RatioDialog.RATIO_FULL:
+                // Full screen setup
+                initImageCapture();
+                initVideoCapture();
+                preview = new Preview.Builder().build();
+                updateCameraPreviewSizeFull();
+                break;
+
+            case RatioDialog.RATIO_16_9:
+                // 16:9 aspect ratio setup
+                initializeImageCaptureWithRatio(AspectRatio.RATIO_16_9);
+                initializeVideoCaptureWithRatio(AspectRatio.RATIO_16_9);
+                preview = new Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9).build();
+                updateCameraPreviewFor16_9();
+                break;
+
+            case RatioDialog.RATIO_4_3:
+            default:
+                // 4:3 aspect ratio setup (default)
+                initializeImageCaptureWithRatio(AspectRatio.RATIO_4_3);
+                initializeVideoCaptureWithRatio(AspectRatio.RATIO_4_3);
+                preview = new Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
+                updateCameraPreviewFor4_3();
+                break;
+        }
+
+        preview.setSurfaceProvider(cameraPreview.getSurfaceProvider());
+
+        UseCase captureUseCase = viewPagerSwitchAction.getCurrentItem() == 0 ? imageCapture : videoCapture;
+
+        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(lensFacingType).build();
+
+        camera = cameraProvider.bindToLifecycle(this, cameraSelector, captureUseCase, preview);
+
+        cameraControl = camera.getCameraControl();
+        cameraInfo = camera.getCameraInfo();
+        setZoomRatio(currentZoomRatio);
+    }
+
+    private void initializeImageCaptureWithRatio(int aspectRatio) {
+        imageCapture = new ImageCapture.Builder().setTargetAspectRatio(aspectRatio).setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build();
+    }
+
+    @SuppressLint("RestrictedApi")
+    private void initializeVideoCaptureWithRatio(int aspectRatio) {
+        videoCapture = new VideoCapture.Builder().setTargetAspectRatio(aspectRatio).build();
+    }
+
+    private void updateCameraPreviewSizeFull() {
+        if (cameraContainer != null && cameraPreview != null) {
+            // Make the container full height
+            ViewGroup.LayoutParams containerParams = cameraContainer.getLayoutParams();
+            containerParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            containerParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            cameraContainer.setLayoutParams(containerParams);
+
+            // Make preview fill container
+            ViewGroup.LayoutParams previewParams = cameraPreview.getLayoutParams();
+            previewParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            previewParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            cameraPreview.setLayoutParams(previewParams);
+        }
+    }
+
+
+    private void updateCameraPreviewFor16_9() {
+        if (cameraContainer != null && cameraPreview != null) {
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            int screenWidth = displayMetrics.widthPixels;
+            int height16_9 = (screenWidth * 16) / 9;
+
+            // Update container height
+            ViewGroup.LayoutParams containerParams = cameraContainer.getLayoutParams();
+            containerParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            containerParams.height = height16_9;
+            cameraContainer.setLayoutParams(containerParams);
+
+            // Update preview height to match container
+            ViewGroup.LayoutParams previewParams = cameraPreview.getLayoutParams();
+            previewParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            previewParams.height = height16_9;
+            cameraPreview.setLayoutParams(previewParams);
+
+            centerPreviewInContainer(height16_9);
+        }
+    }
+
+
+    private void updateCameraPreviewFor4_3() {
+        if (cameraContainer != null && cameraPreview != null) {
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            int screenWidth = displayMetrics.widthPixels;
+            int height4_3 = (screenWidth * 4) / 3;
+
+            // Update container height
+            ViewGroup.LayoutParams containerParams = cameraContainer.getLayoutParams();
+            containerParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            containerParams.height = height4_3;
+            cameraContainer.setLayoutParams(containerParams);
+
+            // Update preview height to match container
+            ViewGroup.LayoutParams previewParams = cameraPreview.getLayoutParams();
+            previewParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            previewParams.height = height4_3;
+            cameraPreview.setLayoutParams(previewParams);
+
+            centerPreviewInContainer(height4_3);
+        }
+    }
+
+    private void centerPreviewInContainer(int previewHeight) {
+        if (cameraPreview != null) {
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            int screenHeight = displayMetrics.heightPixels;
+
+            // If preview is smaller than screen, center it
+            if (previewHeight < screenHeight) {
+                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) cameraPreview.getLayoutParams();
+                params.gravity = Gravity.CENTER;
+                cameraPreview.setLayoutParams(params);
+            }
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density);
+    }
+
+    // ========================== LOCATION METHODS ==========================
+
+    @SuppressLint("MissingPermission")
+    private void requestLocationUpdates() {
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+    }
+
+    private void handleLocationUpdate(Location location) {
+        if (isLocationFetched) return; // Only capture location once
+
+        isLocationFetched = true;
+        fusedLocationClient.removeLocationUpdates(locationCallback);
+
+        // Store the captured location
+        currentLatitude = location.getLatitude();
+        currentLongitude = location.getLongitude();
+
+        Log.d("Location", "Location captured: " + currentLatitude + ", " + currentLongitude);
+
+        resolveAddressFromLocation(location);
+        LoadDMS();
+        renderStamp();
+    }
+
+    private void LoadDMS() {
+        // Latitude
+        String latDirection = (currentLatitude >= 0) ? "N" : "S";
+        latDMS = convertToDMS(Math.abs(currentLatitude)) + " " + latDirection;
+
+        // Longitude
+        String lonDirection = (currentLongitude >= 0) ? "E" : "W";
+        lonDMS = convertToDMS(Math.abs(currentLongitude)) + " " + lonDirection;
+
+        Log.d("PhotoCapture", "DMS " + lonDMS + " " + latDMS);
+    }
+
+    private void resolveAddressFromLocation(Location location) {
+        new Thread(() -> {
+            try {
+                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+
+                if (addresses != null && !addresses.isEmpty()) {
+                    String resolvedAddress = addresses.get(0).getAddressLine(0);
+                    if (resolvedAddress != null && !resolvedAddress.isEmpty()) {
+                        currentAddress = resolvedAddress;
+
+                        Log.d("Location", "Address resolved: " + currentAddress);
+                    } else {
+                        currentAddress = "Address not available";
+                    }
+                } else {
+                    currentAddress = "Address not available";
+                }
+
+                runOnUiThread(this::updateStampLocation);
+            } catch (IOException e) {
+                e.printStackTrace();
+                currentAddress = "Address resolution failed";
+                runOnUiThread(this::updateStampLocation);
+            }
+        }).start();
+    }
+
+    private String convertToDMS(double decimalCoord) {
+        int degrees = (int) decimalCoord;
+
+        double minutesFull = (decimalCoord - degrees) * 60;
+        int minutes = (int) minutesFull;
+
+        double seconds = (minutesFull - minutes) * 60;
+
+        return String.format(Locale.getDefault(), "%d°%d'%s\"", degrees, minutes, formatSeconds(seconds));
+    }
+
+    private String formatSeconds(double seconds) {
+        // Remove unnecessary trailing zeros
+        if (seconds == (long) seconds)
+            return String.format(Locale.getDefault(), "%d", (long) seconds);
+        else return String.format(Locale.getDefault(), "%.2f", seconds);
+    }
+    // ========================== STAMP RENDERING METHODS ==========================
+
+
+    private void getStampFont() {
+        if (FastSave.getInstance().getString(MyApplication.FONT_STYLE, "SF Pro Display.otf") != null) {
+            fontStyle = FastSave.getInstance().getString(MyApplication.FONT_STYLE, "SF Pro Display.otf");
+        } else {
+            fontStyle = "SF Pro Display.otf";
+        }
+    }
+
+    private void getStampBgColor() {
+        current_StampBgColor = FastSave.getInstance().getInt(MyApplication.STAMP_BG_COLOR, ContextCompat.getColor(this, R.color.transparent_30) // default
+        );
+    }
+
+    private void getTextColor() {
+        current_TextColor = FastSave.getInstance().getInt(MyApplication.STAMP_TEXT_COLOR, ContextCompat.getColor(this, R.color.white) // default
+        );
+    }
+
+    private void getDateTimeColor() {
+        current_DateTimeColor = FastSave.getInstance().getInt(MyApplication.STAMP_DATE_TIME_COLOR, ContextCompat.getColor(this, R.color.white) // default
+        );
+
+        // Debug log (both int & hex)
+        Log.d("Rishi_Color", "Loaded DateTimeColor int: " + current_DateTimeColor + " | hex: #" + Integer.toHexString(current_DateTimeColor));
+    }
+
+
+    private void getStampType() {
+        currentstamp_type = FastSave.getInstance().getInt(MyApplication.STAMP_LAYOUT_ID, 1);
+    }
+
+    private void getTemplateStampDateTime() {
+
+        // Get global defaults first
+        String globalDateFormat = FastSave.getInstance().getString(MyApplication.FORMAT_DATE, "dd-MM-yyyy");
+        String globalTimeFormat = FastSave.getInstance().getString(MyApplication.FORMAT_TIME, "HH:mm:ss a");
+        String globalCombinedFormat = FastSave.getInstance().getString(MyApplication.TIME_FORMAT, "dd-MM-yyyy HH:mm:ss a");
+
+        // Get template-specific formats (fallback to global if not set)
+        format_Date = msp.getTemplateDateFormat(this, currentstamp_type, globalDateFormat);
+        format_Time = msp.getTemplateTimeFormat(this, currentstamp_type, globalTimeFormat);
+        format_Combined = msp.getTemplateDateTimeCombinedFormat(this, currentstamp_type, globalCombinedFormat);
+
+        // Have a repository instance here (or pass one in)
+        DateFormatRepository repo = new DateFormatRepository(this);
+        repo.saveSelectedFormat(format_Combined, format_Date, format_Time);
+
+
+        Log.d("Rishi_datetime", "=== Template DateTime Format Debug ===");
+        Log.d("Rishi_datetime", "Template ID: " + currentstamp_type);
+        Log.d("Rishi_datetime", "format_Combined: " + format_Combined);
+        Log.d("Rishi_datetime", "format_Date: " + format_Date);
+        Log.d("Rishi_datetime", "format_Time: " + format_Time);
+    }
+
+    private void getStampDateTime() {
+        // Check if we should use template-specific formats
+        boolean useTemplateFormats = msp.isTemplateEdited(this, currentstamp_type);
+        Log.d("Rishi_datetime", "T/F = " + useTemplateFormats);
+        if (useTemplateFormats) {
+            // Use template-specific formats
+            getTemplateStampDateTime();
+        } else {
+            // Use global formats (your existing logic)
+            if (FastSave.getInstance().getString(MyApplication.TIME_FORMAT, "dd-MM-yyyy HH:mm:ss a") != null) {
+                format_Combined = FastSave.getInstance().getString(MyApplication.TIME_FORMAT, "dd-MM-yyyy HH:mm:ss a");
+                format_Date = FastSave.getInstance().getString(MyApplication.FORMAT_DATE, "dd-MM-yyyy");
+                format_Time = FastSave.getInstance().getString(MyApplication.FORMAT_TIME, "HH:mm:ss a");
+            } else {
+                format_Combined = "dd-MM-yyyy, HH:mm:ss a";
+                format_Date = "dd-MM-yyyy";
+                format_Time = "HH:mm:ss a";
+            }
+
+            Log.d("Rishi_datetime", "=== Global DateTime Format Debug ===");
+            Log.d("Rishi_datetime", "format_Combined: " + format_Combined);
+            Log.d("Rishi_datetime", "format_Date: " + format_Date);
+            Log.d("Rishi_datetime", "format_Time: " + format_Time);
+        }
+    }
+
+
+//    private void renderStamp() {
+//        try {
+//
+//
+//            // Only recreate stamp layout if stamp type actually changed
+//            if (isMapSetup && mapViewContainer != null && supportMapFragment != null) {
+//                // Just update the existing map and content
+//                updateStampContent();
+//                updateMapLocation(); // This will update map with current location
+//                return;
+//            }
+//
+//            relBottomStamp.removeAllViews();
+//
+//            int layoutResId;
+//            switch (currentstamp_type) {
+//                case 1:
+//                    layoutResId = R.layout.stamp_layout_1;
+//                    break;
+//                case 2:
+//                    layoutResId = R.layout.stamp_layout_2;
+//                    break;
+//                case 3:
+//                    layoutResId = R.layout.stamp_layout_3;
+//                    break;
+//                case 4:
+//                    layoutResId = R.layout.stamp_layout_4;
+//                    break;
+//                case 5:
+//                    layoutResId = R.layout.stamp_layout_5;
+//                    break;
+//                case 6:
+//                    layoutResId = R.layout.stamp_layout_6;
+//                    break;
+//                case 7:
+//                    layoutResId = R.layout.stamp_layout_7;
+//                    break;
+//                default:
+//                    layoutResId = R.layout.stamp_layout_1;
+//                    break;
+//            }
+//
+//
+//            Log.d("Rishi_Savedstamptemplate", "STAMP_LAYOUT_ID - RENDER" + currentstamp_type);
+//
+//            View stampView = getLayoutInflater().inflate(layoutResId, relBottomStamp, false);
+//
+//
+//            // Add the view to parent first
+//            relBottomStamp.addView(stampView);
+//
+//            // Initialize views
+//            initializeStampViews(stampView);
+//
+//            if (mapViewContainer != null) {
+//                if (mapViewContainer.getId() == View.NO_ID) {
+//                    mapViewContainer.setId(View.generateViewId());
+//                }
+//                setupMapFragment();
+//            }
+//
+//            updateStampContent();
+//            isMapSetup = true;
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            Toast.makeText(this, "Error setting up stamp: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//        }
+//    }
+
+    private void renderStamp() {
+        try {
+
+            relBottomStamp.removeAllViews();
+            int layoutResId;
+            switch (currentstamp_type) {
+                case 1:
+                    layoutResId = R.layout.stamp_layout_1;
+                    break;
+                case 2:
+                    layoutResId = R.layout.stamp_layout_2;
+                    break;
+                case 3:
+                    layoutResId = R.layout.stamp_layout_3;
+                    break;
+                case 4:
+                    layoutResId = R.layout.stamp_layout_4;
+                    break;
+                case 5:
+                    layoutResId = R.layout.stamp_layout_5;
+                    break;
+                case 6:
+                    layoutResId = R.layout.stamp_layout_6;
+                    break;
+                case 7:
+                    layoutResId = R.layout.stamp_layout_7;
+                    break;
+                case 8:
+                    layoutResId = R.layout.stamp_layout_8;
+                    break;
+                case 9:
+                    layoutResId = R.layout.stamp_layout_9;
+                    break;
+                default:
+                    layoutResId = R.layout.stamp_layout_1;
+                    break;
+            }
+
+
+            Log.d("Rishi_Savedstamptemplate", "STAMP_LAYOUT_ID - RENDER" + currentstamp_type);
+
+            View stampView = getLayoutInflater().inflate(layoutResId, relBottomStamp, false);
+
+
+            // Add the view to parent first
+            relBottomStamp.addView(stampView);
+
+            // Initialize views
+            initializeStampViews(stampView);
+
+            // Setup map fragment with proper timing
+            if (mapViewContainer != null) {
+                // Ensure the container has a stable ID
+                if (mapViewContainer.getId() == View.NO_ID) {
+                    mapViewContainer.setId(View.generateViewId());
+                }
+
+                // Use ViewTreeObserver to ensure layout is complete
+                mapViewContainer.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        mapViewContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        setupMapFragment();
+                    }
+                });
+            }
+
+            // Update other stamp content
+            updateStampContent();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error setting up stamp: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void initializeStampViews(View stampView) {
+        mapViewContainer = stampView.findViewById(R.id.mapView);
+        txtLocation = stampView.findViewById(R.id.txt_gps_stamp_location);
+        txtDateTime = stampView.findViewById(R.id.txt_gps_stamp_datetime);
+        txtLatitude = stampView.findViewById(R.id.txt_latitude);
+        txtLongitude = stampView.findViewById(R.id.txt_longitude);
+        txtTitle = stampView.findViewById(R.id.txt_gps_stamp_title);
+        txtDate = stampView.findViewById(R.id.txt_date);
+        txtTime = stampView.findViewById(R.id.txt_time);
+        lbl_lat = stampView.findViewById(R.id.lbl_lat);
+        lbl_long = stampView.findViewById(R.id.lbl_long);
+        lbl_date = stampView.findViewById(R.id.lbl_date);
+        lbl_gmt = stampView.findViewById(R.id.lbl_gmt);
+        lbl_type = stampView.findViewById(R.id.lbl_type);
+        lbl_degree = stampView.findViewById(R.id.lbl_degree);
+        lbl_dms = stampView.findViewById(R.id.lbl_dms);
+        txt_lat_dms = stampView.findViewById(R.id.txt_lat_dms);
+        txt_long_dms = stampView.findViewById(R.id.txt_long_dms);
+        appStamp = stampView.findViewById(R.id.appStamp);
+        stampBg = stampView.findViewById(R.id.rel_gps_stamp);
+
+        latLongContainer = stampView.findViewById(R.id.latLongContainer);
+        dateTimeContainer = stampView.findViewById(R.id.dateTimeContainer);
+    }
+
+    private void setupMapFragment() {
+        // Add safety checks
+        if (mapViewContainer == null) {
+            Toast.makeText(this, "Map container is not ready", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Ensure the view has a stable ID
+        if (mapViewContainer.getId() == View.NO_ID) {
+            mapViewContainer.setId(View.generateViewId());
+        }
+
+        // Wait for the view to be laid out properly
+        mapViewContainer.post(() -> {
+            if (isFinishing() || isDestroyed()) {
+                return; // Don't proceed if activity is finishing
+            }
+
+            try {
+                // Remove existing fragment if any
+                if (supportMapFragment != null) {
+                    getSupportFragmentManager().beginTransaction().remove(supportMapFragment).commitNowAllowingStateLoss();
+                    supportMapFragment = null;
+                }
+
+                // Create new fragment and add it
+                supportMapFragment = SupportMapFragment.newInstance();
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(mapViewContainer.getId(), supportMapFragment);
+                transaction.commitAllowingStateLoss();
+
+                // Setup map callback
+                supportMapFragment.getMapAsync(this);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Error setting up map: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap map) {
+        googleMap = map;
+        current_map_type = MyApplication.getMapType();
+        googleMap.setMapType(current_map_type);
+        updateMapLocation();
+    }
+
+    private void updateStampContent() {
+
+        if (msp.isTemplateEdited(this, currentstamp_type)) {
+            //Log.d("Edit_Activity_Rishi","?"+ msp.isTemplateEdited(this, currentstamp_type));
+            // Template has been customized - use saved template font
+            String defaultFont = FastSave.getInstance().getString(MyApplication.FONT_STYLE, "SF Pro Display.otf");
+            fontStyle = msp.getTemplateFontStyle(this, currentstamp_type, defaultFont);
+//            msp.setInteger(getApplicationContext(), SP.LOCATION_FONT_POSITION, fontStyle);
+            FastSave.getInstance().saveString(MyApplication.FONT_STYLE, fontStyle);
+
+//           // Log.d("Edit_Activity_Rishi", "Using template " + currentstamp_type +
+//                    " saved font: " + fontStyle);
+
+            // Take color from template
+            int whiteColor = ContextCompat.getColor(this, R.color.white);
+            int transparent30 = ContextCompat.getColor(this, R.color.transparent_30);
+
+            current_StampBgColor = msp.getTemplateBgColor(this, currentstamp_type, transparent30);
+            current_TextColor = msp.getTemplateTextColor(this, currentstamp_type, whiteColor);
+            current_DateTimeColor = msp.getTemplateDateTimeColor(this, currentstamp_type, whiteColor);
+
+
+            Log.d("Rishi_Color", "Saving BgColor: #" + Integer.toHexString(current_StampBgColor));
+            Log.d("Rishi_Color", "Saving TextColor: #" + Integer.toHexString(current_TextColor));
+            Log.d("Rishi_Color", "Saving DateTimeColor: #" + Integer.toHexString(current_DateTimeColor));
+
+            //Saving color from template
+            FastSave.getInstance().saveInt(MyApplication.STAMP_BG_COLOR, current_StampBgColor);
+            FastSave.getInstance().saveInt(MyApplication.STAMP_TEXT_COLOR, current_TextColor);
+            FastSave.getInstance().saveInt(MyApplication.STAMP_DATE_TIME_COLOR, current_DateTimeColor);
+        } else {
+            fontStyle = FastSave.getInstance().getString(MyApplication.FONT_STYLE, "SF Pro Display.otf");
+        }
+
+
+        //msp.setTemplateEdited(this, currentstamp_type, false);
+        //Log.d("Edit_Activity_Rishi","?"+ msp.isTemplateEdited(this, currentstamp_type));
+        //fontStyle = FastSave.getInstance().getString(MyApplication.FONT_STYLE, "SF Pro Display.otf");
+
+        updateStampLocation();
+        updateStampBgColor();
+        updateStampCoordinates();
+        updateStampDateTime();
+        updateMapLocation();
+        updateStampTitle();
+        updateWaterMarkVisibility();
+        if (currentstamp_type == 2 || currentstamp_type == 3 || currentstamp_type == 6 || currentstamp_type == 7) {
+            updateStampDMS();
+        }
+    }
+
+    private void updateMapLocation() {
+        if (googleMap != null && currentLatitude != 0.0 && currentLongitude != 0.0) {
+            LatLng currentLocation = new LatLng(currentLatitude, currentLongitude);
+
+            googleMap.clear();
+            googleMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location"));
+
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15f));
+
+            // Disable map interactions to prevent conflicts
+            googleMap.getUiSettings().setAllGesturesEnabled(false);
+            googleMap.getUiSettings().setMapToolbarEnabled(false);
+        }
+    }
+
+
+    private void updateStampBgColor() {
+        if (currentstamp_type == 9 ) {
+            if (current_StampBgColor == ContextCompat.getColor(this, R.color.transparent_30)) {
+                current_StampBgColor = ContextCompat.getColor(this, R.color.bg_glass);
+            }
+
+            dateTimeContainer.setBackgroundColor(current_StampBgColor);
+            latLongContainer.setBackgroundColor(current_StampBgColor);
+            txtTitle.setBackgroundColor(current_StampBgColor);
+            txtLocation.setBackgroundColor(current_StampBgColor);
+        }else {
+            stampBg.setCardBackgroundColor(current_StampBgColor);
+        }
+    }
+
+    private void updateWaterMarkVisibility() {
+        if (MyApplication.getShowWatermark()) {
+            appStamp.setVisibility(View.VISIBLE);
+        } else if (currentstamp_type == 9) {
+            appStamp.setVisibility(GONE);
+        } else {
+            appStamp.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private void updateStampTitle() {
+        if (currentTitle != null) {
+            txtTitle.setVisibility(VISIBLE);
+            txtTitle.setText(currentTitle);
+            txtTitle.setTextColor(current_TextColor);
+            txtTitle.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+        }
+    }
+
+    private void updateStampLocation() {
+        if (txtLocation != null) {
+            txtLocation.setText(currentAddress);
+            txtLocation.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            txtLocation.setTextColor(current_TextColor);
+        }
+    }
+
+    private void updateStampCoordinates() {
+        if (txtLatitude != null && txtLongitude != null) {
+
+            // Determine N/S for latitude
+            String latDirection = (currentLatitude >= 0) ? "N" : "S";
+
+            // Determine E/W for longitude
+            String lonDirection = (currentLongitude >= 0) ? "E" : "W";
+
+            // Use absolute value to avoid negative sign with letters
+            //txtLatitude.setText(String.format(Locale.getDefault(), "%.5f°%s", Math.abs(currentLatitude), latDirection));
+            txtLatitude.setText(String.format(Locale.getDefault(), "%.5f°%s", currentLatitude, latDirection));
+            txtLatitude.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            lbl_lat.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            //txtLongitude.setText(String.format(Locale.getDefault(), "%.5f°%s", Math.abs(currentLongitude), lonDirection));
+            txtLongitude.setText(String.format(Locale.getDefault(), "%.5f°%s", currentLongitude, lonDirection));
+            txtLongitude.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            lbl_long.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+
+            txtLatitude.setTextColor(current_TextColor);
+            txtLongitude.setTextColor(current_TextColor);
+            lbl_lat.setTextColor(current_TextColor);
+            lbl_long.setTextColor(current_TextColor);
+
+            //For stamp 2,3,6:
+            if (currentstamp_type == 2 || currentstamp_type == 3 || currentstamp_type == 6 || currentstamp_type == 7) {
+                lbl_type.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+                lbl_degree.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+                lbl_type.setTextColor(current_TextColor);
+                lbl_degree.setTextColor(current_TextColor);
+            }
+        }
+    }
+
+    private void updateStampDMS() {
+        if (txt_lat_dms != null && txt_long_dms != null) {
+            // Set text
+            txt_lat_dms.setText(latDMS);
+            txt_lat_dms.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            txt_long_dms.setText(lonDMS);
+            txt_long_dms.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            lbl_dms.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+
+            //Set Color
+            txt_lat_dms.setTextColor(current_TextColor);
+            txt_long_dms.setTextColor(current_TextColor);
+            lbl_dms.setTextColor(current_TextColor);
+        }
+    }
+
+
+//    private void updateStampDateTime() {
+//        if (txtDate != null && txtTime != null) {
+//            Date now = new Date();
+//
+//            SimpleDateFormat dateFormatter = new SimpleDateFormat(format_Date, Locale.getDefault());
+//            SimpleDateFormat timeFormatter = new SimpleDateFormat(format_Time, Locale.getDefault());
+//
+//            txtDate.setText(dateFormatter.format(now));
+//            txtDate.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+//            lbl_date.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+//
+//            if (format_Time == null || format_Time.isEmpty()) {
+//                lbl_gmt.setVisibility(View.GONE);
+//                txtTime.setVisibility(GONE);
+//            } else {
+//                lbl_gmt.setVisibility(VISIBLE);
+//                txtTime.setVisibility(VISIBLE);
+//                txtTime.setText(timeFormatter.format(now));
+//                txtTime.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+//                lbl_gmt.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+//            }
+//        }
+//
+//        // Legacy datetime field for backward compatibility
+//        if (txtDateTime != null) {
+//            SimpleDateFormat fullFormat = new SimpleDateFormat("dd MMM YY, EEEE HH:mm:ss", Locale.getDefault());
+//            txtDateTime.setText(fullFormat.format(new Date()));
+//        }
+//    }
+
+
+    private void updateStampDateTime() {
+        if (txtDate != null && txtTime != null) {
+
+
+            // Commenting for the datetime dialog work efficiently
+//            // Get the user's current chosen formats
+//            String format_Date = FastSave.getInstance()
+//                    .getString(MyApplication.FORMAT_DATE, "dd-MM-yyyy");
+//            String format_Time = FastSave.getInstance()
+//                    .getString(MyApplication.FORMAT_TIME, "HH:mm:ss a");
+
+            String displayDate;
+            String displayTime;
+
+            // ----- DATE -----
+            if (savedDate != null && !savedDate.trim().isEmpty()) {
+                try {
+                    // Adjust this to match how it was originally saved
+                    SimpleDateFormat originalDateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                    Date parsedDate = originalDateFormat.parse(savedDate);
+                    SimpleDateFormat displayDateFormat = new SimpleDateFormat(format_Date, Locale.getDefault());
+                    displayDate = parsedDate != null ? displayDateFormat.format(parsedDate) : savedDate;
+                } catch (Exception e) {
+                    displayDate = savedDate; // fallback if parsing fails
+                }
+            } else {
+                SimpleDateFormat dateFormatter = new SimpleDateFormat(format_Date, Locale.getDefault());
+                displayDate = dateFormatter.format(new Date());
+            }
+
+            // ----- TIME -----
+            if (savedTime != null && !savedTime.trim().isEmpty()) {
+                try {
+                    // Adjust this to match how it was originally saved
+                    SimpleDateFormat originalTimeFormat = new SimpleDateFormat("HH:mm:ss aa", Locale.getDefault());
+                    Date parsedTime = originalTimeFormat.parse(savedTime);
+                    SimpleDateFormat displayTimeFormat = new SimpleDateFormat(format_Time, Locale.getDefault());
+                    displayTime = parsedTime != null ? displayTimeFormat.format(parsedTime) : savedTime;
+                } catch (Exception e) {
+                    displayTime = savedTime; // fallback if parsing fails
+                }
+            } else {
+                SimpleDateFormat timeFormatter = new SimpleDateFormat(format_Time, Locale.getDefault());
+                displayTime = timeFormatter.format(new Date());
+            }
+
+            // Set date
+            txtDate.setText(displayDate);
+            txtDate.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            lbl_date.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+
+            // Set time
+            if (format_Time == null || format_Time.isEmpty()) {
+                lbl_gmt.setVisibility(View.GONE);
+                txtTime.setVisibility(GONE);
+            } else {
+                lbl_gmt.setVisibility(VISIBLE);
+                txtTime.setVisibility(VISIBLE);
+                txtTime.setText(displayTime);
+                txtTime.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+                lbl_gmt.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            }
+        }
+
+        // Apply colors
+        txtTime.setTextColor(current_DateTimeColor);
+        txtDate.setTextColor(current_DateTimeColor);
+        lbl_date.setTextColor(current_DateTimeColor);
+        lbl_gmt.setTextColor(current_DateTimeColor);
+        Log.d("Rishi_Color", "DateTimeColor (int): " + current_DateTimeColor);
+        Log.d("Rishi_Color", "DateTimeColor (hex): #" + Integer.toHexString(current_DateTimeColor));
+
+
+        // Legacy combined field
+        if (txtDateTime != null) {
+            if (savedDate != null && savedTime != null) {
+                txtDateTime.setText(savedDate + " " + savedTime);
+            } else {
+                SimpleDateFormat fullFormat = new SimpleDateFormat("dd MMM YY, EEEE HH:mm:ss", Locale.getDefault());
+                txtDateTime.setText(fullFormat.format(new Date()));
+            }
+        }
+    }
+
+    // ========================== EVENT LISTENERS ==========================
+
+    private void setupExposureListeners() {
+        btnExposure_4.setOnClickListener(view -> {
+            setExposureCompensation(-4);
+        });
+        btnExposure_3.setOnClickListener(view -> setExposureCompensation(-3));
+        btnExposure_2.setOnClickListener(view -> setExposureCompensation(-2));
+        btnExposure_1.setOnClickListener(view -> setExposureCompensation(-1));
+        btnExposure0.setOnClickListener(view -> setExposureCompensation(0));
+        btnExposure1.setOnClickListener(view -> setExposureCompensation(1));
+        btnExposure2.setOnClickListener(view -> setExposureCompensation(2));
+        btnExposure3.setOnClickListener(view -> setExposureCompensation(3));
+        btnExposure4.setOnClickListener(view -> setExposureCompensation(4));
+    }
+
+    ;
+
+
+    private void setupZoomListeners() {
+        btnZoom1x.setOnClickListener(v -> {
+            UtilsX.animateZoomButton(btnZoom1x);
+            setZoomRatio(1f);
+        });
+        relBottomStamp.setOnClickListener(view -> {
+            Log.d("bottom_stamp_rishi", "StampClicked");
+            myLocationNavigation();
+        });
+
+        btnZoom2x.setOnClickListener(v -> {
+            UtilsX.animateZoomButton(btnZoom2x);
+            Log.d("bottom_stamp_rishi", "2x clicked");
+            setZoomRatio(2f);
+        });
+
+        btnZoom3x.setOnClickListener(v -> {
+            UtilsX.animateZoomButton(btnZoom3x);
+            setZoomRatio(3f);
+        });
+    }
+
+    private void setupCameraListeners() {
+
+        btnFlash.setOnClickListener(v -> toggleFlash());
+        btnSwitchCamera.setOnClickListener(v -> {
+            switchCamera();
+            UtilsX.rotateSwitchCameraButton(btnSwitchCamera);
+        });
+    }
+
+    private void setupTabListeners() {
+        viewPagerSwitchAction.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                handleTabSelection(tab.getPosition());
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+    }
+
+    private void setupMenuListeners() {
+        btnExpandMenu.setOnClickListener(view -> toggleHorizontalMenu());
+
+        btnSettings.setOnClickListener(view -> {
+            if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+                if (!InterstitialAdManager.isInterstitialShowing()) {
+                    setInterstitialShowing(true);
+                    InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "settings_open_interstitial", () -> {
+                        setInterstitialShowing(false);
+                        settingsNavigation();
+                    }, errorMsg -> {
+                        setInterstitialShowing(false);
+                        LogUtils.logE("Settings", "Ad failed: " + errorMsg);
+                    });
+                } else {
+                    LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
+                }
+            } else {
+                settingsNavigation();
+            }
+        });
+    }
+
+    private void settingsNavigation() {
+        UtilsX.rotateSettingsButton(btnSettings);
+        String currentDate = "";
+        String currentTime = "";
+
+        if (format_Date != null && format_Time != null) {
+            Date now = new Date();
+            SimpleDateFormat dateFormatter = new SimpleDateFormat(format_Date, Locale.getDefault());
+            SimpleDateFormat timeFormatter = new SimpleDateFormat(format_Time, Locale.getDefault());
+            currentDate = dateFormatter.format(now);
+            currentTime = timeFormatter.format(now);
+        }
+
+        MyLocation location = new MyLocation(null, "", currentDate, currentTime, currentAddress, String.valueOf(currentLatitude), String.valueOf(currentLongitude), false);
+        Intent intent = new Intent(MainActivity.this, Settings_Activity.class);
+        intent.putExtra(MyApplication.EXTRA_LOCATION, location);
+       // startActivity(intent);
+        resultLauncher.launch(intent);
+    }
+
+    private void setUpBottomTabListeners() {
+        btnMap.setOnClickListener(view -> {
+            if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+                if (!InterstitialAdManager.isInterstitialShowing()) {
+                    setInterstitialShowing(true);
+                    InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "map_open_interstitial", () -> {
+                        setInterstitialShowing(false);
+                        Intent intent = new Intent(MainActivity.this, Map_Activity.class);
+                        startActivity(intent);
+
+                    }, errorMsg -> {
+                        setInterstitialShowing(false);
+                        LogUtils.logD("MapActivity", "Ad failed: " + errorMsg);
+                    });
+                } else {
+                    LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
+                }
+            } else {
+                Intent intent = new Intent(MainActivity.this, Map_Activity.class);
+                startActivity(intent);
+            }
+        });
+
+        btnTemplate.setOnClickListener(view -> {
+            if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+                if (!InterstitialAdManager.isInterstitialShowing()) {
+                    setInterstitialShowing(true);
+                    InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "template_open_interstitial", () -> {
+                        setInterstitialShowing(false);
+                        Intent intent = new Intent(MainActivity.this, Template_Activity.class);
+                        startActivity(intent);
+                    }, errorMsg -> {
+                        setInterstitialShowing(false);
+                        LogUtils.logE("TemplateActivity", "Ad failed: " + errorMsg);
+                    });
+                } else {
+                    LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
+                }
+            } else {
+                Intent intent = new Intent(MainActivity.this, Template_Activity.class);
+                startActivity(intent);
+            }
+        });
+
+
+        btnAddLocation.setOnClickListener(view -> {
+            // Use current location data instead of photo data
+            if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+                if (!InterstitialAdManager.isInterstitialShowing()) {
+                    setInterstitialShowing(true);
+                    InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "location_open_interstitial", () -> {
+                        setInterstitialShowing(false);
+                        myLocationNavigation();
+                    }, errorMsg -> {
+                        setInterstitialShowing(false);
+                        LogUtils.logE("MyLocation", "Ad failed: " + errorMsg);
+                    });
+                } else {
+                    LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
+                }
+            } else {
+                myLocationNavigation();
+            }
+
+
+        });
+
+
+        ivMyCapture.setOnClickListener(view -> {
+            // Check if location is loaded
+
+
+            if (currentAddress.equals("Loading location...") || currentAddress.equals("Loading...")) {
+                Toast.makeText(this, getResources().getString(R.string.please_wait_data_is_loading), Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+
+            // Use the most recent photo (either just captured or last one from database)
+            Photo photoToPreview = null;
+
+            if (isCapture && photo != null && photo.getImagePath() != null) {
+
+                photoToPreview = photo;
+            } else if (photoOld != null && photoOld.getImagePath() != null) {
+
+                photoToPreview = photoOld;
+            }
+
+            if (photoToPreview != null) {
+                Intent intent = new Intent(MainActivity.this, PhotoPreview_Activity.class);
+                intent.putExtra("model", photoToPreview);
+                intent.putExtra("isMain", true);
+                startActivity(intent);
+                // Reset capture flag after preview
+                isCapture = false;
+            } else {
+                Intent intent = new Intent(MainActivity.this, No_Preview_Available.class);
+                startActivity(intent);
+            }
+        });
+    }
+
+    private void myLocationNavigation() {
+        String currentDate = "";
+        String currentTime = "";
+
+        if (format_Date != null && format_Time != null) {
+            Date now = new Date();
+            SimpleDateFormat dateFormatter = new SimpleDateFormat(format_Date, Locale.getDefault());
+            SimpleDateFormat timeFormatter = new SimpleDateFormat(format_Time, Locale.getDefault());
+            currentDate = dateFormatter.format(now);
+            currentTime = timeFormatter.format(now);
+        }
+
+        MyLocation location = new MyLocation(null, "", currentDate, currentTime, currentAddress, String.valueOf(currentLatitude), String.valueOf(currentLongitude), false);
+        Intent intent = new Intent(MainActivity.this, MyLocation_Activity.class);
+        intent.putExtra(MyApplication.EXTRA_LOCATION, location);
+        resultLauncher.launch(intent);
+    }
+
+
+    private void setUpHorizontalMenuListeners() {
+
+
+        setupExposureListeners();
+
+        btnFontStyle.setOnClickListener(view -> {
+            showFontStyleDialog();
+            manageExposurelayout();
+        });
+
+        btnDateTime.setOnClickListener(view -> {
+            showDateTimeDialog();
+            manageExposurelayout();
+        });
+
+        btnTimer.setOnClickListener(view -> {
+            showTimerDialog();
+            manageExposurelayout();
+        });
+
+        btnExposure.setOnClickListener(view -> {
+            if (isMenuExpanded) {
+                MainController.toggleVisibilityView(layoutExposure, btnExposure, getResources());
+            }
+        });
+
+        btnRatio.setOnClickListener(view -> {
+            showRatioDialog();
+            manageExposurelayout();
+        });
+
+        btnGrid.setOnClickListener(view -> {
+            showGridDialog();
+            manageExposurelayout();
+        });
+
+        btnWatermark.setOnClickListener(view -> {
+            showWatermarkDialog();
+            manageExposurelayout();
+        });
+
+        btnVideoresolution.setOnClickListener(view -> {
+            if (viewPagerSwitchAction.getCurrentItem() == 0) {
+                Toast.makeText(this, R.string.camera_no_support_resolution, Toast.LENGTH_SHORT).show();
+            } else {
+                showVideoResolutionDialog();
+                manageExposurelayout();
+            }
+        });
+
+        btnFps.setOnClickListener(view -> {
+            if (viewPagerSwitchAction.getCurrentItem() == 0) {
+                Toast.makeText(this, R.string.camera_no_support_fps, Toast.LENGTH_SHORT).show();
+            } else {
+                showFpsDialog();
+                manageExposurelayout();
+            }
+        });
+
+        btnImgQuality.setOnClickListener(view -> {
+            showImageQualityDialog();
+            manageExposurelayout();
+        });
+
+        btnVideoVolume.setOnClickListener(view -> {
+            showVideoVolumeDialog();
+            manageExposurelayout();
+        });
+    }
+
+    ;
+
+    private void showFontStyleDialog() {
+        if (fontStyleDialog != null && fontStyleDialog.isShowing()) {
+            return;
+        }
+
+        String[] fontList = fontViewModel.getFontList().getValue();
+        if (fontList == null) {
+            // Fallback
+            fontList = getResources().getStringArray(R.array.font_name_array);
+        }
+        fontStyleDialog = new FontStyleDialog(this, fontList, new OnFontSelectedListener() {
+            @Override
+            public void onFontSelected(String fontName, int position) {
+                // Save selected font position
+                msp.setInteger(getApplicationContext(), SP.LOCATION_FONT_POSITION, position);
+                FastSave.getInstance().saveString(MyApplication.FONT_STYLE, fontViewModel.getFontList().getValue()[position]);
+                updateStampContent();
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                fontStyleDialog = null;
+            }
+        });
+
+        new HelperClass().setBottomDialog(fontStyleDialog);
+        fontStyleDialog.show();
+    }
+
+
+    private void showDateTimeDialog() {
+
+        if (dateTimeDialog != null && dateTimeDialog.isShowing()) {
+            return;
+        }
+
+        dateTimeDialog = new DateTimeDialog(this, new OnDateTimeSelectedListener() {
+            @Override
+            public void onDateTimeSelected(DateFormatModel selectedFormat, int position) {
+                getStampDateTime();
+                updateStampDateTime();
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                dateTimeDialog = null;
+            }
+        });
+
+        // Pass the current active format to the dialog
+        // This ensures the dialog shows the correct preselected option
+        dateTimeDialog.setCurrentActiveFormat(format_Combined);
+
+        new HelperClass().setBottomDialog(dateTimeDialog);
+        dateTimeDialog.show();
+    }
+
+    private void showTimerDialog() {
+
+        if (timerDialog != null && timerDialog.isShowing()) {
+            return;
+        }
+
+        timerDialog = new TimerDialog(this, this.timernew, new OnTimerSelectedListener() {
+            @Override
+            public void onTimerSelected(int timerValue) {
+                timernew = timerValue;
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                timerDialog = null;
+            }
+        });
+
+        new HelperClass().setFullscreenBottomDialog(timerDialog);
+        timerDialog.show();
+    }
+
+    private void showRatioDialog() {
+        if (ratioDialog != null && ratioDialog.isShowing()) {
+            return;
+        }
+        ratioDialog = new RatioDialog(this, currentRatioType, new OnRatioSelectedListener() {
+            @Override
+            public void onRatioSelected(int ratioValue) {
+                if (currentRatioType != ratioValue) {
+                    currentRatioType = ratioValue;
+                    startCameraPreview();
+                    toggleHorizontalMenu();
+                }
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                ratioDialog = null;
+            }
+        });
+
+        new HelperClass().setFullscreenBottomDialog(ratioDialog);
+        ratioDialog.show();
+    }
+
+    private void showGridDialog() {
+
+        if (gridDialog != null && gridDialog.isShowing()) {
+            return;
+        }
+
+        gridDialog = new GridDialog(this, currentGridType, new OnGridSelectedListener() {
+            @Override
+            public void onGridSelected(int gridValue) {
+                if (currentGridType != gridValue) {
+                    currentGridType = gridValue;
+                    SharedPrefsSettings.setGridType(gridValue, MainActivity.this);
+                    updateGridDisplay();
+                    startCameraPreview();
+                    toggleHorizontalMenu();
+                }
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                gridDialog = null;
+            }
+        });
+
+        new HelperClass().setFullscreenBottomDialog(gridDialog);
+        gridDialog.show();
+    }
+
+    private void showWatermarkDialog() {
+        Dialog watermarkdialog = new Dialog(this);
+        watermarkdialog.setContentView(R.layout.dialog_watermark);
+        watermarkdialog.setCancelable(true);
+
+        Switch switchCamera = watermarkdialog.findViewById(R.id.switch_watermark);
+
+        // Load saved value instead of constant
+        showWatermark = MyApplication.getShowWatermark();
+        switchCamera.setChecked(showWatermark);
+
+        switchCamera.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            showWatermark = isChecked;
+            MyApplication.setShowWatermark(isChecked);
+            updateStampContent();
+        });
+
+        watermarkdialog.setOnDismissListener(dialogInterface -> {
+        });
+
+
+        View anchorView = findViewById(R.id.layoutHorizontalMenu);
+        Window window = watermarkdialog.getWindow();
+        if (window != null) {
+            // Calculate position of the anchor view
+            int[] location = new int[2];
+            anchorView.getLocationOnScreen(location);
+            int anchorBottom = location[1] + anchorView.getHeight();
+
+            // Set watermarkdialog position to TOP with margin below anchor
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+            params.x = 0;
+            params.y = anchorBottom; // 20px margin below the anchor
+            window.setAttributes(params);
+
+            // Calculate width with some gap (e.g., 32dp from both sides)
+            int sideMargin = (int) (12 * getResources().getDisplayMetrics().density);
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int dialogWidth = screenWidth - (sideMargin * 2);
+
+            window.setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        }
+
+        watermarkdialog.show();
+    }
+
+    private void showVideoResolutionDialog() {
+
+        if (videoResolutionDialog != null && videoResolutionDialog.isShowing()) {
+            return;
+        }
+
+        int currentVideoResolution = SharedPrefsSettings.getVideoSize(this);
+
+        videoResolutionDialog = new VideoResolutionDialog(this, currentVideoResolution, new OnResolutionSelectedListener() {
+            @Override
+            public void onResolutionSelected(int resolutionValue) {
+                SharedPrefsSettings.setVideoSize(resolutionValue, getBaseContext());
+                // Reinitialize video capture if recording is not in progress
+                if (!isRecording) {
+                    startCameraPreview();
+                    toggleHorizontalMenu();
+                }
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                videoResolutionDialog = null;
+            }
+        });
+
+        new HelperClass().setFullscreenBottomDialog(videoResolutionDialog);
+        videoResolutionDialog.show();
+    }
+
+    private void showFpsDialog() {
+
+        if (fpsDialog != null && fpsDialog.isShowing()) {
+            return;
+        }
+
+        int currentFps = SharedPrefsSettings.getFps(this);
+
+        fpsDialog = new FpsDialog(this, currentFps, new OnFpsSelectedListener() {
+            @Override
+            public void onFpsSelected(int fpsValue) {
+                SharedPrefsSettings.setFps(fpsValue, getBaseContext());
+
+                // Reinitialize video capture if recording is not in progress
+                if (!isRecording) {
+                    initVideoCapture();
+                    startCameraPreview();
+                    toggleHorizontalMenu();
+                }
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                fpsDialog = null;
+            }
+        });
+
+        new HelperClass().setFullscreenBottomDialog(fpsDialog);
+        fpsDialog.show();
+    }
+
+    private void showImageQualityDialog() {
+        Dialog imageQualityDialog = new Dialog(this);
+        imageQualityDialog.setContentView(R.layout.dialog_imagequality);
+        imageQualityDialog.setCancelable(true);
+
+        Switch switchMaximumImageQuality = imageQualityDialog.findViewById(R.id.switch_maximumimagequality);
+
+        boolean currentQualityState = SharedPrefsSettings.getImageMaxQuality(this);
+        switchMaximumImageQuality.setChecked(currentQualityState);
+
+        switchMaximumImageQuality.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPrefsSettings.setImageMaxQuality(isChecked, this);
+            initImageCapture();
+            startCameraPreview();
+            Log.d("Rishi_Image", "Image quality changed to: " + (isChecked ? "Maximum Quality" : "Minimize Latency"));
+        });
+
+        imageQualityDialog.setOnDismissListener(dialogInterface -> {
+        });
+
+        View anchorView = findViewById(R.id.layoutHorizontalMenu);
+        Window window = imageQualityDialog.getWindow();
+        if (window != null) {
+            // Calculate position of the anchor view
+            int[] location = new int[2];
+            anchorView.getLocationOnScreen(location);
+            int anchorBottom = location[1] + anchorView.getHeight();
+
+            // Set watermarkdialog position to TOP with margin below anchor
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+            params.x = 0;
+            params.y = anchorBottom; // 20px margin below the anchor
+            window.setAttributes(params);
+
+            // Calculate width with some gap (e.g., 32dp from both sides)
+            int sideMargin = (int) (12 * getResources().getDisplayMetrics().density);
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int dialogWidth = screenWidth - (sideMargin * 2);
+
+            window.setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        }
+
+        imageQualityDialog.show();
+    }
+
+    private void showVideoVolumeDialog() {
+        if (videoVolumeDialog != null && videoVolumeDialog.isShowing()) {
+            return;
+        }
+        boolean currentSoundStatus = SharedPrefsSettings.getSoundStatus(this);
+
+        videoVolumeDialog = new VideoVolumeDialog(this, currentSoundStatus, new OnSoundSelectedListener() {
+            @Override
+            public void onSoundSelected(boolean soundEnabled) {
+                // Save the sound setting to SharedPreferences
+                SharedPrefsSettings.setSoundStatus(soundEnabled, getBaseContext());
+
+                if (!isRecording) {
+                    startCameraPreview();
+                    toggleHorizontalMenu();
+                }
+            }
+
+            @Override
+            public void onDialogDismissed() {
+                videoVolumeDialog = null;
+            }
+        });
+
+        new HelperClass().setFullscreenBottomDialog(videoVolumeDialog);
+        videoVolumeDialog.show();
+    }
+
+    private void showInternetDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("No Internet")
+                .setMessage("Oops! You're not connected to the internet. GPS Map Camera needs internet to show your location.")
+                .setCancelable(false)
+//                .setPositiveButton("USE MOBILE DATA", (dialog, which) -> {
+//                    Intent intent = new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS);
+//                    startActivity(intent);
+//                })
+//                .setNegativeButton("CONNECT TO WI-FI", (dialog, which) -> {
+//                    Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+//                    startActivity(intent);
+//                })
+                .setNegativeButton("Cancel", (d, which) -> d.dismiss())
+                .setOnDismissListener(d -> {
+                    renderStamp();
+                })
+                .show();
+
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                .setTextColor(ContextCompat.getColor(this, R.color.blue_primary));
+    }
+
+    private void showInternetLocationDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Location Disabled and no internet")
+                .setMessage("Please turn on Location (GPS) and internet to continue.")
+                .setCancelable(false)
+//                .setPositiveButton("USE MOBILE DATA", (dialog, which) -> {
+//                    Intent intent = new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS);
+//                    startActivity(intent);
+//                })
+//                .setNegativeButton("CONNECT TO WI-FI", (dialog, which) -> {
+//                    Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+//                    startActivity(intent);
+//                })
+                .setNegativeButton("Cancel", (d, which) -> d.dismiss())
+                .setOnDismissListener(d -> {
+                    renderStamp();
+                })
+                .show();
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                .setTextColor(ContextCompat.getColor(this, R.color.blue_primary));
+    }
+
+    private void showLocationDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Location Disabled")
+                .setMessage("Please turn on Location (GPS) to continue.")
+                .setCancelable(false)
+//                .setPositiveButton("Turn On", (dialog, which) -> {
+//                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+//                    startActivity(intent);
+//                })
+                .setNegativeButton("Cancel", (d, which) -> d.dismiss())
+                .setOnDismissListener(d -> {
+                    renderStamp();
+                })
+                .show();
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                .setTextColor(ContextCompat.getColor(this, R.color.blue_primary));
+    }
+
+
+    private void updateGridDisplay() {
+        if (gridLinesView != null) {
+            gridLinesView.setGridType(currentGridType);
+        }
+    }
+
+    private void startCountDown(int position) {
+        txtCountDownTakePhoto.setVisibility(View.VISIBLE);
+        countDownTimer = new CountDownTimer(timernew * 1000L, 1000L) {
+            @Override
+            public void onTick(long j) {
+                UtilsX.playSound(R.raw.beep_timer_sound, getBaseContext());
+                txtCountDownTakePhoto.setText(String.valueOf((j / 1000) + 1));
+            }
+
+            @Override
+            public void onFinish() {
+                if (position == 0) {
+                    takePhoto();
+                    txtCountDownTakePhoto.setVisibility(View.INVISIBLE);
+                    btnTakeAction.setVisibility(View.VISIBLE);
+                    imgCenterTakeAction.setVisibility(View.VISIBLE);
+                } else {
+                    recordVideo();
+                    txtCountDownTakePhoto.setVisibility(View.INVISIBLE);
+                    btnTakeAction.setVisibility(View.VISIBLE);
+                    imgVideoRec.setVisibility(View.VISIBLE);
+                }
+            }
+        }.start();
+    }
+
+    private void setExposureCompensation(int i) {
+        MainController.setExposureCompensation(i, this.camera, this.btnExposure, this.btnExposure_4, this.btnExposure_3, this.btnExposure_2, this.btnExposure_1, this.btnExposure0, this.btnExposure1, this.btnExposure2, this.btnExposure3, this.btnExposure4, this.arrowExposure_4, this.arrowExposure_3, this.arrowExposure_2, this.arrowExposure_1, this.arrowExposure0, this.arrowExposure1, this.arrowExposure2, this.arrowExposure3, this.arrowExposure4, this);
+    }
+
+    // ========================== UI CONTROL METHODS ==========================
+
+    private void toggleFlash() {
+        // Cycle through all three flash modes: OFF -> ON -> AUTO -> OFF
+        switch (flashMode) {
+            case ImageCapture.FLASH_MODE_OFF:
+                flashMode = ImageCapture.FLASH_MODE_ON;
+                UtilsX.changeButtonIcon(btnFlash, R.drawable.ic_flash_on, this);
+                break;
+            case ImageCapture.FLASH_MODE_ON:
+                flashMode = ImageCapture.FLASH_MODE_AUTO;
+                UtilsX.changeButtonIcon(btnFlash, R.drawable.ic_flash_auto, this); // You'll need this icon
+                break;
+            case ImageCapture.FLASH_MODE_AUTO:
+                flashMode = ImageCapture.FLASH_MODE_OFF;
+                UtilsX.changeButtonIcon(btnFlash, R.drawable.ic_flash_off, this);
+                break;
+        }
+
+        // Update torch for video mode if currently in video mode
+        updateVideoFlash();
+    }
+
+    private void updateVideoFlash() {
+        if (viewPagerSwitchAction.getCurrentItem() == 1 && camera != null && cameraControl != null) {
+            // For video mode, only use torch on/off (no auto mode)
+            boolean enableTorch = flashMode == ImageCapture.FLASH_MODE_ON && lensFacingType == CameraSelector.LENS_FACING_BACK;
+            cameraControl.enableTorch(enableTorch);
+        }
+    }
+
+//    @Override
+//    public boolean dispatchKeyEvent(KeyEvent keyEvent) {
+//        int keyCode = keyEvent.getKeyCode();
+//
+//        if (keyEvent.getAction() == 0) {
+//            if (keyCode == 24 || keyCode == 25) { // 24 = VOLUME_UP, 25 = VOLUME_DOWN
+//                int currentItem = this.viewPagerSwitchAction.getCurrentItem();
+//                if (currentItem == 0 || currentItem == 1) {
+//                    takeAction();
+//                }
+//                return true;
+//            }
+//            return super.dispatchKeyEvent(keyEvent);
+//        }
+//        return super.dispatchKeyEvent(keyEvent);
+//    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent keyEvent) {
+        int keyCode = keyEvent.getKeyCode();
+
+        if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
+            // Prevent multiple triggers when long-pressed
+            if (keyEvent.getRepeatCount() == 0) {
+                if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                    int currentItem = viewPagerSwitchAction.getCurrentItem();
+                    if (currentItem == 0 || currentItem == 1) {
+                        takeAction();
+                    }
+                    return true;
+                }
+            }
+        }
+        return super.dispatchKeyEvent(keyEvent);
+    }
+
+
+    private void disableFlashForFrontCamera() {
+        if (lensFacingType == CameraSelector.LENS_FACING_FRONT) {
+            // Turn off torch for front camera
+            if (camera != null && cameraControl != null) {
+                cameraControl.enableTorch(false);
+            }
+        }
+    }
+
+    private void switchCamera() {
+        // Stop any ongoing recording before switching
+        if (isRecording) {
+            stopVideoRecording();
+        }
+
+        lensFacingType = lensFacingType == CameraSelector.LENS_FACING_BACK ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
+
+        // Auto-disable flash for front camera in video mode
+        if (lensFacingType == CameraSelector.LENS_FACING_FRONT && viewPagerSwitchAction.getCurrentItem() == 1) {
+            disableFlashForFrontCamera();
+        }
+
+        startCameraPreview();
+    }
+
+    private void toggleHorizontalMenu() {
+        if (isMenuExpanded) {
+            UtilsX.slideMenuUp(layoutHorizontalMenu);
+            UtilsX.rotateExpandButton(btnExpandMenu, false);
+            manageExposurelayout();
+            isMenuExpanded = false;
+        } else {
+            UtilsX.slideMenuDown(layoutHorizontalMenu);
+            UtilsX.rotateExpandButton(btnExpandMenu, true);
+            isMenuExpanded = true;
+        }
+    }
+
+    private void manageExposurelayout() {
+        if (layoutExposure.getVisibility() == View.VISIBLE) {
+            MainController.toggleVisibilityView(layoutExposure, btnExposure, getResources());
+        }
+    }
+
+
+    private void setZoomRatio(float ratio) {
+        if (cameraControl != null && cameraInfo != null) {
+            float minZoom = cameraInfo.getZoomState().getValue().getMinZoomRatio();
+            float maxZoom = cameraInfo.getZoomState().getValue().getMaxZoomRatio();
+            float clampedRatio = Math.max(minZoom, Math.min(maxZoom, ratio));
+
+            cameraControl.setZoomRatio(clampedRatio);
+            currentZoomRatio = clampedRatio;
+            UtilsX.updateZoomButtons(btnZoom1x, btnZoom2x, btnZoom3x, currentZoomRatio);
+        }
+    }
+
+    private void updateZoomVisibility() {
+        int selectedTab = tabLayout.getSelectedTabPosition();
+        boolean isBackCamera = lensFacingType == CameraSelector.LENS_FACING_BACK;
+        boolean shouldShowZoom = (selectedTab == 0 || selectedTab == 1) && isBackCamera;
+
+        zoomLayout.setVisibility(shouldShowZoom ? VISIBLE : GONE);
+    }
+
+//    private void handleTabSelection(int position) {
+//        // Stop any ongoing recording when switching tabs
+//        if (isRecording && position != 1) {
+//            stopVideoRecording();
+//        }
+//
+//        viewPagerSwitchAction.setCurrentItem(position);
+//        UtilsX.toggleRecordingIndicator(imgCenterTakeAction, imgVideoRec, position);
+//
+//        new Handler().postDelayed(() -> {
+//            startCameraPreview();
+//            updateZoomVisibility();
+//
+//            // Update flash for video mode
+//            if (position == 1) {
+//                updateVideoFlash();
+//                // Auto-disable flash for front camera in video mode
+//                if (lensFacingType == CameraSelector.LENS_FACING_FRONT) {
+//                    disableFlashForFrontCamera();
+//                }
+//            }
+//        }, 200);
+//
+//        float alpha = (position == 0 || position == 1) ? 1f : 0.5f;
+//        UtilsX.setAlpha(layoutBottom, alpha);
+//
+//        boolean isEnabled = position == 0 || position == 1;
+//        btnTakeAction.setEnabled(isEnabled);
+//        btnSwitchCamera.setEnabled(isEnabled);
+//    }
+
+    private void handleTabSelection(int position) {
+        if (isSwitching) return; // ignore rapid switches
+        isSwitching = true;
+
+        if (isRecording && position != 1) {
+            stopVideoRecording();
+        }
+
+        viewPagerSwitchAction.setCurrentItem(position);
+        UtilsX.toggleRecordingIndicator(imgCenterTakeAction, imgVideoRec, position);
+
+        new Handler().postDelayed(() -> {
+            startCameraPreview();
+            updateZoomVisibility();
+
+            if (position == 1) {
+                updateVideoFlash();
+                if (lensFacingType == CameraSelector.LENS_FACING_FRONT) {
+                    disableFlashForFrontCamera();
+                }
+            }
+
+            isSwitching = false; // allow next switch only after preview binds
+        }, 200);
+    }
+
+    // ========================== LIFECYCLE METHODS ==========================
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cleanupResources();
+    }
+
+    private void cleanupResources() {
+        // Stop any ongoing recording
+        if (isRecording) {
+            stopVideoRecording();
+        }
+
+        if (handler != null && dateTimeUpdater != null) {
+            handler.removeCallbacks(dateTimeUpdater);
+        }
+
+        if (fusedLocationClient != null && locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
+
+        if (supportMapFragment != null) {
+            getSupportFragmentManager().beginTransaction().remove(supportMapFragment).commitAllowingStateLoss();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+            countDownTimer = null;
+        }
+        txtCountDownTakePhoto.setVisibility(View.INVISIBLE);
+        btnTakeAction.setVisibility(View.VISIBLE);
+        imgCenterTakeAction.setVisibility(View.VISIBLE);
+        imgVideoRec.setVisibility(View.VISIBLE);
+
+        // Stop recording when app goes to background
+        if (isRecording) {
+            stopVideoRecording();
+        }
+
+        if (handler != null && dateTimeUpdater != null) {
+            handler.removeCallbacks(dateTimeUpdater);
+        }
+    }
+
+    private void updateMaps() {
+        if (msp.isTemplateEdited(this, currentstamp_type)) {
+            getStampDateTime();
+            updateStampDateTime();
+            current_map_type = msp.getTemplateMapType(this, currentstamp_type, current_map_type);
+            MyApplication.setMapType(current_map_type);
+            if (googleMap != null) {
+                googleMap.setMapType(current_map_type);
+            }
+        } else {
+            getStampDateTime();
+            current_map_type = MyApplication.getMapType();
+            if (googleMap != null) {
+                googleMap.setMapType(current_map_type);
+            }
+        }
+    }
+
+    private void refreshLatestPhoto() {
+        viewModel.getAllPhoto().observe(this, photos -> {
+            if (photos != null && !photos.isEmpty()) {
+                Photo latestPhoto = photos.get(0);
+                boolean exists = false;
+                for (Photo p : photos) {
+                    if (photoOld != null && photoOld.getId() == p.getId()) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    photoOld = null;
+                    ivMyCapture.setImageResource(R.drawable.my_capture_icon);
+                }
+            } else {
+                photoOld = null;
+                ivMyCapture.setImageResource(R.drawable.my_capture_icon);
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+
+        super.onResume();
+        refreshLatestPhoto();
+        setZoomRatio(currentZoomRatio);
+        // Re-enable immersive mode
+        enableImmersiveMode();
+
+        if (handler != null && dateTimeUpdater != null) {
+            handler.post(dateTimeUpdater);
+        }
+        updateMaps();
+        getStampType();
+        renderStamp();
+    }
+
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        // Ensure recording is stopped when activity stops
+        if (isRecording) {
+            stopVideoRecording();
+        }
+    }
+}

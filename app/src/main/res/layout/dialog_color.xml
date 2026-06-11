@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_white_rounded"
+    android:layout_gravity="bottom">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/_6sdp">
+
+        <ImageView
+            android:id="@+id/btnPicker"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="?actionBarItemBackground"
+            android:padding="@dimen/_4sdp"
+            android:visibility="gone"
+            android:src="@drawable/ic_picker"
+            android:contentDescription="Picker" />
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:fontFamily="@font/sfprotextsemibold"
+            android:text="Background Color"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_16sdp" />
+
+        <ImageView
+            android:id="@+id/btnCloseDialog"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?actionBarItemBackground"
+            android:padding="@dimen/_4sdp"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close" />
+
+    </RelativeLayout>
+
+    <!-- Color Picker Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_6sdp">
+
+        <ir.kotlin.kavehcolorpicker.KavehColorPicker
+            android:id="@+id/colorPickerView"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_160sdp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ir.kotlin.kavehcolorpicker.KavehHueSlider
+            android:id="@+id/hueSlider"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_13sdp"
+            android:layout_margin="@dimen/_7sdp"
+            app:layout_constraintEnd_toStartOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent" />
+
+        <ir.kotlin.kavehcolorpicker.KavehColorAlphaSlider
+            android:id="@+id/colorAlphaSlider"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_13sdp"
+            android:layout_margin="@dimen/_7sdp"
+            app:layout_constraintEnd_toStartOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent" />
+
+
+
+        <!-- Hex Color Input Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_30sdp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:weightSum="2"
+            android:layout_marginStart="@dimen/_7sdp"
+            android:layout_marginEnd="@dimen/_7sdp"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:layout_marginBottom="@dimen/_10sdp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.4"
+                android:text="Hex"
+                android:fontFamily="@font/sfprotextregular"
+                android:background="@drawable/bg_card_unselected"
+                android:textColor="@color/black"
+                android:gravity="center"
+                android:layout_marginEnd="@dimen/_10sdp"
+                android:textSize="@dimen/_14sdp" />
+
+            <EditText
+                android:id="@+id/etHexColor"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.8"
+                android:background="@drawable/bg_card_unselected"
+                android:text="#4F46E5"
+                android:gravity="center"
+                android:fontFamily="@font/sfprotextregular"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_12sdp"
+                android:inputType="textCapCharacters"
+                android:paddingHorizontal="@dimen/_3sdp"
+                android:maxLength="9" />
+
+            <ImageView
+                android:id="@+id/PreviewColor"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.8"
+                android:layout_marginStart="@dimen/_10sdp"
+                android:layout_marginEnd="@dimen/_5sdp"
+                android:background="@drawable/bg_card_unselected" />
+
+        </LinearLayout>
+
+
+        <!-- Saved Colors Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginStart="@dimen/_7sdp"
+            android:layout_marginEnd="@dimen/_7sdp"
+            android:layout_marginBottom="@dimen/_4sdp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Saved colors:"
+                android:fontFamily="@font/sfprotextregular"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_12sdp" />
+
+            <TextView
+                android:id="@+id/tvAddColor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Add"
+                android:fontFamily="@font/sfprotextregular"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_12sdp"
+                android:padding="@dimen/_5sdp" />
+
+        </LinearLayout>
+
+        <!-- Predefined Colors Grid -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewColors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/_7sdp"
+            android:overScrollMode="never" />
+
+    </LinearLayout>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_16sdp"
+        android:paddingEnd="@dimen/_16sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:weightSum="2"
+        android:layout_marginBottom="@dimen/_12sdp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/btnSaveColor"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/background_blue"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="Save"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+
+        <TextView
+            android:id="@+id/btnCancelColor"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/background_black"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="Cancel"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+
+    </LinearLayout>
+
+</LinearLayout>

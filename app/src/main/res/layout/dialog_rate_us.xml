@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_dialog_white_rounded"
+    android:padding="@dimen/_12sdp">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/_6sdp">
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:fontFamily="@font/sfprotextsemibold"
+            android:text="@string/rateUs"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_16sdp" />
+
+        <ImageView
+            android:id="@+id/close_ratus_dialog"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?actionBarItemBackground"
+            android:padding="@dimen/_4sdp"
+            android:src="@drawable/ic_close" />
+    </RelativeLayout>
+
+
+        <ImageView
+            android:layout_width="@dimen/_70sdp"
+            android:layout_height="@dimen/_70sdp"
+            android:src="@drawable/ic_rateus_bg"
+            android:layout_gravity="center" />
+
+
+    <!-- Question -->
+    <TextView
+        android:id="@+id/tvQuestion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:fontFamily="@font/sfprotextsemibold"
+        android:text="@string/how_was_your_experience"
+        android:textColor="@color/black"
+        android:textSize="@dimen/_16sdp" />
+
+    <!-- Sub Question -->
+    <TextView
+        android:id="@+id/tvSubQuestion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:text="@string/rate_us_sub_text"
+        android:textColor="@color/grey_text"
+        android:fontFamily="@font/sfprotextregular"
+        android:textSize="@dimen/_12sdp" />
+
+    <!-- Stars -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/_12sdp">
+
+        <ImageView
+            android:id="@+id/star1"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:src="@drawable/ic_star_unselected"
+            android:layout_margin="4dp" />
+
+        <ImageView
+            android:id="@+id/star2"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:src="@drawable/ic_star_unselected"
+            android:layout_margin="4dp" />
+
+        <ImageView
+            android:id="@+id/star3"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:src="@drawable/ic_star_unselected"
+            android:layout_margin="4dp" />
+
+        <ImageView
+            android:id="@+id/star4"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:src="@drawable/ic_star_unselected"
+            android:layout_margin="4dp" />
+
+        <ImageView
+            android:id="@+id/star5"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:src="@drawable/ic_star_unselected"
+            android:layout_margin="4dp" />
+    </LinearLayout>
+
+    <!-- Better / Feedback Text -->
+    <TextView
+        android:id="@+id/tvBetter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textColor="@color/blue_primary"
+        android:textSize="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_4sdp" />
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_8sdp"
+        android:paddingEnd="@dimen/_8sdp"
+        android:paddingTop="@dimen/_12sdp"
+        android:weightSum="2"
+        android:layout_marginBottom="@dimen/_12sdp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tvSubmit"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/background_blue"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="@string/submit"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+
+        <TextView
+            android:id="@+id/tvLater"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/background_black"
+            android:fontFamily="@font/poppins_medium"
+            android:gravity="center"
+            android:text="@string/cancel"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_14sdp" />
+    </LinearLayout>
+
+</LinearLayout>

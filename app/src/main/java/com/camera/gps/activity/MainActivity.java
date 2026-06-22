@@ -63,7 +63,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AlertDialog;
 import androidx.camera.core.CameraControl;
-import androidx.camera.core.VideoCapture;
 import androidx.camera.core.CameraInfo;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
@@ -73,6 +72,15 @@ import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
+import androidx.camera.video.FallbackStrategy;
+import androidx.camera.video.FileOutputOptions;
+import androidx.camera.video.PendingRecording;
+import androidx.camera.video.Quality;
+import androidx.camera.video.QualitySelector;
+import androidx.camera.video.Recorder;
+import androidx.camera.video.Recording;
+import androidx.camera.video.VideoCapture;
+import androidx.camera.video.VideoRecordEvent;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
@@ -194,7 +202,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private FrameLayout cameraContainer;
     private Camera camera;
     @SuppressLint("RestrictedApi")
-    private VideoCapture videoCapture;
+    private VideoCapture<Recorder> videoCapture;
+    private Recording activeRecording;
     private ImageCapture imageCapture;
     private CameraControl cameraControl;
     private CameraInfo cameraInfo;
@@ -869,12 +878,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @SuppressLint("RestrictedApi")
     private void stopVideoRecording() {
-        if (videoCapture != null && isRecording) {
-            videoCapture.stopRecording();
+        if (activeRecording != null && isRecording) {
+            activeRecording.stop();
+            activeRecording = null;
             UtilsX.playSound(R.raw.stop_recording_sound, getBaseContext());
             MainController.stopRecAnimation(animationRecVideo);
             MainController.stopChronometer(chronometerVideo);
-            isRecording = false;
         }
     }
 
@@ -951,43 +960,58 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Get sound setting
         boolean soundEnabled = SharedPrefsSettings.getSoundStatus(getBaseContext());
 
-        VideoCapture.OutputFileOptions build = new VideoCapture.OutputFileOptions.Builder(videoFile).build();
+        FileOutputOptions outputOptions = new FileOutputOptions.Builder(videoFile).build();
         this.videoCapture.setTargetRotation(UtilsX.getDisplayRotation(this));
 
         // Check permissions and start recording based on sound setting
         if (soundEnabled) {
             // Sound enabled - require audio permission
             if (ActivityCompat.checkSelfPermission(this, "android.permission.RECORD_AUDIO") == 0) {
-                startVideoRecording(build, soundEnabled);
+                startVideoRecording(outputOptions, soundEnabled);
             } else {
                 isVideoRecordingPreparing = false;
                 Toast.makeText(this, "Audio permission required for video recording with sound", Toast.LENGTH_SHORT).show();
             }
         } else {
             // Sound disabled - record without audio permission check
-            startVideoRecording(build, soundEnabled);
+            startVideoRecording(outputOptions, soundEnabled);
         }
     }
 
-    @SuppressLint("RestrictedApi")
+    @SuppressLint({"RestrictedApi", "MissingPermission"})
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    private void startVideoRecording(@SuppressLint("RestrictedApi") VideoCapture.OutputFileOptions outputOptions, boolean soundEnabled) {
+    private void startVideoRecording(FileOutputOptions outputOptions, boolean soundEnabled) {
+        PendingRecording pendingRecording = this.videoCapture.getOutput().prepareRecording(this, outputOptions);
+        if (soundEnabled) {
+            pendingRecording = pendingRecording.withAudioEnabled();
+        }
 
-        this.videoCapture.startRecording(outputOptions, ContextCompat.getMainExecutor(this), new VideoCapture.OnVideoSavedCallback() {
-            @Override
-            public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
+        activeRecording = pendingRecording.start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
+            if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
                 isVideoRecordingPreparing = false;
                 isRecording = false;
+                activeRecording = null;
+                MainController.stopChronometer(chronometerVideo);
+                MainController.stopRecAnimation(animationRecVideo);
+
+                if (finalizeEvent.hasError()) {
+                    String message = "Video recording error: " + finalizeEvent.getError();
+                    Toast.makeText(getBaseContext(), message, Toast.LENGTH_SHORT).show();
+                    Log.e("Rishi_Video", message, finalizeEvent.getCause());
+                    return;
+                }
 
                 // Set the capture flag to true
                 isCapture = true;
 
                 // Update UI with captured video
-                if (outputFileResults.getSavedUri() != null) {
-                    Glide.with(getBaseContext()).load(outputFileResults.getSavedUri()).into(ivMyCapture);
+                Uri outputUri = finalizeEvent.getOutputResults().getOutputUri();
+                if (outputUri != null && outputUri != Uri.EMPTY) {
+                    Glide.with(getBaseContext()).load(outputUri).into(ivMyCapture);
 
-                    MediaScannerConnection.scanFile(getBaseContext(), new String[]{outputFileResults.getSavedUri().getPath()}, null, null);
-                    mediaFilePath = outputFileResults.getSavedUri().getPath();
+                    MediaScannerConnection.scanFile(getBaseContext(), new String[]{outputUri.getPath()}, null, null);
+                    mediaFilePath = outputUri.getPath();
                 } else if (videoFile.exists()) {
                     // Fallback to file path
                     Glide.with(getBaseContext()).load(videoFile).into(ivMyCapture);
@@ -996,25 +1020,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     mediaFilePath = videoFile.getAbsolutePath();
                 }
 
-                // Post-process video to remove audio if sound is disabled
-                if (!soundEnabled && mediaFilePath != null) {
-                    // Since CameraX doesn't natively support disabling audio during recording,
-                    // we need to mute the audio track after recording
-                    muteVideoAudio(mediaFilePath);
-                }
-
                 // Log recording completion with settings used
                 Log.d("Rishi_Video", "Video recorded successfully with sound: " + soundEnabled);
-            }
-
-            @Override
-            public void onError(int i, @NonNull String str, Throwable th) {
-                isVideoRecordingPreparing = false;
-                isRecording = false;
-                MainController.stopChronometer(chronometerVideo);
-                MainController.stopRecAnimation(animationRecVideo);
-                Toast.makeText(getBaseContext(), "Error recording video: " + str, Toast.LENGTH_SHORT).show();
-                Log.e("Rishi_Video", "Video recording error: " + str, th);
             }
         });
 
@@ -1285,7 +1292,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         boolean soundEnabled = SharedPrefsSettings.getSoundStatus(getBaseContext());
         Log.d("Rishi_Video", "Initializing VideoCapture with resolution: " + videoSizes[0] + "x" + videoSizes[1] + " at " + fps + " FPS" + soundEnabled + "sound");
 
-        this.videoCapture = new VideoCapture.Builder().setVideoFrameRate(fps).setMaxResolution(new Size(videoSizes[0], videoSizes[1])).build();
+        this.videoCapture = createVideoCapture(chooseVideoQuality(videoSizes), AspectRatio.RATIO_16_9);
 
 //
 //        int width = 1280;   // 720p width
@@ -1404,7 +1411,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @SuppressLint("RestrictedApi")
     private void initializeVideoCaptureWithRatio(int aspectRatio) {
-        videoCapture = new VideoCapture.Builder().setTargetAspectRatio(aspectRatio).build();
+        int[] videoSizes = SharedPrefsSettings.getVideoSizes(getBaseContext());
+        videoCapture = createVideoCapture(chooseVideoQuality(videoSizes), aspectRatio);
+    }
+
+    private VideoCapture<Recorder> createVideoCapture(Quality quality, int aspectRatio) {
+        Recorder recorder = new Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(quality, FallbackStrategy.lowerQualityOrHigherThan(quality)))
+                .setAspectRatio(aspectRatio)
+                .build();
+        return VideoCapture.withOutput(recorder);
+    }
+
+    private Quality chooseVideoQuality(int[] videoSizes) {
+        int width = Math.max(videoSizes[0], videoSizes[1]);
+        if (width >= 3840) {
+            return Quality.UHD;
+        } else if (width >= 1920) {
+            return Quality.FHD;
+        } else if (width >= 1280) {
+            return Quality.HD;
+        } else {
+            return Quality.SD;
+        }
     }
 
     private void updateCameraPreviewSizeFull() {

@@ -27,6 +27,8 @@
     <string name="preview_scale">Preview Scale</string>
     <string name="exposure">Exposure</string>
     <string name="error_in_creating_file">Error in creating file!</string>
+    <string name="preparing_video">Preparing video...</string>
+    <string name="share_video">Share Video!</string>
     <string name="delete">Delete</string>
     <string name="are_you_sure_delete">Are you sure you want to delete it!</string>
     <string name="please_check_your_internet">Please check your internet</string>

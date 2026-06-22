@@ -108,6 +108,11 @@ dependencies {
 
     implementation 'com.google.code.gson:gson:2.11.0'
 
+    // Video export used to burn GPS stamps into shared videos.
+    def media3_version = "1.8.0"
+    implementation "androidx.media3:media3-transformer:${media3_version}"
+    implementation "androidx.media3:media3-effect:${media3_version}"
+
     // FastSave
     implementation 'com.github.yehiahd:FastSave-Android:1.0.6'
 

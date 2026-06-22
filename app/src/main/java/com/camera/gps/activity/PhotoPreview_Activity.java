@@ -77,6 +77,7 @@ import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.VideoStampShareHelper;
 
 public final class PhotoPreview_Activity extends AppCompatActivity {
 
@@ -385,42 +386,14 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
 
-    private void shareMultipleFiles(Photo photo, File stampFile) {
-        ArrayList<Uri> uris = new ArrayList<>();
-
-        // Add video URI
-        Uri videoUri = FileProvider.getUriForFile(this, getPackageName() + ".provider", new File(photo.getImagePath()));
-        uris.add(videoUri);
-
-        // Add stamp image URI
-        Uri stampUri = FileProvider.getUriForFile(this, getPackageName() + ".provider", stampFile);
-        uris.add(stampUri);
-
-        Intent sharingIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-        sharingIntent.setType("*/*"); // Mixed content
-        sharingIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-        sharingIntent.putExtra(Intent.EXTRA_TEXT, "Video with GPS stamp\n\n" + getResources().getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + getPackageName());
-
-        startActivity(Intent.createChooser(sharingIntent, "Share Video with Stamp!"));
-    }
-
     private void shareVideoWithStamp(Photo photo) {
         try {
             if (mapFragment != null) {
                 mapFragment.getMapAsync(googleMap -> {
                     googleMap.snapshot(mapSnapshot -> {
                         try {
-                            // Create stamp overlay image
                             Bitmap stampBitmap = createStampOverlay(mapSnapshot);
-
-                            // Save stamp as image
-                            File stampFile = new File(getCacheDir(), "video_stamp_" + System.currentTimeMillis() + ".jpg");
-                            FileOutputStream fos = new FileOutputStream(stampFile);
-                            stampBitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
-                            fos.close();
-
-                            shareMultipleFiles(photo, stampFile);
-
+                            VideoStampShareHelper.shareVideoWithStamp(this, photo, stampBitmap);
                         } catch (Exception e) {
                             e.printStackTrace();
                             shareVideoOnly(photo);
@@ -428,7 +401,8 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
                     });
                 });
             } else {
-                shareVideoOnly(photo);
+                Bitmap stampBitmap = viewToImage(relBottomStamp);
+                VideoStampShareHelper.shareVideoWithStamp(this, photo, stampBitmap);
             }
 
         } catch (Exception e) {
@@ -438,12 +412,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
     private void shareVideoOnly(Photo photo) {
-        Intent sharingIntent = new Intent(Intent.ACTION_SEND);
-        sharingIntent.setType("video/mp4");
-        Uri videoUri = FileProvider.getUriForFile(this, getPackageName() + ".provider", new File(photo.getImagePath()));
-        sharingIntent.putExtra(Intent.EXTRA_STREAM, videoUri);
-        sharingIntent.putExtra(Intent.EXTRA_TEXT, getResources().getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + getPackageName());
-        startActivity(Intent.createChooser(sharingIntent, "Share Video!"));
+        VideoStampShareHelper.shareVideoOnly(this, photo);
     }
 
     @SuppressLint("SetTextI18n")

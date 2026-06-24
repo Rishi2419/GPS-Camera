@@ -2,6 +2,7 @@ package com.camera.gps.activity;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
+import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialShowing;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
@@ -70,11 +71,13 @@ import java.util.Locale;
 import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adapter.PhotoGalleryAdapter;
+import com.camera.gps.adsmanager.InterstitialAdManager;
 import com.camera.gps.data.GlobalViewModel;
 import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.Utils;
 
 public final class PhotoGallery_Activity extends AppCompatActivity {
 
@@ -84,6 +87,9 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
     private List<Photo> photoList = new ArrayList<>();
     private int currentPosition = 0;
     private boolean isUIVisible = true;
+    private int previewsSinceLastInterstitial = 0;
+    private boolean ignoreInitialPageSelection = true;
+    private static final int PREVIEWS_BEFORE_INTERSTITIAL = 7;
 
     @Override
     public void onCreate(Bundle bundle) {
@@ -134,8 +140,39 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
                 super.onPageSelected(position);
                 currentPosition = position;
                 updateCounter();
+                handlePreviewSwipeAd();
             }
         });
+    }
+
+    private void handlePreviewSwipeAd() {
+        if (ignoreInitialPageSelection) {
+            ignoreInitialPageSelection = false;
+            return;
+        }
+
+        previewsSinceLastInterstitial++;
+        if (previewsSinceLastInterstitial < PREVIEWS_BEFORE_INTERSTITIAL) {
+            return;
+        }
+
+        if (!MyApplication.isNetworkAvailable(this)
+                || Utils.getIsPremium(this)
+                || InterstitialAdManager.isInterstitialShowing()) {
+            return;
+        }
+
+        previewsSinceLastInterstitial = 0;
+        setInterstitialShowing(true);
+        InterstitialAdManager.getInstance().loadAndShowInterstitialAd(
+                this,
+                "previewgallery_open_interstitial",
+                () -> setInterstitialShowing(false),
+                errorMsg -> {
+                    setInterstitialShowing(false);
+                    Utils.LogUtils.logE("PhotoGallerySwipe", "Ad failed: " + errorMsg);
+                }
+        );
     }
 
     private void setupClickListeners() {

@@ -5,13 +5,17 @@ import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.camera.gps.MyApplication;
 import com.camera.gps.R;
+import com.camera.gps.adsmanager.NativeAdManager;
 import com.camera.gps.database.entity.MyLocation;
 import com.camera.gps.databinding.ItemSavedLocationBinding;
+import com.camera.gps.util.Utils;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
@@ -22,7 +26,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-public final class SavedLocationAdapter extends RecyclerView.Adapter<SavedLocationAdapter.ViewHolder> {
+public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int VIEW_TYPE_LOCATION = 1;
+    private static final int VIEW_TYPE_NATIVE_AD = 2;
+    private static final int NATIVE_AD_POSITION = 3;
+
     private final List<MyLocation> list;
     private final LocationAdapterInterface listener;
     private boolean isSelectionMode = false;
@@ -263,17 +271,55 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<SavedLocati
         }
     }
 
+    public static final class NativeAdViewHolder extends RecyclerView.ViewHolder {
+        private final FrameLayout container;
+        private boolean requested;
+
+        public NativeAdViewHolder(@NonNull View itemView) {
+            super(itemView);
+            container = itemView.findViewById(R.id.flNativeAd);
+        }
+
+        public void bind() {
+            android.content.Context context = itemView.getContext();
+            if (!(context instanceof android.app.Activity)
+                    || !MyApplication.isNetworkAvailable(context)
+                    || Utils.getIsPremium(context)) {
+                container.setVisibility(View.GONE);
+                return;
+            }
+
+            container.setVisibility(View.VISIBLE);
+            if (!requested) {
+                requested = true;
+                NativeAdManager.getInstance().loadAndShowNativeAd(
+                        (android.app.Activity) context,
+                        "saved_location_native",
+                        container,
+                        true,
+                        null,
+                        () -> requested = false
+                );
+            }
+        }
+    }
+
     @Override
-    public void onViewRecycled(@NonNull ViewHolder holder) {
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewRecycled(holder);
-        if (holder.getMMap() != null) {
-            holder.getMMap().clear();
+        if (holder instanceof ViewHolder && ((ViewHolder) holder).getMMap() != null) {
+            ((ViewHolder) holder).getMMap().clear();
         }
     }
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        if (i == VIEW_TYPE_NATIVE_AD) {
+            return new NativeAdViewHolder(LayoutInflater.from(viewGroup.getContext())
+                    .inflate(R.layout.item_native_ad_container, viewGroup, false));
+        }
+
         ItemSavedLocationBinding inflate = ItemSavedLocationBinding.inflate(
                 LayoutInflater.from(viewGroup.getContext()),
                 viewGroup,
@@ -283,12 +329,40 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<SavedLocati
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder viewHolder, int i) {
-        viewHolder.bind(this.list.get(viewHolder.getAdapterPosition()));
+    public int getItemViewType(int position) {
+        return isNativeAdPosition(position) ? VIEW_TYPE_NATIVE_AD : VIEW_TYPE_LOCATION;
+    }
+
+    @Override
+    public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, int i) {
+        if (viewHolder instanceof NativeAdViewHolder) {
+            ((NativeAdViewHolder) viewHolder).bind();
+            return;
+        }
+
+        int locationPosition = getLocationPosition(viewHolder.getAdapterPosition());
+        if (locationPosition >= 0 && locationPosition < list.size()) {
+            ((ViewHolder) viewHolder).bind(this.list.get(locationPosition));
+        }
     }
 
     @Override
     public int getItemCount() {
-        return this.list.size();
+        return this.list.size() + getNativeAdCount();
+    }
+
+    private boolean isNativeAdPosition(int position) {
+        return getNativeAdCount() > 0 && position == NATIVE_AD_POSITION;
+    }
+
+    private int getNativeAdCount() {
+        return list.size() > NATIVE_AD_POSITION ? 1 : 0;
+    }
+
+    private int getLocationPosition(int adapterPosition) {
+        if (getNativeAdCount() > 0 && adapterPosition > NATIVE_AD_POSITION) {
+            return adapterPosition - 1;
+        }
+        return adapterPosition;
     }
 }

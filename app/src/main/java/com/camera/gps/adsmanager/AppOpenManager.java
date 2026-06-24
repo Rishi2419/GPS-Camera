@@ -19,6 +19,7 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
     private Activity currentActivity = null;
     private boolean isShowingAd = false;
     private boolean isAppInBackground = true; // track background/foreground
+    private long lastAppOpenAdClosedAtMs = 0L;
     private static final String TAG = "AppOpenManager";
 
     public AppOpenManager(MyApplication myApplication) {
@@ -112,6 +113,13 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
             return;
         }
 
+        RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(currentActivity);
+        int cooldownSeconds = remoteConfig.getInterstitialCooldownSeconds();
+        if (isInAppOpenCooldown(cooldownSeconds)) {
+            Utils.LogUtils.logD(TAG, "OpenAd cooldown active → skip showing");
+            OpenAdManager.getInstance().preloadOpenAd(currentActivity, "app_resume_ad");
+            return;
+        }
 
         // ✅ Only show if already cached
         if (OpenAdManager.getInstance().isAdReadyForPublisher("admob")) {
@@ -121,6 +129,7 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
                     "admob",
                     () -> {
                         Utils.LogUtils.logD(TAG, "OpenAd closed");
+                        lastAppOpenAdClosedAtMs = System.currentTimeMillis();
                         isShowingAd = false;
                         // preload next one immediately
                         OpenAdManager.getInstance().preloadOpenAd(currentActivity, "app_resume_ad");
@@ -137,6 +146,15 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
             Utils.LogUtils.logD(TAG, "OpenAd not ready → skip showing");
             OpenAdManager.getInstance().preloadOpenAd(currentActivity, "app_resume_ad");
         }
+    }
+
+    private boolean isInAppOpenCooldown(int cooldownSeconds) {
+        if (cooldownSeconds <= 0 || lastAppOpenAdClosedAtMs == 0L) {
+            return false;
+        }
+
+        long elapsedMs = System.currentTimeMillis() - lastAppOpenAdClosedAtMs;
+        return elapsedMs < cooldownSeconds * 1000L;
     }
 
     // Empty required overrides
@@ -160,4 +178,3 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
         // log if needed
     }
 }
-

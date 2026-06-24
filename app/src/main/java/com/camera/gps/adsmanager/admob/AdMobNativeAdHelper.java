@@ -59,8 +59,6 @@ import com.google.android.gms.ads.nativead.NativeAdView;
 public class AdMobNativeAdHelper {
 
     private static final String TAG = "AdMobNativeAdHelper";
-    private static NativeAd currentNativeAd;
-
     public interface AdCallback {
         void onFailure(String error);
     }
@@ -93,10 +91,11 @@ public class AdMobNativeAdHelper {
                         }
 
                         Utils.LogUtils.logD(TAG, "Native AD onAdLoaded");
-                        if (currentNativeAd != null) {
-                            currentNativeAd.destroy();
+                        Object previousAd = container.getTag();
+                        if (previousAd instanceof NativeAd) {
+                            ((NativeAd) previousAd).destroy();
                         }
-                        currentNativeAd = nativeAd;
+                        container.setTag(nativeAd);
 
                         View adBinding;
                         if ("nativeBig".equals(adSize)) {
@@ -207,4 +206,3 @@ public class AdMobNativeAdHelper {
         }
     }
 }
-

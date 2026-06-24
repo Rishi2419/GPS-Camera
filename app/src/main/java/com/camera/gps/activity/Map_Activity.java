@@ -41,6 +41,7 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.camera.gps.adsmanager.InterstitialAdManager;
+import com.camera.gps.adsmanager.admob.AdMobBannerAdHelper;
 import com.camera.gps.databinding.ActivityMapBinding;
 import com.camera.gps.util.Utils;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -134,6 +135,15 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
         geocoder = new Geocoder(this, Locale.getDefault());
 
         initMap();
+        loadBottomBannerAd();
+    }
+
+    private void loadBottomBannerAd() {
+        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+            binding.flMapBanner.post(() -> AdMobBannerAdHelper.loadBannerAd(this, binding.flMapBanner, "map_banner"));
+        } else {
+            binding.flMapBanner.setVisibility(View.GONE);
+        }
     }
 
 

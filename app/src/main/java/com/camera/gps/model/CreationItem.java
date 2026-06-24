@@ -4,4 +4,5 @@ public interface CreationItem {
 
     int TYPE_DATE_HEADER = 1;
     int TYPE_PHOTO_ITEM = 2;
+    int TYPE_NATIVE_AD = 3;
 }

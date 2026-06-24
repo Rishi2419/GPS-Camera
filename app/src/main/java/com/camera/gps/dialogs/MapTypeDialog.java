@@ -1,16 +1,22 @@
 package com.camera.gps.dialogs;
 
 import android.app.Dialog;
+import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.camera.gps.MyApplication;
 import com.camera.gps.R;
+import com.camera.gps.adsmanager.NativeAdManager;
 import com.camera.gps.listener.OnMapTypeSelectedListener;
+import com.camera.gps.util.Utils;
 
 public class MapTypeDialog extends Dialog {
 
@@ -19,6 +25,9 @@ public class MapTypeDialog extends Dialog {
     private View vNormalOverlay, vHybridOverlay, vSatelliteOverlay, vTerrainOverlay;
     private TextView btnSaveMap, btnCancelMap;
     private ImageView btnCloseDialog;
+    private FrameLayout flMapTypeNative;
+    private Activity activity;
+    private boolean nativeLoadRequested = false;
     private int selectedMapType;
     private OnMapTypeSelectedListener listener;
 
@@ -30,6 +39,7 @@ public class MapTypeDialog extends Dialog {
 
     public MapTypeDialog(Context context, int currentMapType, OnMapTypeSelectedListener listener) {
         super(context);
+        this.activity = resolveActivity(context);
         this.selectedMapType = currentMapType;
         this.listener = listener;
         init();
@@ -65,6 +75,7 @@ public class MapTypeDialog extends Dialog {
         btnSaveMap = findViewById(R.id.btnSaveMap);
         btnCancelMap = findViewById(R.id.btnCancelMap);
         btnCloseDialog = findViewById(R.id.btnCloseDialog);
+        flMapTypeNative = findViewById(R.id.flMapTypeNative);
     }
 
     private void setCurrentSelection() {
@@ -122,6 +133,42 @@ public class MapTypeDialog extends Dialog {
         if (btnCloseDialog != null) {
             btnCloseDialog.setOnClickListener(v -> dismiss());
         }
+
+    }
+
+    private void loadNativeAd() {
+        if (nativeLoadRequested) {
+            return;
+        }
+        nativeLoadRequested = true;
+
+        if (activity == null
+                || !MyApplication.isNetworkAvailable(activity)
+                || Utils.getIsPremium(activity)) {
+            if (flMapTypeNative != null) {
+                flMapTypeNative.setVisibility(View.GONE);
+            }
+            return;
+        }
+
+        NativeAdManager.getInstance().loadAndShowNativeAd(
+                activity,
+                "map_type_native",
+                flMapTypeNative,
+                false,
+                null,
+                () -> nativeLoadRequested = false
+        );
+    }
+
+    private Activity resolveActivity(Context context) {
+        while (context instanceof ContextWrapper) {
+            if (context instanceof Activity) {
+                return (Activity) context;
+            }
+            context = ((ContextWrapper) context).getBaseContext();
+        }
+        return null;
     }
 
     private void selectMapType(int mapType) {
@@ -134,6 +181,14 @@ public class MapTypeDialog extends Dialog {
         super.dismiss();
         if (listener != null) {
             listener.onDialogDismissed();
+        }
+    }
+
+    @Override
+    public void show() {
+        super.show();
+        if (flMapTypeNative != null) {
+            flMapTypeNative.post(this::loadNativeAd);
         }
     }
 }

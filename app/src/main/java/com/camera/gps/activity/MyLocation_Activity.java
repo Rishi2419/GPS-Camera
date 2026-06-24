@@ -14,6 +14,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.camera.gps.MyApplication;
 import com.camera.gps.adsmanager.InterstitialAdManager;
+import com.camera.gps.adsmanager.admob.AdMobBannerAdHelper;
 import com.camera.gps.databinding.ActivityMyLocationBinding;
 import com.camera.gps.util.Utils;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -50,6 +51,15 @@ public final class MyLocation_Activity extends AppCompatActivity {
         source = getIntent().getStringExtra("SOURCE");
         setupClickListeners();
         setupViewPager();
+        loadBottomBannerAd();
+    }
+
+    private void loadBottomBannerAd() {
+        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+            binding.flNative.post(() -> AdMobBannerAdHelper.loadBannerAd(this, binding.flNative, "saved_location_banner"));
+        } else {
+            binding.flNative.setVisibility(View.GONE);
+        }
     }
 
     private void setupClickListeners() {

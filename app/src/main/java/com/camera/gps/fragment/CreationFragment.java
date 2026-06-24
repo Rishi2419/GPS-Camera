@@ -231,7 +231,8 @@ public class CreationFragment extends Fragment {
             public int getSpanSize(int position) {
                 // Date headers should span all 3 columns, photos span 1 column
                 if (adapter != null) {
-                    return adapter.getItemViewType(position) == CreationItem.TYPE_DATE_HEADER ? 3 : 1;
+                    int viewType = adapter.getItemViewType(position);
+                    return viewType == CreationItem.TYPE_DATE_HEADER || viewType == CreationItem.TYPE_NATIVE_AD ? 3 : 1;
                 }
                 return 1;
             }

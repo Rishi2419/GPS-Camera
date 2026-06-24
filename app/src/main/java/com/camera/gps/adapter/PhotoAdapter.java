@@ -346,20 +346,25 @@ import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.activity.MyCreation_Activity;
 import com.camera.gps.activity.PhotoGallery_Activity;
+import com.camera.gps.adsmanager.NativeAdManager;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.databinding.ItemMyCreationBinding;
 import com.camera.gps.databinding.ItemDateHeaderBinding;
 import com.camera.gps.model.CreationItem;
 import com.camera.gps.model.DateHeaderItem;
+import com.camera.gps.model.NativeAdItem;
 import com.camera.gps.model.PhotoItem;
+import com.camera.gps.util.Utils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -380,6 +385,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     private List<Photo> originalPhotoList;
     private boolean isSelectionMode = false;
     private OnSelectionChangeListener selectionChangeListener;
+    private static final int NATIVE_AD_INTERVAL = 6;
 
     public interface OnSelectionChangeListener {
         void onSelectionChanged(boolean hasSelection);
@@ -406,6 +412,8 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         if (viewType == CreationItem.TYPE_DATE_HEADER) {
             ItemDateHeaderBinding binding = ItemDateHeaderBinding.inflate(inflater, parent, false);
             return new DateHeaderViewHolder(binding);
+        } else if (viewType == CreationItem.TYPE_NATIVE_AD) {
+            return new NativeAdViewHolder(inflater.inflate(R.layout.item_native_ad_container, parent, false));
         } else {
             ItemMyCreationBinding binding = ItemMyCreationBinding.inflate(inflater, parent, false);
             return new PhotoViewHolder(binding);
@@ -418,6 +426,8 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         if (holder instanceof DateHeaderViewHolder && item instanceof DateHeaderItem) {
             ((DateHeaderViewHolder) holder).bind((DateHeaderItem) item);
+        } else if (holder instanceof NativeAdViewHolder) {
+            ((NativeAdViewHolder) holder).bind();
         } else if (holder instanceof PhotoViewHolder && item instanceof PhotoItem) {
             ((PhotoViewHolder) holder).bind(((PhotoItem) item).getPhoto());
         }
@@ -440,6 +450,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             Map<String, List<Photo>> groupedPhotos = groupPhotosByDate(newPhotos);
 
             // Create items list with headers and photos
+            int mediaCount = 0;
             for (Map.Entry<String, List<Photo>> entry : groupedPhotos.entrySet()) {
                 // Add date header
                 itemList.add(new DateHeaderItem(entry.getKey()));
@@ -447,6 +458,10 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 // Add photos for this date
                 for (Photo photo : entry.getValue()) {
                     itemList.add(new PhotoItem(photo));
+                    mediaCount++;
+                    if (mediaCount % NATIVE_AD_INTERVAL == 0) {
+                        itemList.add(new NativeAdItem());
+                    }
                 }
             }
         }
@@ -557,6 +572,39 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
         public void bind(DateHeaderItem dateHeader) {
             binding.tvDateHeader.setText(dateHeader.getDateText());
+        }
+    }
+
+    public static class NativeAdViewHolder extends RecyclerView.ViewHolder {
+        private final FrameLayout container;
+        private boolean requested;
+
+        public NativeAdViewHolder(@NonNull android.view.View itemView) {
+            super(itemView);
+            container = itemView.findViewById(R.id.flNativeAd);
+        }
+
+        public void bind() {
+            Context context = itemView.getContext();
+            if (!(context instanceof android.app.Activity)
+                    || !MyApplication.isNetworkAvailable(context)
+                    || Utils.getIsPremium(context)) {
+                container.setVisibility(android.view.View.GONE);
+                return;
+            }
+
+            container.setVisibility(android.view.View.VISIBLE);
+            if (!requested) {
+                requested = true;
+                NativeAdManager.getInstance().loadAndShowNativeAd(
+                        (android.app.Activity) context,
+                        "my_creation_native",
+                        container,
+                        false,
+                        null,
+                        () -> requested = false
+                );
+            }
         }
     }
 

@@ -17,6 +17,8 @@ import com.appizona.yehiahd.fastsave.FastSave;
 import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adsmanager.InterstitialAdManager;
+import com.camera.gps.adsmanager.NativeAdManager;
+import com.camera.gps.adsmanager.admob.AdMobBannerAdHelper;
 import com.camera.gps.camerax.util.SharedPrefsSettings;
 import com.camera.gps.database.entity.MyLocation;
 import com.camera.gps.databinding.ActivitySettingsBinding;
@@ -71,6 +73,40 @@ public class Settings_Activity extends AppCompatActivity {
 
         setupListeners();
         setupSwitches();
+        loadNativeAds();
+        loadBottomBannerAd();
+    }
+
+    private void loadNativeAds() {
+        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+            NativeAdManager.getInstance().loadAndShowNativeAd(
+                    this,
+                    "settings_native",
+                    binding.flNativeSettingsOne,
+                    false,
+                    null,
+                    null
+            );
+            NativeAdManager.getInstance().loadAndShowNativeAd(
+                    this,
+                    "settings_native",
+                    binding.flNativeSettingsTwo,
+                    false,
+                    null,
+                    null
+            );
+        } else {
+            binding.flNativeSettingsOne.setVisibility(android.view.View.GONE);
+            binding.flNativeSettingsTwo.setVisibility(android.view.View.GONE);
+        }
+    }
+
+    private void loadBottomBannerAd() {
+        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+            binding.flSettingsBanner.post(() -> AdMobBannerAdHelper.loadBannerAd(this, binding.flSettingsBanner, "settings_banner"));
+        } else {
+            binding.flSettingsBanner.setVisibility(android.view.View.GONE);
+        }
     }
 
     private void setupListeners() {

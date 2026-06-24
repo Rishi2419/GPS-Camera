@@ -172,6 +172,7 @@ import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adapter.CreationViewPagerAdapter;
 import com.camera.gps.adsmanager.InterstitialAdManager;
+import com.camera.gps.adsmanager.admob.AdMobBannerAdHelper;
 import com.camera.gps.data.GlobalViewModel;
 import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
@@ -213,6 +214,7 @@ public class MyCreation_Activity extends AppCompatActivity implements CreationVi
         initViewModel();
         setupViewPager();
         getPhotos();
+        loadBottomBannerAd();
 
         // Check if we need to select a specific tab
         int selectedTab = getIntent().getIntExtra("selectedTab", 0);
@@ -391,6 +393,14 @@ public class MyCreation_Activity extends AppCompatActivity implements CreationVi
                 }
             }
         });
+    }
+
+    private void loadBottomBannerAd() {
+        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+            binding.flNative.post(() -> AdMobBannerAdHelper.loadBannerAd(this, binding.flNative, "my_creation_banner"));
+        } else {
+            binding.flNative.setVisibility(android.view.View.GONE);
+        }
     }
 
     @Override

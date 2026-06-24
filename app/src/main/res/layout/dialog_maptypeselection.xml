@@ -153,6 +153,12 @@
 
         </LinearLayout>
 
+        <FrameLayout
+            android:id="@+id/flMapTypeNative"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/_8sdp" />
+
         <LinearLayout
             android:id="@+id/llSatelliteMap"
             android:layout_width="match_parent"

@@ -9,13 +9,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.camera.gps.adsmanager.NativeAdManager;
 import com.appizona.yehiahd.fastsave.FastSave;
 import com.camera.gps.MyApplication;
 import com.camera.gps.R;
@@ -24,7 +25,11 @@ import com.camera.gps.util.Utils;
 
 import java.util.ArrayList;
 
-public class Template_Adapter extends RecyclerView.Adapter<Template_Adapter.ViewHolder> {
+public class Template_Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int VIEW_TYPE_TEMPLATE = 1;
+    private static final int VIEW_TYPE_NATIVE_AD = 2;
+    private static final int FIRST_NATIVE_AD_POSITION = 2;
+    private static final int SECOND_NATIVE_AD_POSITION = 6;
 
     ArrayList<Integer> arrayList;
     final TemplateClicksListener themeClicksListener;
@@ -45,15 +50,31 @@ public class Template_Adapter extends RecyclerView.Adapter<Template_Adapter.View
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_template, parent, false));
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        if (viewType == VIEW_TYPE_NATIVE_AD) {
+            return new NativeAdViewHolder(inflater.inflate(R.layout.item_native_ad_container, parent, false));
+        }
+        return new ViewHolder(inflater.inflate(R.layout.item_template, parent, false));
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
-        holder.imageView.setImageResource(arrayList.get(position));
+    public int getItemViewType(int position) {
+        return isNativeAdPosition(position) ? VIEW_TYPE_NATIVE_AD : VIEW_TYPE_TEMPLATE;
+    }
 
-        if (position == 0 || position == 3 || position == 7 || position == 4) {
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder recyclerHolder, @SuppressLint("RecyclerView") int position) {
+        if (recyclerHolder instanceof NativeAdViewHolder) {
+            ((NativeAdViewHolder) recyclerHolder).bind();
+            return;
+        }
+
+        ViewHolder holder = (ViewHolder) recyclerHolder;
+        int templatePosition = getTemplatePosition(position);
+        holder.imageView.setImageResource(arrayList.get(templatePosition));
+
+        if (templatePosition == 0 || templatePosition == 3 || templatePosition == 7 || templatePosition == 4) {
             holder.premium_img.setVisibility(View.GONE);
         } else if (Utils.getIsPremium(context)) {
             holder.premium_img.setVisibility(View.GONE);
@@ -71,13 +92,13 @@ public class Template_Adapter extends RecyclerView.Adapter<Template_Adapter.View
         boolean shouldShowOverlay = false;
         boolean showOnlyEdit = false;
 
-        if (savedStampId == position + 1) {
+        if (savedStampId == templatePosition + 1) {
             // This is the currently saved/selected template
-            if (clickedPosition == position || clickedPosition == -1) {
+            if (clickedPosition == templatePosition || clickedPosition == -1) {
                 shouldShowOverlay = true;
                 showOnlyEdit = true; // Only show Edit button for already selected
             }
-        } else if (clickedPosition == position) {
+        } else if (clickedPosition == templatePosition) {
             // This item was clicked but not yet selected
             shouldShowOverlay = true;
             showOnlyEdit = false; // Show both Edit and Use buttons
@@ -98,22 +119,22 @@ public class Template_Adapter extends RecyclerView.Adapter<Template_Adapter.View
 
         // Setup overlay button clicks
         holder.btnUse.setOnClickListener(v -> {
-            activity.onUseClicked(position);
+            activity.onUseClicked(templatePosition);
             clickedPosition = -1; // Reset after use
         });
 
         holder.btnEdit.setOnClickListener(v -> {
-            activity.onEditClicked(position);
+            activity.onEditClicked(templatePosition);
             clickedPosition = -1; // Reset after edit
         });
 
         holder.itemView.setOnClickListener(v -> {
-            if (position == 0 || position == 3 || position == 7 || position == 4) {
-                handleItemClick(position);
+            if (templatePosition == 0 || templatePosition == 3 || templatePosition == 7 || templatePosition == 4) {
+                handleItemClick(templatePosition);
             } else if (Utils.getIsPremium(context)) {
-                handleItemClick(position);
+                handleItemClick(templatePosition);
             } else {
-                handleItemClick(position);
+                handleItemClick(templatePosition);
                 //Toast.makeText(context, "Please subscribe to access this feature", Toast.LENGTH_SHORT).show();
             }
         });
@@ -132,7 +153,31 @@ public class Template_Adapter extends RecyclerView.Adapter<Template_Adapter.View
 
     @Override
     public int getItemCount() {
-        return arrayList.size();
+        return arrayList.size() + getNativeAdCount();
+    }
+
+    private boolean isNativeAdPosition(int position) {
+        return position == FIRST_NATIVE_AD_POSITION
+                || position == SECOND_NATIVE_AD_POSITION
+                || position == getItemCount() - 1;
+    }
+
+    private int getNativeAdCount() {
+        return arrayList.isEmpty() ? 0 : 3;
+    }
+
+    private int getTemplatePosition(int adapterPosition) {
+        int nativeAdsBeforePosition = 0;
+        if (adapterPosition > FIRST_NATIVE_AD_POSITION) {
+            nativeAdsBeforePosition++;
+        }
+        if (adapterPosition > SECOND_NATIVE_AD_POSITION) {
+            nativeAdsBeforePosition++;
+        }
+        if (adapterPosition > getItemCount() - 1) {
+            nativeAdsBeforePosition++;
+        }
+        return adapterPosition - nativeAdsBeforePosition;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -159,6 +204,38 @@ public class Template_Adapter extends RecyclerView.Adapter<Template_Adapter.View
 //                // Create a dummy ImageView if it doesn't exist in layout
 //                img_select = new ImageView(itemView.getContext());
 //            }
+        }
+    }
+
+    public class NativeAdViewHolder extends RecyclerView.ViewHolder {
+        private final FrameLayout container;
+        private boolean requested;
+
+        public NativeAdViewHolder(@NonNull View itemView) {
+            super(itemView);
+            container = itemView.findViewById(R.id.flNativeAd);
+        }
+
+        public void bind() {
+            if (!(context instanceof android.app.Activity)
+                    || !MyApplication.isNetworkAvailable(context)
+                    || Utils.getIsPremium(context)) {
+                container.setVisibility(View.GONE);
+                return;
+            }
+
+            container.setVisibility(View.VISIBLE);
+            if (!requested) {
+                requested = true;
+                NativeAdManager.getInstance().loadAndShowNativeAd(
+                        (android.app.Activity) context,
+                        "template_list_native",
+                        container,
+                        true,
+                        null,
+                        () -> requested = false
+                );
+            }
         }
     }
 }

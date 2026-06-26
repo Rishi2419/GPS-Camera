@@ -495,23 +495,17 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             String dateKey;
             try {
                 String rawDate = photo.getDateTimeTaken();
-                Log.d("RishiDate", "📌 Raw Date from Photo: " + rawDate);
 
                 if (rawDate != null && !rawDate.isEmpty()) {
                     String cleanDate = rawDate.trim();
-                    Log.d("RishiDate", "✅ Cleaned Date: " + cleanDate);
 
                     Date date = inputFormat.parse(cleanDate);
-                    Log.d("RishiDate", "🛠 Parsed Date Object: " + date);
 
                     dateKey = outputFormat.format(date).toUpperCase();
-                    Log.d("RishiDate", "🎯 Final Formatted Date Key: " + dateKey);
                 } else {
-                    Log.d("RishiDate", "⚠️ Date is NULL or EMPTY for this photo.");
                     dateKey = "UNKNOWN DATE";
                 }
             } catch (ParseException e) {
-                Log.d("RishiDate", "❌ ParseException: " + e.getMessage());
                 dateKey = "UNKNOWN DATE";
             }
 

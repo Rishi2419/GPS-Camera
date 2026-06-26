@@ -66,7 +66,6 @@ public class SavedLocationFragment extends Fragment implements SavedLocationAdap
         setupClickListeners();
         setupObservers();
         setupSearchBar();
-        binding.recycler.postDelayed(() -> getAllLocation(), 300);
 
         // Setup delete button click listener in activity
         if (getActivity() instanceof MyLocation_Activity) {

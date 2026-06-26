@@ -350,6 +350,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Photo photoOld;
     private boolean isCapture = false;
     private boolean isMapSetup = false;
+    private boolean latestPhotoObserverRegistered = false;
 
 //
 //    private void updateLocationData(MyLocation location) {
@@ -3161,6 +3162,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void refreshLatestPhoto() {
+        if (latestPhotoObserverRegistered) {
+            return;
+        }
+        latestPhotoObserverRegistered = true;
+
         viewModel.getAllPhoto().observe(this, photos -> {
             if (photos != null && !photos.isEmpty()) {
                 Photo latestPhoto = photos.get(0);

@@ -261,16 +261,35 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
     }
 
     private void getAddress(double d, double d2) {
-        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
-        try {
-            Ref.ObjectRef objectRef = new Ref.ObjectRef();
-            objectRef.element = geocoder.getFromLocation(d, d2, 1);
-            if (objectRef.element != null) {
-                requireActivity().runOnUiThread(() -> setAddress((List) objectRef.element));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        Context context = getContext();
+        if (context == null) {
+            return;
         }
+
+        new Thread(() -> {
+            Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+            try {
+                List<Address> addresses = geocoder.getFromLocation(d, d2, 1);
+                Activity activity = getActivity();
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        if (binding != null) {
+                            setAddress(addresses);
+                        }
+                    });
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Activity activity = getActivity();
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        if (binding != null) {
+                            binding.etAddress.setText("Unknown");
+                        }
+                    });
+                }
+            }
+        }).start();
     }
 
     public void setAddress(List<Address> list) {

@@ -99,6 +99,7 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
     private MarkerModel clickedMarker = null;
     private boolean isLocationObtained = false;
     private boolean hasZoomedToUserLocation = false;
+    private boolean storageObserversRegistered = false;
     private Handler timeoutHandler = new Handler(Looper.getMainLooper());
     private final List<Photo> currentPhotoList = new ArrayList<>();
 
@@ -194,7 +195,10 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
             } else {
                 // This is the first click
                 clickedMarker = markerModel;
-                String address = getAddress(markerModel.getPosition());
+                String address = markerModel.getTitle();
+                if (address == null || address.trim().isEmpty()) {
+                    address = "Unknown";
+                }
                 markerModel.setTitle(address);
 
                 // The renderer will handle showing the info window,
@@ -284,6 +288,7 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
 
                     // ADDED: Store the current photo list for marker-to-photo mapping
                     currentPhotoList.clear();
+                    allMarkerModels.clear();
                     List<Photo> photos = (List<Photo>) obj;
                     currentPhotoList.addAll(photos);
 
@@ -299,14 +304,7 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
                                             photo.getImagePath().endsWith(".avi") ||
                                             photo.getImagePath().endsWith(".mov"));
 
-                            long timestamp = 0;
-                            try {
-                                if (photo.getDateTimeTaken() != null) {
-                                    timestamp = Long.parseLong(photo.getDateTimeTaken());
-                                }
-                            } catch (NumberFormatException e) {
-                                timestamp = System.currentTimeMillis();
-                            }
+                            long timestamp = photo.getId();
 
                             MarkerModel markerModel = new MarkerModel(parseDouble, parseDouble2,
                                     photo.getImagePath(),
@@ -317,6 +315,14 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
                             allMarkerModels.add(markerModel);
                         }
                     }
+                } else {
+                    mMap.clear();
+                    currentPhotoList.clear();
+                    allMarkerModels.clear();
+                    if (mClusterManager != null) {
+                        mClusterManager.clearItems();
+                        mClusterManager.cluster();
+                    }
                 }
                 searchStorage();
             }
@@ -324,6 +330,11 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void searchStorage() {
+        if (storageObserversRegistered) {
+            return;
+        }
+        storageObserversRegistered = true;
+
         viewModel.getMarkerOpMutableLiveData().observe(this, new Observer() {
             @Override
             public void onChanged(Object obj) {

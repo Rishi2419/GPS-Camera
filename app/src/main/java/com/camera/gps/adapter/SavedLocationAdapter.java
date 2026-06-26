@@ -84,8 +84,9 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
     public void addList(List<MyLocation> list) {
         this.list.clear();
         if (!(list == null || list.isEmpty())) {
-            Collections.reverse(list);
-            this.list.addAll(list);
+            List<MyLocation> reversedList = new ArrayList<>(list);
+            Collections.reverse(reversedList);
+            this.list.addAll(reversedList);
         }
         if (listener != null) {
             listener.checkValidation();
@@ -123,6 +124,8 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
     public final class ViewHolder extends RecyclerView.ViewHolder {
         private final ItemSavedLocationBinding bin;
         GoogleMap mMap;
+        private String boundLatitude;
+        private String boundLongitude;
 
         public ViewHolder(ItemSavedLocationBinding bin) {
             super(bin.getRoot());
@@ -174,11 +177,13 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
             itemMyLocationBinding.tvTime.setText(model.getTime());
             itemMyLocationBinding.tvTitle.setText(model.getTitle());
 
-            if (mMap != null) {
+            if (mMap != null && (!latitude.equals(boundLatitude) || !longitude.equals(boundLongitude))) {
                 mMap.clear();
                 LatLng latLng = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
                 mMap.addMarker(new MarkerOptions().position(latLng).title("Current position"));
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f));
+                boundLatitude = latitude;
+                boundLongitude = longitude;
             }
 
             itemMyLocationBinding.btnCompass.setOnClickListener(view -> {
@@ -340,7 +345,7 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
             return;
         }
 
-        int locationPosition = getLocationPosition(viewHolder.getAdapterPosition());
+        int locationPosition = getLocationPosition(i);
         if (locationPosition >= 0 && locationPosition < list.size()) {
             ((ViewHolder) viewHolder).bind(this.list.get(locationPosition));
         }

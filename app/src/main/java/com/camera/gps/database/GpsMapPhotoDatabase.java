@@ -11,7 +11,7 @@ import com.camera.gps.MyApplication;
 import com.camera.gps.database.entity.MyLocation;
 import com.camera.gps.database.entity.Photo;
 
-@Database(entities = {MyLocation.class, Photo.class}, version = 10, exportSchema = false)
+@Database(entities = {MyLocation.class, Photo.class}, version = 11, exportSchema = false)
 
 public abstract class GpsMapPhotoDatabase extends RoomDatabase {
     private static GpsMapPhotoDatabase INSTANCE;

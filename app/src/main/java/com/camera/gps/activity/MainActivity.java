@@ -15,6 +15,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -165,6 +166,7 @@ import com.camera.gps.util.Utils;
 import java.util.concurrent.TimeUnit;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -1204,14 +1206,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("PhotoCapture", "datetime col: " + photo.getCurrent_datetime_color());
                 Log.d("PhotoCapture", "ratio " + photo.getRatio());
 
-                // Insert photo into database
-                insertPhoto();
+                saveMapSnapshotAndInsertPhoto(timeStamp);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return mediaFile;
+    }
+
+    private void saveMapSnapshotAndInsertPhoto(String timeStamp) {
+        if (googleMap == null || currentLatitude == 0.0 || currentLongitude == 0.0) {
+            insertPhoto();
+            return;
+        }
+
+        googleMap.snapshot(bitmap -> {
+            if (bitmap != null) {
+                String savedMapPath = saveMapBitmap(bitmap, timeStamp);
+                photo.setMapImagePath(savedMapPath);
+            }
+            insertPhoto();
+        });
+    }
+
+    private String saveMapBitmap(Bitmap bitmap, String timeStamp) {
+        try {
+            File outputFolder = DirManager.Companion.generateFile();
+            File mapFile = new File(outputFolder, "MAP_" + timeStamp + ".png");
+            FileOutputStream fos = new FileOutputStream(mapFile);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.flush();
+            fos.close();
+            return mapFile.getAbsolutePath();
+        } catch (Exception e) {
+            Log.e("PhotoCapture", "Failed to save map snapshot", e);
+            return null;
+        }
     }
 
 
@@ -1247,6 +1278,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         photoOld.setFontStyle(photo.getFontStyle());
                         photoOld.setDateTimeTaken(photo.getDateTimeTaken());
                         photoOld.setMap_type(photo.getMap_type());
+                        photoOld.setMapImagePath(photo.getMapImagePath());
                         photoOld.setShow_watermark(photo.getShow_watermark());
                         photoOld.setLong_dms(photo.getLong_dms());
                         photoOld.setLat_dms(photo.getLat_dms());

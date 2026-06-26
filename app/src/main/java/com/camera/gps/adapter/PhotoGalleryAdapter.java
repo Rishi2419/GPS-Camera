@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,7 +61,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
     private List<Photo> photoList;
     private OnPhotoInteractionListener listener;
-    private List<PhotoFragment> fragmentList = new ArrayList<>();
+    private SparseArray<PhotoFragment> fragmentList = new SparseArray<>();
 
     public interface OnPhotoInteractionListener {
         void onPhotoClick();
@@ -78,7 +79,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
     @Override
     public Fragment createFragment(int position) {
         PhotoFragment fragment = PhotoFragment.newInstance(photoList.get(position), listener);
-        fragmentList.add(fragment);
+        fragmentList.put(position, fragment);
         return fragment;
     }
 
@@ -89,14 +90,27 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
     public void updatePhotoList(List<Photo> newPhotoList) {
         this.photoList = new ArrayList<>(newPhotoList);
+        fragmentList.clear();
         notifyDataSetChanged();
     }
 
     public PhotoFragment getCurrentFragment(int position) {
-        if (position >= 0 && position < fragmentList.size()) {
-            return fragmentList.get(position);
+        return fragmentList.get(position);
+    }
+
+    public void playOnly(int position) {
+        for (int i = 0; i < fragmentList.size(); i++) {
+            int key = fragmentList.keyAt(i);
+            PhotoFragment fragment = fragmentList.valueAt(i);
+            if (fragment == null) {
+                continue;
+            }
+            if (key == position) {
+                fragment.playVideoIfNeeded();
+            } else {
+                fragment.pauseVideoIfNeeded();
+            }
         }
-        return null;
     }
 
     public static class PhotoFragment extends Fragment {
@@ -114,6 +128,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
         // Stamp components
         private SupportMapFragment mapFragment;
         private LinearLayout mapViewContainer;
+        private ImageView staticMapImage;
         private CardView stampBg;
         private ConstraintLayout appStamp;
         private TextView txtLocation, txtDateTime, txtLatitude, txtLongitude, txtDate, txtTime, txtTitle, txt_lat_dms, txt_long_dms;
@@ -131,7 +146,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
         private int currentRatioType;
         private boolean show_watermark;
         private LinearLayout dateTimeContainer, latLongContainer;
-        private String date, time, title, lat_dms, long_dms, current_address = "Loading...", fontStyle;
+        private String date, time, title, lat_dms, long_dms, mapImagePath, current_address = "Loading...", fontStyle;
         private HelperClass mHelperClass = new HelperClass();
 
         public static PhotoFragment newInstance(Photo photo, OnPhotoInteractionListener listener) {
@@ -179,7 +194,6 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
                 videoView.setVisibility(View.VISIBLE);
                 videoView.setMediaController(new MediaController(getContext()));
                 videoView.setVideoURI(Uri.parse(photo.getImagePath()));
-                videoView.start();
             } else {
                 videoView.setVisibility(View.GONE);
                 imageView.setVisibility(View.VISIBLE);
@@ -199,6 +213,18 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             }
         }
 
+        public void playVideoIfNeeded() {
+            if (isVideo && videoView != null && !videoView.isPlaying()) {
+                videoView.start();
+            }
+        }
+
+        public void pauseVideoIfNeeded() {
+            if (isVideo && videoView != null && videoView.isPlaying()) {
+                videoView.pause();
+            }
+        }
+
         private void initPhotoData() {
             if (photo == null) return;
 
@@ -215,6 +241,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             fontStyle = photo.getFontStyle();
             title = photo.getTitle();
             current_map_type = photo.getMap_type();
+            mapImagePath = photo.getMapImagePath();
             show_watermark = photo.getShow_watermark();
             currentstamp_type = photo.getType();
             lat_dms = photo.getLat_dms();
@@ -356,18 +383,21 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             initializeStampViews(stampView);
 
             if (mapViewContainer != null && isAdded()) {
-                FragmentTransaction beginTransaction = getParentFragmentManager().beginTransaction();
-                mapFragment = SupportMapFragment.newInstance();
-                beginTransaction.add(mapViewContainer.getId(), mapFragment);
-                beginTransaction.commit();
-
-                try {
-                    MapsInitializer.initialize(requireContext());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                setupStaticMapImage();
             }
             updateStampContent();
+        }
+
+        private void setupStaticMapImage() {
+            mapFragment = null;
+            mapViewContainer.removeAllViews();
+            staticMapImage = new ImageView(requireContext());
+            staticMapImage.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+            staticMapImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            mapViewContainer.addView(staticMapImage);
         }
 
         private void initializeStampViews(View stampView) {
@@ -531,13 +561,21 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
         }
 
         private void updateMapLocation() {
-            if (mapFragment != null && currentLatitude != 0.0 && currentLongitude != 0.0) {
-                mapFragment.getMapAsync(googleMap -> {
-                    LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-                    googleMap.addMarker(new MarkerOptions().position(latLng).title("Photo Location"));
-                    googleMap.setMapType(current_map_type);
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f));
-                });
+            if (staticMapImage != null && getContext() != null) {
+                if (mapImagePath != null && !mapImagePath.isEmpty() && new File(mapImagePath).exists()) {
+                    Glide.with(this)
+                            .load(mapImagePath)
+                            .placeholder(R.drawable.default_map)
+                            .error(R.drawable.default_map)
+                            .into(staticMapImage);
+                    return;
+                }
+
+                Glide.with(this)
+                        .load(R.drawable.default_map)
+                        .placeholder(R.drawable.default_map)
+                        .error(R.drawable.default_map)
+                        .into(staticMapImage);
             }
         }
 
@@ -610,7 +648,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
                         });
                     });
                 } else {
-                    Bitmap stampBitmap = viewToImage(stampContainer);
+                    Bitmap stampBitmap = createStampOverlay(null);
                     VideoStampShareHelper.shareVideoWithStamp(requireContext(), photo, stampBitmap);
                 }
             } catch (Exception e) {

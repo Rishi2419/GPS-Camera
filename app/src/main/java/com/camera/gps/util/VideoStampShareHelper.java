@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -102,7 +103,7 @@ public final class VideoStampShareHelper {
         shareFile(context, new File(photo.getImagePath()), "video/mp4", context.getString(R.string.share_video));
     }
 
-    private static Bitmap createFullFrameOverlay(File videoFile, Bitmap stampBitmap) {
+    public static Bitmap createFullFrameOverlay(File videoFile, Bitmap stampBitmap) {
         int videoWidth = 1080;
         int videoHeight = 1920;
 
@@ -126,6 +127,7 @@ public final class VideoStampShareHelper {
         }
 
         Bitmap overlay = Bitmap.createBitmap(videoWidth, videoHeight, Bitmap.Config.ARGB_8888);
+        overlay.eraseColor(Color.TRANSPARENT);
         Canvas canvas = new Canvas(overlay);
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
 

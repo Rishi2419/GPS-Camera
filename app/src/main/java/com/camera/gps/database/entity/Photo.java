@@ -23,6 +23,7 @@ public final class Photo implements Serializable {
     private String fontStyle;
     private String dateTimeTaken;
     private Integer map_type;
+    private String mapImagePath;
     private Boolean show_watermark;
 
     // ✅ New fields
@@ -35,14 +36,14 @@ public final class Photo implements Serializable {
 
     public Photo() {
         this(null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, 0, 0, 0, 0);
+                null, null, null, null, null, null, null, null, 0, 0, 0, 0);
     }
 
     public Photo(String title, Integer id, String address, String latitude, String longitude,
                  String date, String time, String imagePath,
                  Integer type, Boolean bgMode, Boolean isSelected,
                  String fontStyle, String dateTimeTaken,
-                 Integer map_type, Boolean show_watermark,
+                 Integer map_type, String mapImagePath, Boolean show_watermark,
                  String lat_dms, String long_dms,
                  int current_bg_color, int current_text_color, int current_datetime_color,
                  int ratio) {
@@ -60,6 +61,7 @@ public final class Photo implements Serializable {
         this.fontStyle = fontStyle;
         this.dateTimeTaken = dateTimeTaken;
         this.map_type = map_type;
+        this.mapImagePath = mapImagePath;
         this.show_watermark = show_watermark;
         this.lat_dms = lat_dms;
         this.long_dms = long_dms;
@@ -124,6 +126,14 @@ public final class Photo implements Serializable {
 
     public void setMap_type(Integer map_type) {
         this.map_type = map_type;
+    }
+
+    public String getMapImagePath() {
+        return mapImagePath;
+    }
+
+    public void setMapImagePath(String mapImagePath) {
+        this.mapImagePath = mapImagePath;
     }
 
     public Boolean getShow_watermark() {

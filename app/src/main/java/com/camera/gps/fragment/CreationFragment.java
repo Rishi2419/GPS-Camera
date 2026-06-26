@@ -164,11 +164,14 @@ import android.view.ViewGroup;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 
+import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adapter.PhotoAdapter;
+import com.camera.gps.adsmanager.NativeAdManager;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.databinding.FragmentCreationBinding;
 import com.camera.gps.model.CreationItem;
+import com.camera.gps.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -264,8 +267,17 @@ public class CreationFragment extends Fragment {
 
         hideEmptyState();
         if (adapter != null) {
+            adapter.setNativeAdsEnabled(shouldShowNativeAds());
             adapter.updateData(photos);
         }
+    }
+
+    private boolean shouldShowNativeAds() {
+        return getActivity() != null
+                && getContext() != null
+                && MyApplication.isNetworkAvailable(requireContext())
+                && !Utils.getIsPremium(requireContext())
+                && NativeAdManager.getInstance().isAdsEnabled(requireActivity(), "my_creation_native");
     }
 
     private void showEmptyState() {

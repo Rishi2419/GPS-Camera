@@ -49,6 +49,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.appizona.yehiahd.fastsave.FastSave;
@@ -130,7 +131,17 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
         });
 
         binding.viewPager.setAdapter(galleryAdapter);
+        int offscreenLimit = Math.min(3, Math.max(1, photoList.size() - 1));
+        binding.viewPager.setOffscreenPageLimit(offscreenLimit);
+        RecyclerView pagerRecyclerView = (RecyclerView) binding.viewPager.getChildAt(0);
+        if (pagerRecyclerView != null) {
+            pagerRecyclerView.setItemViewCacheSize(offscreenLimit * 2 + 1);
+            pagerRecyclerView.setHasFixedSize(true);
+        }
         binding.viewPager.setCurrentItem(currentPosition, false);
+        preloadAround(currentPosition);
+        binding.viewPager.postDelayed(() -> preloadAround(currentPosition), 150);
+        binding.viewPager.post(() -> galleryAdapter.playOnly(currentPosition));
 
 
         // Listen for page changes to update counter and buttons
@@ -140,9 +151,26 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
                 super.onPageSelected(position);
                 currentPosition = position;
                 updateCounter();
+                preloadAround(position);
+                galleryAdapter.playOnly(position);
                 handlePreviewSwipeAd();
             }
         });
+    }
+
+    private void preloadAround(int position) {
+        for (int i = Math.max(0, position - 2); i <= Math.min(photoList.size() - 1, position + 2); i++) {
+            Photo item = photoList.get(i);
+            preloadPath(item.getImagePath());
+            preloadPath(item.getMapImagePath());
+        }
+    }
+
+    private void preloadPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return;
+        }
+        Glide.with(this).load(path).preload();
     }
 
     private void handlePreviewSwipeAd() {

@@ -54,6 +54,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.appizona.yehiahd.fastsave.FastSave;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.request.RequestOptions;
 import com.camera.gps.adsmanager.InterstitialAdManager;
 import com.camera.gps.databinding.ActivityPhotoPreviewBinding;
 import com.camera.gps.util.Utils;
@@ -81,6 +82,8 @@ import com.camera.gps.util.VideoStampShareHelper;
 
 public final class PhotoPreview_Activity extends AppCompatActivity {
 
+    private static final float MAP_CORNER_RADIUS_DP = 4f;
+
     boolean isVideo = false;
     double currentLatitude;
     double currentLongitude;
@@ -97,6 +100,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     String format_Time;
     SupportMapFragment mapFragment;
     LinearLayout mapViewContainer;
+    ImageView staticMapImage;
     RelativeLayout relBottomStamp;
     int height16_9;
     private SupportMapFragment supportMapFragment;
@@ -107,6 +111,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     String title;
     String lat_dms;
     String long_dms;
+    String mapImagePath;
     private Dialog dialog;
 
 
@@ -292,7 +297,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
                             Bitmap scaledMapSnapshot = Bitmap.createScaledBitmap(mapSnapshot, mapViewContainer.getWidth(), mapViewContainer.getHeight(), false);
 
                             // Draw the map at the correct position
-                            float cornerRadius = 0f; // e.g. 30px, or convert dp -> px
+                            float cornerRadius = getMapCornerRadiusPx();
                             Bitmap roundedMap = getRoundedCornerBitmap(scaledMapSnapshot, cornerRadius);
 
                             canvas.drawBitmap(roundedMap, relativeX, relativeY, null);
@@ -353,8 +358,9 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
             int relativeY = mapLocation[1] - stampLocation[1];
 
             Bitmap scaledMapSnapshot = Bitmap.createScaledBitmap(mapSnapshot, mapViewContainer.getWidth(), mapViewContainer.getHeight(), false);
+            Bitmap roundedMap = getRoundedCornerBitmap(scaledMapSnapshot, getMapCornerRadiusPx());
 
-            canvas.drawBitmap(scaledMapSnapshot, relativeX, relativeY, null);
+            canvas.drawBitmap(roundedMap, relativeX, relativeY, null);
         }
 
         return stampBitmap;
@@ -372,11 +378,18 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
     private Bitmap viewToImage(View view) {
-        // Ensure view is properly measured and laid out
-        view.measure(View.MeasureSpec.makeMeasureSpec(view.getWidth(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(view.getHeight(), View.MeasureSpec.EXACTLY));
-        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+        int width = view.getWidth();
+        int height = view.getHeight();
+        if (width <= 0 || height <= 0) {
+            view.measure(
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            );
+            width = view.getMeasuredWidth();
+            height = view.getMeasuredHeight();
+        }
 
-        Bitmap returnedBitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap returnedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(returnedBitmap);
 
         Drawable background = view.getBackground();
@@ -388,6 +401,14 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
         view.draw(canvas);
         return returnedBitmap;
+    }
+
+    private float getMapCornerRadiusPx() {
+        return TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                MAP_CORNER_RADIUS_DP,
+                getResources().getDisplayMetrics()
+        );
     }
 
     private Bitmap getPhoto() {
@@ -414,7 +435,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
                     });
                 });
             } else {
-                Bitmap stampBitmap = viewToImage(relBottomStamp);
+                Bitmap stampBitmap = createStampOverlay(null);
                 VideoStampShareHelper.shareVideoWithStamp(this, photo, stampBitmap);
             }
 
@@ -444,6 +465,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         fontStyle = photo.getFontStyle();
         title = photo.getTitle();
         current_map_type = photo.getMap_type();
+        mapImagePath = photo.getMapImagePath();
         show_watermark = photo.getShow_watermark();
         currentstamp_type = photo.getType();
         lat_dms = photo.getLat_dms();
@@ -701,18 +723,22 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         relBottomStamp.addView(stampView);
         initializeStampViews(stampView);
         if (mapViewContainer != null) {
-            FragmentTransaction beginTransaction = getSupportFragmentManager().beginTransaction();
-            mapFragment = SupportMapFragment.newInstance();
-            beginTransaction.add(mapViewContainer.getId(), mapFragment);
-            beginTransaction.commit();
-
-            try {
-                MapsInitializer.initialize(this);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            setupStaticMapImage();
         }
         updateStampContent();
+    }
+
+    private void setupStaticMapImage() {
+        mapFragment = null;
+        mapViewContainer.removeAllViews();
+        mapViewContainer.setBackgroundColor(Color.TRANSPARENT);
+        staticMapImage = new ImageView(this);
+        staticMapImage.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        staticMapImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        mapViewContainer.addView(staticMapImage);
     }
 
     public void updateStampContent() {
@@ -810,15 +836,30 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
     private void updateMapLocation() {
-        if (mapFragment != null && currentLatitude != 0.0 && currentLongitude != 0.0) {
-            mapFragment.getMapAsync(googleMap -> {
-                LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-                googleMap.addMarker(new MarkerOptions().position(latLng).title("Photo Location"));
-                Log.d("Rishi_map_type", "Map" + current_map_type);
-                googleMap.setMapType(current_map_type);
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f));
-            });
+        if (staticMapImage != null) {
+            if (mapImagePath != null && !mapImagePath.isEmpty() && new File(mapImagePath).exists()) {
+                Glide.with(this)
+                        .load(mapImagePath)
+                        .apply(mapCornerOptions())
+                        .placeholder(R.drawable.default_map)
+                        .error(R.drawable.default_map)
+                        .into(staticMapImage);
+                return;
+            }
+
+            Glide.with(this)
+                    .load(R.drawable.default_map)
+                    .apply(mapCornerOptions())
+                    .placeholder(R.drawable.default_map)
+                    .error(R.drawable.default_map)
+                    .into(staticMapImage);
         }
+    }
+
+    private RequestOptions mapCornerOptions() {
+        return RequestOptions.bitmapTransform(
+                new com.bumptech.glide.load.resource.bitmap.RoundedCorners((int) getMapCornerRadiusPx())
+        );
     }
 
     private void updateStampCoordinates() {

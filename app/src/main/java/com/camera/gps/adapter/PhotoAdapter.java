@@ -386,6 +386,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     private boolean isSelectionMode = false;
     private OnSelectionChangeListener selectionChangeListener;
     private static final int NATIVE_AD_INTERVAL = 6;
+    private boolean nativeAdsEnabled = true;
 
     public interface OnSelectionChangeListener {
         void onSelectionChanged(boolean hasSelection);
@@ -397,6 +398,10 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         if (photoList != null) {
             updateData(photoList);
         }
+    }
+
+    public void setNativeAdsEnabled(boolean nativeAdsEnabled) {
+        this.nativeAdsEnabled = nativeAdsEnabled;
     }
 
     @Override
@@ -459,7 +464,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 for (Photo photo : entry.getValue()) {
                     itemList.add(new PhotoItem(photo));
                     mediaCount++;
-                    if (mediaCount % NATIVE_AD_INTERVAL == 0) {
+                    if (nativeAdsEnabled && mediaCount % NATIVE_AD_INTERVAL == 0) {
                         itemList.add(new NativeAdItem());
                     }
                 }

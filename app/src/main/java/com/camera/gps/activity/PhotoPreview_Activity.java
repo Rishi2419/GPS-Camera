@@ -205,14 +205,27 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         viewModel.deletePhotos(list).observe(this, result -> {
             if (result != null && result > 0 && isVideo) {
                 Toast.makeText(PhotoPreview_Activity.this, "Video deleted successfully", Toast.LENGTH_SHORT).show();
+                setDeletedResult(list.get(0));
                 onBackPressed();
             } else if (result != null && result > 0) {
                 Toast.makeText(PhotoPreview_Activity.this, "Photo deleted successfully", Toast.LENGTH_SHORT).show();
+                setDeletedResult(list.get(0));
                 onBackPressed();
             } else {
                 Toast.makeText(PhotoPreview_Activity.this, "Failed to delete photo/video", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void setDeletedResult(Photo photo) {
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra("previewDeleted", true);
+        if (photo != null) {
+            Integer photoId = photo.getId();
+            resultIntent.putExtra("deletedPhotoId", photoId != null ? photoId : -1);
+            resultIntent.putExtra("deletedPhotoPath", photo.getImagePath());
+        }
+        setResult(RESULT_OK, resultIntent);
     }
 
     private void share(Photo photo) {
@@ -878,6 +891,8 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         boolean fromMap = getIntent().getBooleanExtra("fromMap", false);
         if (fromMap) {
             startActivity(new Intent(this, Map_Activity.class));
+            finish();
+        } else if (getIntent().getBooleanExtra("isMain", false)) {
             finish();
         } else {
             if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {

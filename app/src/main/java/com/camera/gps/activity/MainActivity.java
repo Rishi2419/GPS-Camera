@@ -285,9 +285,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // UI Components
     int current_map_type;
     private ImageButton btnMap;
+    private ImageButton btnCollection;
     private ImageButton btnTemplate;
     private ImageButton btnAddLocation;
     private ActivityResultLauncher resultLauncher;
+    private ActivityResultLauncher<Intent> previewResultLauncher;
     private ImageView imgFocus, imgCenterTakeAction, imgVideoRec;
     private TabLayout tabLayout;
     private ViewPager viewPagerSwitchAction;
@@ -451,6 +453,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                     });
                 }
+            }
+        });
+
+        previewResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            Intent data = result.getData();
+            if (result.getResultCode() == Activity.RESULT_OK && data != null && data.getBooleanExtra("previewDeleted", false)) {
+                clearDeletedPreview(data.getIntExtra("deletedPhotoId", -1), data.getStringExtra("deletedPhotoPath"));
             }
         });
     }
@@ -747,6 +756,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnSwitchCamera = findViewById(R.id.btnSwitchCamera);
         btnTakeAction = findViewById(R.id.btnTakeAction);
         btnMap = findViewById(R.id.btnMap);
+        btnCollection = findViewById(R.id.btnCollection);
         btnAddLocation = findViewById(R.id.btnAddLocation);
         btnTemplate = findViewById(R.id.btnTemplate);
 
@@ -2316,6 +2326,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+        btnCollection.setOnClickListener(view -> {
+            if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+                if (!InterstitialAdManager.isInterstitialShowing()) {
+                    setInterstitialShowing(true);
+                    InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "collection_open_interstitial", () -> {
+                        setInterstitialShowing(false);
+                        Intent intent = new Intent(MainActivity.this, MyCreation_Activity.class);
+                        startActivity(intent);
+                    }, errorMsg -> {
+                        setInterstitialShowing(false);
+                        LogUtils.logE("MyCreation", "Ad failed: " + errorMsg);
+                    });
+                } else {
+                    LogUtils.logD("MyCreation", "Interstitial already showing, ignoring click");
+                }
+            } else {
+                Intent intent = new Intent(MainActivity.this, MyCreation_Activity.class);
+                startActivity(intent);
+            }
+        });
+
         btnTemplate.setOnClickListener(view -> {
             if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
                 if (!InterstitialAdManager.isInterstitialShowing()) {
@@ -2386,7 +2417,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Intent intent = new Intent(MainActivity.this, PhotoPreview_Activity.class);
                 intent.putExtra("model", photoToPreview);
                 intent.putExtra("isMain", true);
-                startActivity(intent);
+                previewResultLauncher.launch(intent);
                 // Reset capture flag after preview
                 isCapture = false;
             } else {
@@ -2394,6 +2425,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 startActivity(intent);
             }
         });
+    }
+
+    private void clearDeletedPreview(int deletedPhotoId, String deletedPhotoPath) {
+        if (isSamePhoto(photoOld, deletedPhotoId, deletedPhotoPath)) {
+            photoOld = null;
+        }
+
+        if (isSamePhoto(photo, deletedPhotoId, deletedPhotoPath)) {
+            isCapture = false;
+            initializePhotoObject();
+        }
+
+        ivMyCapture.setImageResource(R.drawable.my_capture_icon);
+    }
+
+    private boolean isSamePhoto(Photo target, int photoId, String photoPath) {
+        if (target == null) {
+            return false;
+        }
+
+        Integer targetId = target.getId();
+        if (photoId != -1 && targetId != null && targetId.equals(photoId)) {
+            return true;
+        }
+
+        String targetPath = target.getImagePath();
+        return photoPath != null && targetPath != null && photoPath.equals(targetPath);
     }
 
     private void myLocationNavigation() {

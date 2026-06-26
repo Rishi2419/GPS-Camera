@@ -89,14 +89,14 @@
             android:src="@drawable/ic_expand" />
 
         <ImageButton
-            android:id="@+id/subscription_anim"
+            android:id="@+id/btnMap"
             android:layout_width="@dimen/_28sdp"
             android:layout_height="@dimen/_28sdp"
             android:layout_marginEnd="@dimen/_8sdp"
             android:layout_weight="1"
-            android:background="@drawable/ripple_yellow"
+            android:background="@drawable/ripple_white"
             android:scaleType="centerInside"
-            app:srcCompat="@drawable/ic_premium" />
+            app:srcCompat="@drawable/ic_map" />
 
         <ImageButton
             android:id="@+id/btnSettings"
@@ -851,9 +851,9 @@
                 android:visibility="gone" />
         </RelativeLayout>
 
-        <!-- Map -->
+        <!-- Collection -->
         <LinearLayout
-            android:id="@+id/llMap"
+            android:id="@+id/llCollection"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="0.9"
@@ -861,38 +861,11 @@
             android:orientation="vertical">
 
             <ImageButton
-                android:id="@+id/btnMap"
+                android:id="@+id/btnCollection"
                 android:layout_width="@dimen/_38sdp"
                 android:layout_height="@dimen/_38sdp"
                 android:background="@drawable/ripple_white2"
-                android:src="@drawable/ic_map" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/sfprotextmedium"
-                android:text="@string/map"
-                android:textColor="@android:color/white"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <!-- Collection -->
-        <LinearLayout
-            android:id="@+id/btCollection"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="0.9"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/ivMyCapture"
-                android:layout_width="43dp"
-                android:layout_height="43dp"
-                android:foreground="?actionBarItemBackground"
-                android:scaleType="centerCrop"
-                android:src="@drawable/my_capture_icon"
-                app:shapeAppearance="@style/ShapeAppearanceOverlay.App.Circular" />
+                android:src="@drawable/ic_photos" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -903,7 +876,33 @@
                 android:textSize="10sp" />
         </LinearLayout>
 
+        <!-- Preview -->
+        <LinearLayout
+            android:id="@+id/btCollection"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.9"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivMyCapture"
+                android:layout_width="@dimen/_38sdp"
+                android:layout_height="@dimen/_38sdp"
+                android:foreground="?actionBarItemBackground"
+                android:scaleType="centerCrop"
+                android:src="@drawable/my_capture_icon"
+                app:shapeAppearance="@style/ShapeAppearanceOverlay.App.Circular" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/sfprotextmedium"
+                android:text="@string/preview"
+                android:textColor="@android:color/white"
+                android:textSize="10sp" />
+        </LinearLayout>
+
     </LinearLayout>
 
 </RelativeLayout>
-

@@ -129,6 +129,7 @@ import com.camera.gps.repositories.DateFormatRepository;
 import com.camera.gps.util.DirManager;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.SP;
+import com.camera.gps.util.StampedGallerySaver;
 import com.camera.gps.viewmodel.DateFormatViewModel;
 import com.camera.gps.viewmodel.FontStyleViewModel;
 import com.google.android.material.tabs.TabLayout;
@@ -925,6 +926,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
                 MediaScannerConnection.scanFile(getBaseContext(), new String[]{mediaFile.toString()}, null, null);
                 Glide.with(getBaseContext()).load(mediaFile.toString()).into(ivMyCapture);
+                StampedGallerySaver.savePhoto(MainActivity.this, mediaFile, relBottomStamp, googleMap, mapViewContainer);
 
                 mediaFilePath = mediaFile.toString();
                 btnTakeAction.setEnabled(true);
@@ -1025,12 +1027,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     MediaScannerConnection.scanFile(getBaseContext(), new String[]{outputUri.getPath()}, null, null);
                     mediaFilePath = outputUri.getPath();
+                    if (videoFile != null && videoFile.exists()) {
+                        StampedGallerySaver.saveVideo(MainActivity.this, videoFile, relBottomStamp, googleMap, mapViewContainer);
+                    }
                 } else if (videoFile.exists()) {
                     // Fallback to file path
                     Glide.with(getBaseContext()).load(videoFile).into(ivMyCapture);
 
                     MediaScannerConnection.scanFile(getBaseContext(), new String[]{videoFile.getAbsolutePath()}, null, null);
                     mediaFilePath = videoFile.getAbsolutePath();
+                    StampedGallerySaver.saveVideo(MainActivity.this, videoFile, relBottomStamp, googleMap, mapViewContainer);
                 }
 
                 // Log recording completion with settings used

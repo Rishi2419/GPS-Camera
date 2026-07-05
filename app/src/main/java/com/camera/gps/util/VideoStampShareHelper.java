@@ -159,7 +159,8 @@ public final class VideoStampShareHelper {
         Uri uriForFile = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", file);
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra(Intent.EXTRA_STREAM, uriForFile);
-        intent.putExtra(Intent.EXTRA_TEXT, context.getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + context.getPackageName());
+        // App link text is disabled until the app is published.
+        // intent.putExtra(Intent.EXTRA_TEXT, context.getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + context.getPackageName());
         intent.setType(mimeType);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         context.startActivity(Intent.createChooser(intent, chooserTitle));

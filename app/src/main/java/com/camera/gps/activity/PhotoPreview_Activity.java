@@ -27,6 +27,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -39,7 +41,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -78,9 +79,21 @@ import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.StampedPhotoShareHelper;
 import com.camera.gps.util.VideoStampShareHelper;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public final class PhotoPreview_Activity extends AppCompatActivity {
+
+    private static final int STABLE_PREVIEW_SYSTEM_UI =
+            View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
 
     private static final float MAP_CORNER_RADIUS_DP = 4f;
 
@@ -113,6 +126,16 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     String long_dms;
     String mapImagePath;
     private Dialog dialog;
+    private final Handler videoProgressHandler = new Handler(Looper.getMainLooper());
+    private final Runnable videoProgressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateVideoPlaybackPill();
+            if (isVideo && binding != null && binding.videoView.isPlaying()) {
+                videoProgressHandler.postDelayed(this, 500);
+            }
+        }
+    };
 
 
     private LinearLayout dateTimeContainer, latLongContainer;
@@ -147,11 +170,10 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
             binding.videoView.setVisibility(VISIBLE);
             isVideo = true;
             binding.imageview.setVisibility(GONE);
-            binding.videoView.setMediaController(new MediaController(this));
-            binding.videoView.setVideoURI(Uri.parse(photo.getImagePath()));
-            binding.videoView.start();
+            setupVideoPreview(photo.getImagePath());
         } else if (photo.getImagePath().endsWith(".jpeg")) {
             binding.videoView.setVisibility(GONE);
+            binding.videoPlaybackPill.setVisibility(GONE);
             binding.imageview.setVisibility(VISIBLE);
             RequestBuilder<Drawable> load = Glide.with(this).load(photo.getImagePath());
             load.into(binding.imageview);
@@ -163,6 +185,65 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         binding.btnDelete.setOnClickListener(view -> deleteAlert(photo, isVideo));
         binding.btnShare.setOnClickListener(view -> share(photo));
         initCardInfoVisibility(photo);
+    }
+
+    private void setupVideoPreview(String videoPath) {
+        binding.videoPlaybackPill.setVisibility(VISIBLE);
+        binding.videoCurrentTime.setText(formatVideoTime(0));
+        binding.videoDuration.setText(formatVideoTime(0));
+        binding.videoPlayPauseIcon.setImageResource(R.drawable.ic_video_play);
+        binding.videoView.setVideoURI(Uri.parse(videoPath));
+        binding.videoView.setOnClickListener(v -> toggleUI());
+        binding.videoPlaybackPill.setOnClickListener(v -> toggleVideoPlayback());
+        binding.videoView.setOnPreparedListener(mediaPlayer -> {
+            binding.videoView.seekTo(1);
+            binding.videoView.start();
+            videoProgressHandler.removeCallbacks(videoProgressRunnable);
+            videoProgressHandler.post(videoProgressRunnable);
+            updateVideoPlaybackPill();
+        });
+        binding.videoView.setOnCompletionListener(mediaPlayer -> {
+            videoProgressHandler.removeCallbacks(videoProgressRunnable);
+            binding.videoView.seekTo(0);
+            updateVideoPlaybackPill();
+        });
+    }
+
+    private void toggleVideoPlayback() {
+        if (!isVideo) {
+            return;
+        }
+
+        if (binding.videoView.isPlaying()) {
+            binding.videoView.pause();
+            videoProgressHandler.removeCallbacks(videoProgressRunnable);
+        } else {
+            binding.videoView.start();
+            videoProgressHandler.removeCallbacks(videoProgressRunnable);
+            videoProgressHandler.post(videoProgressRunnable);
+        }
+        updateVideoPlaybackPill();
+    }
+
+    private void updateVideoPlaybackPill() {
+        if (!isVideo || binding == null) {
+            return;
+        }
+
+        int currentPosition = Math.max(binding.videoView.getCurrentPosition(), 0);
+        int duration = Math.max(binding.videoView.getDuration(), 0);
+        binding.videoCurrentTime.setText(formatVideoTime(currentPosition));
+        binding.videoDuration.setText(formatVideoTime(duration));
+        binding.videoPlayPauseIcon.setImageResource(
+                binding.videoView.isPlaying() ? R.drawable.ic_video_pause : R.drawable.ic_video_play
+        );
+    }
+
+    private String formatVideoTime(int milliseconds) {
+        int totalSeconds = Math.max(milliseconds, 0) / 1000;
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
     }
 
     private void deleteAlert(final Photo photo, boolean isVideo) {
@@ -266,72 +347,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
     private void shareImageWithStamp(Photo photo) {
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(googleMap -> {
-                googleMap.snapshot(mapSnapshot -> {
-                    try {
-                        // Get the main container view that includes the image and stamp
-                        View containerView = binding.previewFrame;
-
-                        // Create bitmap from the container
-                        Bitmap containerBitmap = Bitmap.createBitmap(containerView.getWidth(), containerView.getHeight(), Bitmap.Config.ARGB_8888);
-                        Canvas canvas = new Canvas(containerBitmap);
-
-                        // Draw the container (this includes the image and stamp layout)
-                        containerView.draw(canvas);
-
-                        // Now overlay the map snapshot at the correct position
-                        if (mapSnapshot != null && mapViewContainer != null) {
-                            // Get map view position relative to the container
-                            int[] mapLocation = new int[2];
-                            int[] containerLocation = new int[2];
-
-                            mapViewContainer.getLocationInWindow(mapLocation);
-                            containerView.getLocationInWindow(containerLocation);
-
-                            // Calculate relative position
-                            int relativeX = mapLocation[0] - containerLocation[0];
-                            int relativeY = mapLocation[1] - containerLocation[1];
-
-                            // Scale the map snapshot to match the mapView size
-                            Bitmap scaledMapSnapshot = Bitmap.createScaledBitmap(mapSnapshot, mapViewContainer.getWidth(), mapViewContainer.getHeight(), false);
-
-                            // Draw the map at the correct position
-                            float cornerRadius = getMapCornerRadiusPx();
-                            Bitmap roundedMap = getRoundedCornerBitmap(scaledMapSnapshot, cornerRadius);
-
-                            canvas.drawBitmap(roundedMap, relativeX, relativeY, null);
-                        }
-
-                        // Save to temporary file
-                        File sharedFile = new File(getCacheDir(), "shared_image_" + System.currentTimeMillis() + ".jpg");
-                        FileOutputStream fos = new FileOutputStream(sharedFile);
-                        containerBitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
-                        fos.close();
-
-                        // Share the image
-                        shareFile(sharedFile, "image/jpeg", "Share Image!");
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Constant.Companion.showToast(this, getResources().getString(R.string.error_in_creating_file));
-                    }
-                });
-            });
-        } else {
-            // Fallback if no map - just share the container view
-            try {
-                Bitmap containerBitmap = viewToImage(binding.previewFrame);
-                File sharedFile = new File(getCacheDir(), "shared_image_" + System.currentTimeMillis() + ".jpg");
-                FileOutputStream fos = new FileOutputStream(sharedFile);
-                containerBitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
-                fos.close();
-                shareFile(sharedFile, "image/jpeg", "Share Image!");
-            } catch (Exception e) {
-                e.printStackTrace();
-                Constant.Companion.showToast(this, getResources().getString(R.string.error_in_creating_file));
-            }
-        }
+        StampedPhotoShareHelper.shareImageWithStamp(this, mapFragment, binding.previewFrame, mapViewContainer, getMapCornerRadiusPx());
     }
 
 
@@ -371,7 +387,8 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         Uri uriForFile = FileProvider.getUriForFile(this, getPackageName() + ".provider", file);
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra(Intent.EXTRA_STREAM, uriForFile);
-        intent.putExtra(Intent.EXTRA_TEXT, getResources().getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + getPackageName());
+        // App link text is disabled until the app is published.
+        // intent.putExtra(Intent.EXTRA_TEXT, getResources().getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + getPackageName());
         intent.setType(mimeType);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(intent, chooserTitle));
@@ -454,6 +471,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         current_datetime_color = photo.getCurrent_datetime_color();
         currentRatioType = photo.getRatio();
 
+        updatePreviewDateTime(photo);
         Log.d("Rishi", "Details:" + current_address + currentLatitude + currentLongitude + date + time + fontStyle + title);
         setRatio(currentRatioType);
         if (isVideo) {
@@ -462,6 +480,33 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         } else {
             relBottomStamp.setVisibility(VISIBLE);
             setCurrentStampLayout(currentstamp_type);
+        }
+    }
+
+    private void updatePreviewDateTime(Photo photo) {
+        if (photo == null) {
+            return;
+        }
+
+        Date capturedAt = parseCaptureDate(photo.getDateTimeTaken());
+        if (capturedAt != null) {
+            binding.tvPreviewDate.setText(new SimpleDateFormat("d MMMM, yyyy", Locale.getDefault()).format(capturedAt));
+            binding.tvPreviewTime.setText(new SimpleDateFormat("hh.mm a", Locale.getDefault()).format(capturedAt));
+        } else {
+            binding.tvPreviewDate.setText(photo.getDate() != null ? photo.getDate() : "");
+            binding.tvPreviewTime.setText(photo.getTime() != null ? photo.getTime() : "");
+        }
+    }
+
+    private Date parseCaptureDate(String dateTimeTaken) {
+        if (dateTimeTaken == null || dateTimeTaken.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).parse(dateTimeTaken);
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -479,36 +524,19 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
         switch (ratio) {
             case 0:
-                //16:9 - if video
                 if (isVideo) {
-                    height16_9 = (screenWidth * 16) / 9;
                     frameParams.width = ConstraintLayout.LayoutParams.MATCH_PARENT;
-                    frameParams.height = height16_9;
+                    frameParams.height = ConstraintLayout.LayoutParams.MATCH_PARENT;
+                    frameParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+                    frameParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+                    frameParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
+                    frameParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
+                    frameParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
+                    frameParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
+                    frameParams.verticalBias = 0.5f;
 
-                    if (height16_9 >= screenHeight - 200) {
-                        // Large 16:9 - treat as full screen
-                        frameParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-                        frameParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
-                        frameParams.verticalBias = 0.5f;
-                        setupFullScreenMode();
-                    } else {
-                        // Normal 16:9 - center between available space
-                        frameParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
-                        frameParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-                        frameParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
-                        frameParams.verticalBias = 0.5f;
-                        showUI();
-                        // Remove click listener for normal mode
-                        binding.previewFrame.setOnClickListener(null);
-                    }
-                    updateMediaViewFor16_9(height16_9);
+                    setupFullScreenMode();
+                    updateMediaViewForFullScreen();
                     break;
 
                 } else {
@@ -535,30 +563,15 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
                 height16_9 = (screenWidth * 16) / 9;
                 frameParams.width = ConstraintLayout.LayoutParams.MATCH_PARENT;
                 frameParams.height = height16_9;
+                frameParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+                frameParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+                frameParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
+                frameParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
+                frameParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
+                frameParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
+                frameParams.verticalBias = 0.5f;
 
-                if (height16_9 >= screenHeight - 200) {
-                    // Large 16:9 - treat as full screen
-                    frameParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-                    frameParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
-                    frameParams.verticalBias = 0.5f;
-                    setupFullScreenMode();
-                } else {
-                    // Normal 16:9 - center between available space
-                    frameParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
-                    frameParams.topToBottom = ConstraintLayout.LayoutParams.UNSET;
-                    frameParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
-                    frameParams.verticalBias = 0.5f;
-                    showUI();
-                    // Remove click listener for normal mode
-                    binding.previewFrame.setOnClickListener(null);
-                }
+                setupFullScreenMode();
                 updateMediaViewFor16_9(height16_9);
                 break;
 
@@ -577,9 +590,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
                 frameParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
                 frameParams.verticalBias = 0.5f;
 
-                showUI();
-                // Remove click listener for normal mode
-                binding.previewFrame.setOnClickListener(null);
+                setupFullScreenMode();
                 updateMediaViewFor4_3(height4_3);
                 break;
         }
@@ -605,21 +616,21 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     private void hideUI() {
         binding.header.setVisibility(View.GONE);
         binding.buttonContainer.setVisibility(View.GONE);
+        binding.videoPlaybackPill.setVisibility(View.GONE);
         binding.view.setVisibility(View.GONE);
         isUIVisible = false;
 
-        // Make status bar and navigation bar transparent/hidden for immersive experience
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        getWindow().getDecorView().setSystemUiVisibility(STABLE_PREVIEW_SYSTEM_UI);
     }
 
     private void showUI() {
         binding.header.setVisibility(View.VISIBLE);
         binding.buttonContainer.setVisibility(View.VISIBLE);
+        binding.videoPlaybackPill.setVisibility(isVideo ? View.VISIBLE : View.GONE);
         binding.view.setVisibility(View.VISIBLE);
         isUIVisible = true;
 
-        // Restore system UI
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        getWindow().getDecorView().setSystemUiVisibility(STABLE_PREVIEW_SYSTEM_UI);
     }
 
     private void updateMediaViewForFullScreen() {
@@ -963,5 +974,21 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
             return height16_9 >= screenHeight - 200;
         }
         return false;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (isVideo && binding != null && binding.videoView.isPlaying()) {
+            binding.videoView.pause();
+            updateVideoPlaybackPill();
+        }
+        videoProgressHandler.removeCallbacks(videoProgressRunnable);
+    }
+
+    @Override
+    protected void onDestroy() {
+        videoProgressHandler.removeCallbacks(videoProgressRunnable);
+        super.onDestroy();
     }
 }

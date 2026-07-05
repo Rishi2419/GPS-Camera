@@ -52,11 +52,20 @@ public final class StampedPhotoComposer {
     }
 
     public static Bitmap createStampBitmap(View stampView, Bitmap mapSnapshot, View mapView) {
+        Bitmap mapBitmap = createMapBitmap(mapView, mapSnapshot);
+        int originalMapVisibility = View.VISIBLE;
+        if (mapBitmap != null) {
+            originalMapVisibility = mapView.getVisibility();
+            mapView.setVisibility(View.INVISIBLE);
+        }
+
         Bitmap stampBitmap = Bitmap.createBitmap(stampView.getWidth(), stampView.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas stampCanvas = new Canvas(stampBitmap);
         stampView.draw(stampCanvas);
 
-        if (mapSnapshot != null && mapView != null && mapView.getWidth() > 0 && mapView.getHeight() > 0) {
+        if (mapBitmap != null) {
+            mapView.setVisibility(originalMapVisibility);
+
             int[] mapLocation = new int[2];
             int[] stampLocation = new int[2];
             mapView.getLocationOnScreen(mapLocation);
@@ -64,12 +73,26 @@ public final class StampedPhotoComposer {
 
             int relativeX = mapLocation[0] - stampLocation[0];
             int relativeY = mapLocation[1] - stampLocation[1];
-            Bitmap scaledMap = Bitmap.createScaledBitmap(mapSnapshot, mapView.getWidth(), mapView.getHeight(), true);
-            Bitmap roundedMap = getRoundedMapBitmap(mapView, scaledMap);
+            Bitmap roundedMap = getRoundedMapBitmap(mapView, mapBitmap);
             stampCanvas.drawBitmap(roundedMap, relativeX, relativeY, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
         }
 
         return stampBitmap;
+    }
+
+    private static Bitmap createMapBitmap(View mapView, Bitmap mapSnapshot) {
+        if (mapView == null || mapView.getWidth() <= 0 || mapView.getHeight() <= 0) {
+            return null;
+        }
+
+        if (mapSnapshot != null) {
+            return Bitmap.createScaledBitmap(mapSnapshot, mapView.getWidth(), mapView.getHeight(), true);
+        }
+
+        Bitmap mapBitmap = Bitmap.createBitmap(mapView.getWidth(), mapView.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(mapBitmap);
+        mapView.draw(canvas);
+        return mapBitmap;
     }
 
     private static Bitmap getRoundedMapBitmap(View mapView, Bitmap bitmap) {

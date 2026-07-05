@@ -2767,7 +2767,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (ratioDialog != null && ratioDialog.isShowing()) {
             return;
         }
-        ratioDialog = new RatioDialog(this, currentRatioType, new OnRatioSelectedListener() {
+        boolean isVideoMode = viewPagerSwitchAction != null && viewPagerSwitchAction.getCurrentItem() == 1;
+        ratioDialog = new RatioDialog(this, currentRatioType, !isVideoMode, new OnRatioSelectedListener() {
             @Override
             public void onRatioSelected(int ratioValue) {
                 if (currentRatioType != ratioValue) {
@@ -3270,6 +3271,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (isRecording && position != 1) {
             stopVideoRecording();
+        }
+
+        if (position == 1 && currentRatioType == RatioDialog.RATIO_FULL) {
+            currentRatioType = RatioDialog.RATIO_16_9;
         }
 
         viewPagerSwitchAction.setCurrentItem(position);

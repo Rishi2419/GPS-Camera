@@ -2,6 +2,7 @@
 
     import android.app.Dialog;
     import android.content.Context;
+    import android.view.View;
     import android.widget.ImageView;
     import android.widget.LinearLayout;
     import android.widget.RadioButton;
@@ -18,6 +19,7 @@
         private ImageView btnCloseDialog;
         private int selectedRatio;
         private OnRatioSelectedListener listener;
+        private boolean showFullRatio = true;
 
         // Ratio constants
         public static final int RATIO_FULL = 0;
@@ -29,6 +31,14 @@
         public RatioDialog(Context context, int currentRatio, OnRatioSelectedListener listener) {
             super(context);
             this.selectedRatio = currentRatio;
+            this.listener = listener;
+            init();
+        }
+
+        public RatioDialog(Context context, int currentRatio, boolean showFullRatio, OnRatioSelectedListener listener) {
+            super(context);
+            this.selectedRatio = showFullRatio || currentRatio != RATIO_FULL ? currentRatio : RATIO_16_9;
+            this.showFullRatio = showFullRatio;
             this.listener = listener;
             init();
         }
@@ -54,6 +64,8 @@
             btnSaveRatio = findViewById(R.id.btnSaveRatio);
             btnCancelRatio = findViewById(R.id.btnCancelRatio);
             btnCloseDialog = findViewById(R.id.btnCloseDialog);
+
+            layoutfull.setVisibility(showFullRatio ? View.VISIBLE : View.GONE);
         }
 
         private void setCurrentSelection() {

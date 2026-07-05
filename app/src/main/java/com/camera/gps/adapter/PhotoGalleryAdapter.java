@@ -23,7 +23,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
@@ -43,6 +42,7 @@ import com.camera.gps.R;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.StampedPhotoShareHelper;
 import com.camera.gps.util.VideoStampShareHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.MapsInitializer;
@@ -115,6 +115,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
     public static class PhotoFragment extends Fragment {
         private static final String ARG_PHOTO = "photo";
+        private static final float MAP_CORNER_RADIUS_DP = 4f;
 
         private Photo photo;
         private OnPhotoInteractionListener listener;
@@ -192,8 +193,18 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             if (isVideo) {
                 imageView.setVisibility(View.GONE);
                 videoView.setVisibility(View.VISIBLE);
-                videoView.setMediaController(new MediaController(getContext()));
                 videoView.setVideoURI(Uri.parse(photo.getImagePath()));
+                videoView.setOnPreparedListener(mediaPlayer -> {
+                    if (listener != null) {
+                        listener.onVideoStatusChanged(videoView.isPlaying());
+                    }
+                });
+                videoView.setOnCompletionListener(mediaPlayer -> {
+                    videoView.seekTo(0);
+                    if (listener != null) {
+                        listener.onVideoStatusChanged(false);
+                    }
+                });
             } else {
                 videoView.setVisibility(View.GONE);
                 imageView.setVisibility(View.VISIBLE);
@@ -222,13 +233,53 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
         public void playVideoIfNeeded() {
             if (isVideo && videoView != null && !videoView.isPlaying()) {
                 videoView.start();
+                if (listener != null) {
+                    listener.onVideoStatusChanged(true);
+                }
             }
         }
 
         public void pauseVideoIfNeeded() {
             if (isVideo && videoView != null && videoView.isPlaying()) {
                 videoView.pause();
+                if (listener != null) {
+                    listener.onVideoStatusChanged(false);
+                }
             }
+        }
+
+        public void toggleVideoPlayback() {
+            if (!isVideo || videoView == null) {
+                return;
+            }
+
+            if (videoView.isPlaying()) {
+                pauseVideoIfNeeded();
+            } else {
+                playVideoIfNeeded();
+            }
+        }
+
+        public boolean isVideo() {
+            return isVideo;
+        }
+
+        public boolean isVideoPlaying() {
+            return isVideo && videoView != null && videoView.isPlaying();
+        }
+
+        public int getVideoCurrentPosition() {
+            return isVideo && videoView != null ? Math.max(videoView.getCurrentPosition(), 0) : 0;
+        }
+
+        public int getVideoDuration() {
+            return isVideo && videoView != null ? Math.max(videoView.getDuration(), 0) : 0;
+        }
+
+        @Override
+        public void onDestroyView() {
+            pauseVideoIfNeeded();
+            super.onDestroyView();
         }
 
         private void initPhotoData() {
@@ -587,56 +638,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
         // Share methods
         public void shareImageWithStamp() {
-            if (mapFragment != null) {
-                mapFragment.getMapAsync(googleMap -> {
-                    googleMap.snapshot(mapSnapshot -> {
-                        try {
-                            View containerView = previewFrame;
-                            Bitmap containerBitmap = Bitmap.createBitmap(containerView.getWidth(), containerView.getHeight(), Bitmap.Config.ARGB_8888);
-                            Canvas canvas = new Canvas(containerBitmap);
-                            containerView.draw(canvas);
-
-                            if (mapSnapshot != null && mapViewContainer != null) {
-                                int[] mapLocation = new int[2];
-                                int[] containerLocation = new int[2];
-
-                                mapViewContainer.getLocationInWindow(mapLocation);
-                                containerView.getLocationInWindow(containerLocation);
-
-                                int relativeX = mapLocation[0] - containerLocation[0];
-                                int relativeY = mapLocation[1] - containerLocation[1];
-
-                                Bitmap scaledMapSnapshot = Bitmap.createScaledBitmap(mapSnapshot, mapViewContainer.getWidth(), mapViewContainer.getHeight(), false);
-                                Bitmap roundedMap = getRoundedCornerBitmap(scaledMapSnapshot, 0f);
-                                canvas.drawBitmap(roundedMap, relativeX, relativeY, null);
-                            }
-
-                            File sharedFile = new File(requireContext().getCacheDir(), "shared_image_" + System.currentTimeMillis() + ".jpg");
-                            FileOutputStream fos = new FileOutputStream(sharedFile);
-                            containerBitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
-                            fos.close();
-
-                            shareFile(sharedFile, "image/jpeg", "Share Image!");
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            Constant.Companion.showToast(requireContext(), getString(R.string.error_in_creating_file));
-                        }
-                    });
-                });
-            } else {
-                try {
-                    Bitmap containerBitmap = viewToImage(previewFrame);
-                    File sharedFile = new File(requireContext().getCacheDir(), "shared_image_" + System.currentTimeMillis() + ".jpg");
-                    FileOutputStream fos = new FileOutputStream(sharedFile);
-                    containerBitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
-                    fos.close();
-                    shareFile(sharedFile, "image/jpeg", "Share Image!");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Constant.Companion.showToast(requireContext(), getString(R.string.error_in_creating_file));
-                }
-            }
+            StampedPhotoShareHelper.shareImageWithStamp(requireContext(), mapFragment, previewFrame, mapViewContainer, getMapCornerRadiusPx());
         }
 
         public void shareVideoWithStamp() {
@@ -688,7 +690,8 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             Uri uriForFile = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".provider", file);
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.putExtra(Intent.EXTRA_STREAM, uriForFile);
-            intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + requireContext().getPackageName());
+            // App link text is disabled until the app is published.
+            // intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.app_name) + "\n\nhttps://play.google.com/store/apps/details?id=" + requireContext().getPackageName());
             intent.setType(mimeType);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(Intent.createChooser(intent, chooserTitle));
@@ -696,6 +699,14 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
         private void shareVideoOnly(Photo photo) {
             VideoStampShareHelper.shareVideoOnly(requireContext(), photo);
+        }
+
+        private float getMapCornerRadiusPx() {
+            return android.util.TypedValue.applyDimension(
+                    android.util.TypedValue.COMPLEX_UNIT_DIP,
+                    MAP_CORNER_RADIUS_DP,
+                    getResources().getDisplayMetrics()
+            );
         }
 
         private Bitmap viewToImage(View view) {

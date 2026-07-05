@@ -73,6 +73,7 @@
     <string name="photo">Photo</string>
     <string name="videos">Videos</string>
     <string name="video">Video</string>
+    <string name="video_play_pause">Play or pause video</string>
     <string name="custom_location">Custom Location</string>
     <string name="saved_location">Saved Location</string>
     <string name="photos_not_found">Photos Not Found!</string>

@@ -26,6 +26,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -38,7 +40,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -80,7 +81,18 @@ import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.Utils;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public final class PhotoGallery_Activity extends AppCompatActivity {
+
+    private static final int STABLE_PREVIEW_SYSTEM_UI =
+            View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
 
     private ActivityPhotoGalleryBinding binding;
     private GlobalViewModel viewModel;
@@ -91,6 +103,17 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
     private int previewsSinceLastInterstitial = 0;
     private boolean ignoreInitialPageSelection = true;
     private static final int PREVIEWS_BEFORE_INTERSTITIAL = 7;
+    private final Handler videoProgressHandler = new Handler(Looper.getMainLooper());
+    private final Runnable videoProgressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateVideoPlaybackPill();
+            PhotoGalleryAdapter.PhotoFragment currentFragment = getCurrentGalleryFragment();
+            if (currentFragment != null && currentFragment.isVideoPlaying()) {
+                videoProgressHandler.postDelayed(this, 500);
+            }
+        }
+    };
 
     @Override
     public void onCreate(Bundle bundle) {
@@ -100,6 +123,8 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
 
         Application application = getApplication();
         getWindow().setFlags(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        getWindow().setNavigationBarColor(Color.BLACK);
+        getWindow().getDecorView().setSystemUiVisibility(STABLE_PREVIEW_SYSTEM_UI);
 
         viewModel = new ViewModelProvider(this, new GlobalViewModelFactory(application)).get(GlobalViewModel.class);
 
@@ -126,7 +151,12 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
 
             @Override
             public void onVideoStatusChanged(boolean isPlaying) {
-                // Handle video play/pause if needed
+                updateVideoPlaybackPill();
+                if (isPlaying) {
+                    startVideoProgressUpdates();
+                } else {
+                    videoProgressHandler.removeCallbacks(videoProgressRunnable);
+                }
             }
         });
 
@@ -141,7 +171,11 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
         binding.viewPager.setCurrentItem(currentPosition, false);
         preloadAround(currentPosition);
         binding.viewPager.postDelayed(() -> preloadAround(currentPosition), 150);
-        binding.viewPager.post(() -> galleryAdapter.playOnly(currentPosition));
+        binding.viewPager.post(() -> {
+            galleryAdapter.playOnly(currentPosition);
+            updateVideoPlaybackPill();
+            startVideoProgressUpdates();
+        });
 
 
         // Listen for page changes to update counter and buttons
@@ -153,6 +187,8 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
                 updateCounter();
                 preloadAround(position);
                 galleryAdapter.playOnly(position);
+                updateVideoPlaybackPill();
+                startVideoProgressUpdates();
                 handlePreviewSwipeAd();
             }
         });
@@ -220,12 +256,42 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
                 share(currentPhoto);
             }
         });
+
+        binding.videoPlaybackPill.setOnClickListener(view -> toggleCurrentVideoPlayback());
     }
 
     private void updateCounter() {
         if (photoList.size() > 0) {
             String counter = (currentPosition + 1) + " of " + photoList.size();
             binding.tvCounter.setText(counter);
+            updatePreviewDateTime(photoList.get(currentPosition));
+        }
+    }
+
+    private void updatePreviewDateTime(Photo photo) {
+        if (photo == null) {
+            return;
+        }
+
+        Date capturedAt = parseCaptureDate(photo.getDateTimeTaken());
+        if (capturedAt != null) {
+            binding.tvPreviewDate.setText(new SimpleDateFormat("d MMMM, yyyy", Locale.getDefault()).format(capturedAt));
+            binding.tvPreviewTime.setText(new SimpleDateFormat("hh.mm a", Locale.getDefault()).format(capturedAt));
+        } else {
+            binding.tvPreviewDate.setText(photo.getDate() != null ? photo.getDate() : "");
+            binding.tvPreviewTime.setText(photo.getTime() != null ? photo.getTime() : "");
+        }
+    }
+
+    private Date parseCaptureDate(String dateTimeTaken) {
+        if (dateTimeTaken == null || dateTimeTaken.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).parse(dateTimeTaken);
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -335,28 +401,99 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
     private void hideUI() {
         binding.header.setVisibility(View.GONE);
         binding.buttonContainer.setVisibility(View.GONE);
+        binding.videoPlaybackPill.setVisibility(View.GONE);
         binding.view.setVisibility(View.GONE);
         isUIVisible = false;
 
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_FULLSCREEN |
-                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
-                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-        );
+        getWindow().getDecorView().setSystemUiVisibility(STABLE_PREVIEW_SYSTEM_UI);
     }
 
     private void showUI() {
         binding.header.setVisibility(View.VISIBLE);
         binding.buttonContainer.setVisibility(View.VISIBLE);
+        binding.videoPlaybackPill.setVisibility(isCurrentPhotoVideo() ? View.VISIBLE : View.GONE);
         binding.view.setVisibility(View.VISIBLE);
         isUIVisible = true;
 
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_VISIBLE |
-                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        getWindow().getDecorView().setSystemUiVisibility(STABLE_PREVIEW_SYSTEM_UI);
+    }
+
+    private void toggleCurrentVideoPlayback() {
+        PhotoGalleryAdapter.PhotoFragment currentFragment = getCurrentGalleryFragment();
+        if (currentFragment == null || !currentFragment.isVideo()) {
+            return;
+        }
+
+        currentFragment.toggleVideoPlayback();
+        updateVideoPlaybackPill();
+        if (currentFragment.isVideoPlaying()) {
+            startVideoProgressUpdates();
+        } else {
+            videoProgressHandler.removeCallbacks(videoProgressRunnable);
+        }
+    }
+
+    private void updateVideoPlaybackPill() {
+        if (binding == null) {
+            return;
+        }
+
+        PhotoGalleryAdapter.PhotoFragment currentFragment = getCurrentGalleryFragment();
+        boolean shouldShow = isUIVisible && currentFragment != null && currentFragment.isVideo();
+        binding.videoPlaybackPill.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+        if (!shouldShow) {
+            return;
+        }
+
+        binding.videoCurrentTime.setText(formatVideoTime(currentFragment.getVideoCurrentPosition()));
+        binding.videoDuration.setText(formatVideoTime(currentFragment.getVideoDuration()));
+        binding.videoPlayPauseIcon.setImageResource(
+                currentFragment.isVideoPlaying() ? R.drawable.ic_video_pause : R.drawable.ic_video_play
         );
+    }
+
+    private void startVideoProgressUpdates() {
+        videoProgressHandler.removeCallbacks(videoProgressRunnable);
+        PhotoGalleryAdapter.PhotoFragment currentFragment = getCurrentGalleryFragment();
+        if (currentFragment != null && currentFragment.isVideoPlaying()) {
+            videoProgressHandler.post(videoProgressRunnable);
+        }
+    }
+
+    private PhotoGalleryAdapter.PhotoFragment getCurrentGalleryFragment() {
+        if (galleryAdapter == null || currentPosition < 0 || currentPosition >= photoList.size()) {
+            return null;
+        }
+        return galleryAdapter.getCurrentFragment(currentPosition);
+    }
+
+    private boolean isCurrentPhotoVideo() {
+        return currentPosition >= 0
+                && currentPosition < photoList.size()
+                && photoList.get(currentPosition).getImagePath().endsWith(".mp4");
+    }
+
+    private String formatVideoTime(int milliseconds) {
+        int totalSeconds = Math.max(milliseconds, 0) / 1000;
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        PhotoGalleryAdapter.PhotoFragment currentFragment = getCurrentGalleryFragment();
+        if (currentFragment != null) {
+            currentFragment.pauseVideoIfNeeded();
+        }
+        videoProgressHandler.removeCallbacks(videoProgressRunnable);
+    }
+
+    @Override
+    protected void onDestroy() {
+        videoProgressHandler.removeCallbacks(videoProgressRunnable);
+        super.onDestroy();
     }
 
     @Override

@@ -687,6 +687,7 @@ import com.camera.gps.listener.OnDateTimeSelectedListener;
 import com.camera.gps.listener.OnFontSelectedListener;
 import com.camera.gps.listener.OnMapTypeSelectedListener;
 import com.camera.gps.model.DateFormatModel;
+import com.camera.gps.model.StampTemplateDefaults;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.SP;
 import com.camera.gps.util.Utils;
@@ -807,109 +808,15 @@ public class Edit_Activity extends AppCompatActivity {
 
     // NEW METHOD: Get predefined values for each template
     private void getPredefinedTemplateDefaults() {
-        switch (current_stamp_id) {
-//            case 1:
-//                currentFontStyle = "SF Pro Display.otf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.WHITE;
-//                currentDateTimeColor = Color.WHITE;
-//                current_map_type = 1; // Normal map
-//                currentDateFormat = "dd-MM-yyyy";
-//                currentTimeFormat = "HH:mm:ss a";
-//                currentCombinedFormat = "dd-MM-yyyy HH:mm:ss a";
-//                break;
-//            case 2:
-//                currentFontStyle = "Roboto-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.BLACK;
-//                currentDateTimeColor = Color.BLACK;
-//                current_map_type = 2; // Satellite map
-//                currentDateFormat = "MM/dd/yyyy";
-//                currentTimeFormat = "hh:mm a";
-//                currentCombinedFormat = "MM/dd/yyyy hh:mm a";
-//                break;
-//            case 3:
-//                currentFontStyle = "OpenSans-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.BLUE;
-//                currentDateTimeColor = Color.BLUE;
-//                current_map_type = 3; // Terrain map
-//                currentDateFormat = "yyyy-MM-dd";
-//                currentTimeFormat = "HH:mm";
-//                currentCombinedFormat = "yyyy-MM-dd HH:mm";
-//                break;
-//            case 4:
-//                currentFontStyle = "Lato-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.RED;
-//                currentDateTimeColor = Color.RED;
-//                current_map_type = 4; // Hybrid map
-//                currentDateFormat = "dd/MM/yyyy";
-//                currentTimeFormat = "HH:mm:ss";
-//                currentCombinedFormat = "dd/MM/yyyy HH:mm:ss";
-//                break;
-//            case 5:
-//                currentFontStyle = "Montserrat-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.GREEN;
-//                currentDateTimeColor = Color.GREEN;
-//                current_map_type = 1; // Normal map
-//                currentDateFormat = "MMM dd, yyyy";
-//                currentTimeFormat = "hh:mm:ss a";
-//                currentCombinedFormat = "MMM dd, yyyy hh:mm:ss a";
-//                break;
-//            case 6:
-//                currentFontStyle = "SourceSansPro-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.MAGENTA;
-//                currentDateTimeColor = Color.MAGENTA;
-//                current_map_type = 2; // Satellite map
-//                currentDateFormat = "EEEE, MMMM dd, yyyy";
-//                currentTimeFormat = "HH:mm a";
-//                currentCombinedFormat = "EEEE, MMMM dd, yyyy HH:mm a";
-//                break;
-//            case 7:
-//                currentFontStyle = "Poppins-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.CYAN;
-//                currentDateTimeColor = Color.CYAN;
-//                current_map_type = 3; // Terrain map
-//                currentDateFormat = "dd.MM.yyyy";
-//                currentTimeFormat = "HH:mm:ss";
-//                currentCombinedFormat = "dd.MM.yyyy HH:mm:ss";
-//                break;
-//            case 8:
-//                currentFontStyle = "NunitoSans-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                currentTextColor = Color.YELLOW;
-//                currentDateTimeColor = Color.YELLOW;
-//                current_map_type = 4; // Hybrid map
-//                currentDateFormat = "yyyy/MM/dd";
-//                currentTimeFormat = "hh:mm a";
-//                currentCombinedFormat = "yyyy/MM/dd hh:mm a";
-//                break;
-//            case 9:
-//                currentFontStyle = "Inter-Regular.ttf";
-//                currentBgColor = ContextCompat.getColor(this, R.color.bg_glass);
-//                currentTextColor = Color.WHITE;
-//                currentDateTimeColor = Color.WHITE;
-//                current_map_type = 1; // Normal map
-//                currentDateFormat = "dd-MMM-yyyy";
-//                currentTimeFormat = "HH:mm:ss a";
-//                currentCombinedFormat = "dd-MMM-yyyy HH:mm:ss a";
-//                break;
-            default:
-                // Default template values
-                currentFontStyle = "SF Pro Display.otf";
-                currentBgColor = ContextCompat.getColor(this, R.color.transparent_30);
-                currentTextColor = Color.WHITE;
-                currentDateTimeColor = Color.WHITE;
-                current_map_type = 1; // Normal map
-                currentDateFormat = "dd-MM-yyyy";
-                currentTimeFormat = "HH:mm:ss a";
-                currentCombinedFormat = "dd-MM-yyyy HH:mm:ss a";
-                break;
-        }
+        StampTemplateDefaults.Settings defaults = StampTemplateDefaults.forTemplate(this, current_stamp_id);
+        currentFontStyle = defaults.fontStyle;
+        currentBgColor = defaults.bgColor;
+        currentTextColor = defaults.textColor;
+        currentDateTimeColor = defaults.dateTimeColor;
+        current_map_type = defaults.mapType;
+        currentDateFormat = defaults.dateFormat;
+        currentTimeFormat = defaults.timeFormat;
+        currentCombinedFormat = defaults.combinedFormat;
 
         // Find font position
         String[] fontList = getResources().getStringArray(R.array.font_name_array);

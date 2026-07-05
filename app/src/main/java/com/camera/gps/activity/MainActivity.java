@@ -125,10 +125,12 @@ import com.camera.gps.listener.OnResolutionSelectedListener;
 import com.camera.gps.listener.OnSoundSelectedListener;
 import com.camera.gps.listener.OnTimerSelectedListener;
 import com.camera.gps.model.DateFormatModel;
+import com.camera.gps.model.StampTemplateDefaults;
 import com.camera.gps.repositories.DateFormatRepository;
 import com.camera.gps.util.DirManager;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.SP;
+import com.camera.gps.util.StampedVideoComposer;
 import com.camera.gps.viewmodel.DateFormatViewModel;
 import com.camera.gps.viewmodel.FontStyleViewModel;
 import com.google.android.material.tabs.TabLayout;
@@ -286,11 +288,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // UI Components
     int current_map_type;
+    private Integer sessionMapType;
     private ImageButton btnMap;
     private ImageButton btnCollection;
     private ImageButton btnTemplate;
     private ImageButton btnAddLocation;
     private ActivityResultLauncher resultLauncher;
+    private ActivityResultLauncher<Intent> mapTypeResultLauncher;
+    private ActivityResultLauncher<Intent> templateResultLauncher;
     private ActivityResultLauncher<Intent> previewResultLauncher;
     private ImageView imgFocus, imgCenterTakeAction, imgVideoRec;
     private TabLayout tabLayout;
@@ -328,6 +333,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private SupportMapFragment supportMapFragment;
     private GoogleMap googleMap;
     private int currentstamp_type, current_DateTimeColor, current_TextColor, current_StampBgColor;
+    private boolean hasSessionStampOverride = false;
+    private boolean hasSessionDateTimeOverride = false;
     private TextView txtLocation, txtDateTime, txtLatitude, txtLongitude, txtDate, txtTime, txtTitle, txt_lat_dms, txt_long_dms;
     private LinearLayout dateTimeContainer, latLongContainer;
     private CardView stampBg;
@@ -458,12 +465,54 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+        mapTypeResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                Intent data = result.getData();
+                if (data.hasExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE)) {
+                    sessionMapType = data.getIntExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE, current_map_type);
+                    current_map_type = sessionMapType;
+                    updateMaps();
+                }
+            }
+        });
+
+        templateResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == Activity.RESULT_OK) {
+                clearSessionStampOverrides();
+                getStampType();
+                updateMaps();
+                renderStamp();
+            }
+        });
+
         previewResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             Intent data = result.getData();
             if (result.getResultCode() == Activity.RESULT_OK && data != null && data.getBooleanExtra("previewDeleted", false)) {
                 clearDeletedPreview(data.getIntExtra("deletedPhotoId", -1), data.getStringExtra("deletedPhotoPath"));
             }
         });
+    }
+
+    private int getActiveMapTypeForSession() {
+        if (sessionMapType != null) {
+            return sessionMapType;
+        }
+        return resolveTemplateMapType();
+    }
+
+    private int resolveTemplateMapType() {
+        StampTemplateDefaults.Settings defaults = StampTemplateDefaults.forTemplate(this, currentstamp_type);
+        int fallbackMapType = defaults.mapType;
+        if (msp != null) {
+            return msp.getTemplateMapType(this, currentstamp_type, fallbackMapType);
+        }
+        return fallbackMapType;
+    }
+
+    private void clearSessionStampOverrides() {
+        hasSessionStampOverride = false;
+        hasSessionDateTimeOverride = false;
+        sessionMapType = null;
     }
 
 
@@ -1015,23 +1064,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     return;
                 }
 
-                // Set the capture flag to true
-                isCapture = true;
-
                 // Update UI with captured video
                 Uri outputUri = finalizeEvent.getOutputResults().getOutputUri();
                 if (outputUri != null && outputUri != Uri.EMPTY) {
                     Glide.with(getBaseContext()).load(outputUri).into(ivMyCapture);
-
-                    MediaScannerConnection.scanFile(getBaseContext(), new String[]{outputUri.getPath()}, null, null);
                     mediaFilePath = outputUri.getPath();
                 } else if (videoFile.exists()) {
                     // Fallback to file path
                     Glide.with(getBaseContext()).load(videoFile).into(ivMyCapture);
-
-                    MediaScannerConnection.scanFile(getBaseContext(), new String[]{videoFile.getAbsolutePath()}, null, null);
                     mediaFilePath = videoFile.getAbsolutePath();
                 }
+
+                finalizeSavedVideo(videoFile);
 
                 // Log recording completion with settings used
                 Log.d("Rishi_Video", "Video recorded successfully with sound: " + soundEnabled);
@@ -1043,6 +1087,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         isVideoRecordingPreparing = false;
         MainController.startRecAnimation(imgVideoRec, animationRecVideo);
         MainController.startChronometer(chronometerVideo);
+    }
+
+    private void finalizeSavedVideo(File recordedFile) {
+        if (recordedFile == null || photo == null || photo.getImagePath() == null) {
+            return;
+        }
+
+        StampedVideoComposer.writeStampedVideo(this, photo, relBottomStamp, googleMap, mapViewContainer, () -> {
+            String savedPath = recordedFile.getAbsolutePath();
+            MediaScannerConnection.scanFile(getBaseContext(), new String[]{savedPath}, null, null);
+            mediaFilePath = savedPath;
+            isCapture = true;
+            Glide.with(getBaseContext()).load(recordedFile).into(ivMyCapture);
+            saveMapSnapshotAndInsertPhoto(photo.getDateTimeTaken());
+        });
     }
 
     @SuppressLint("WrongConstant")
@@ -1179,7 +1238,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 photo.setTitle(currentTitle);
                 photo.setFontStyle(fontStyle);
                 photo.setMap_type(current_map_type);
-                photo.setShow_watermark(MyApplication.getShowWatermark());
+                photo.setShow_watermark(showWatermark);
                 photo.setLat_dms(latDMS);
                 photo.setLong_dms(lonDMS);
                 photo.setCurrent_bg_color(current_StampBgColor);
@@ -1206,7 +1265,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("PhotoCapture", "datetime col: " + photo.getCurrent_datetime_color());
                 Log.d("PhotoCapture", "ratio " + photo.getRatio());
 
-                saveMapSnapshotAndInsertPhoto(timeStamp);
+                if (type == MEDIA_TYPE_IMAGE) {
+                    saveMapSnapshotAndInsertPhoto(timeStamp);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1314,11 +1375,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                // cameraProvider.unbindAll();
                 bindCameraUseCases(cameraProvider);
 
-                if (cameraReadyListener != null) {
+                boolean firstCameraReady = !isCameraReady;
+                if (cameraReadyListener != null && firstCameraReady) {
                     runOnUiThread(() -> {
                         isCameraReady = true;
                         cameraReadyListener.onCameraReady();
                     });
+                } else {
+                    isCameraReady = true;
                 }
 
             } catch (Exception e) {
@@ -1674,7 +1738,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     private void getStampType() {
+        int previousStampType = currentstamp_type;
         currentstamp_type = FastSave.getInstance().getInt(MyApplication.STAMP_LAYOUT_ID, 1);
+        if (previousStampType != 0 && previousStampType != currentstamp_type) {
+            hasSessionStampOverride = false;
+            hasSessionDateTimeOverride = false;
+            sessionMapType = null;
+        }
     }
 
     private void getTemplateStampDateTime() {
@@ -1709,16 +1779,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Use template-specific formats
             getTemplateStampDateTime();
         } else {
-            // Use global formats (your existing logic)
-            if (FastSave.getInstance().getString(MyApplication.TIME_FORMAT, "dd-MM-yyyy HH:mm:ss a") != null) {
-                format_Combined = FastSave.getInstance().getString(MyApplication.TIME_FORMAT, "dd-MM-yyyy HH:mm:ss a");
-                format_Date = FastSave.getInstance().getString(MyApplication.FORMAT_DATE, "dd-MM-yyyy");
-                format_Time = FastSave.getInstance().getString(MyApplication.FORMAT_TIME, "HH:mm:ss a");
-            } else {
-                format_Combined = "dd-MM-yyyy, HH:mm:ss a";
-                format_Date = "dd-MM-yyyy";
-                format_Time = "HH:mm:ss a";
-            }
+            StampTemplateDefaults.Settings defaults = StampTemplateDefaults.forTemplate(this, currentstamp_type);
+            format_Combined = defaults.combinedFormat;
+            format_Date = defaults.dateFormat;
+            format_Time = defaults.timeFormat;
 
             Log.d("Rishi_datetime", "=== Global DateTime Format Debug ===");
             Log.d("Rishi_datetime", "format_Combined: " + format_Combined);
@@ -1943,14 +2007,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(@NonNull GoogleMap map) {
         googleMap = map;
-        current_map_type = MyApplication.getMapType();
+        current_map_type = getActiveMapTypeForSession();
         googleMap.setMapType(current_map_type);
         updateMapLocation();
     }
 
     private void updateStampContent() {
 
-        if (msp.isTemplateEdited(this, currentstamp_type)) {
+        if (!hasSessionStampOverride && msp.isTemplateEdited(this, currentstamp_type)) {
             //Log.d("Edit_Activity_Rishi","?"+ msp.isTemplateEdited(this, currentstamp_type));
             // Template has been customized - use saved template font
             String defaultFont = FastSave.getInstance().getString(MyApplication.FONT_STYLE, "SF Pro Display.otf");
@@ -1968,6 +2032,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             current_StampBgColor = msp.getTemplateBgColor(this, currentstamp_type, transparent30);
             current_TextColor = msp.getTemplateTextColor(this, currentstamp_type, whiteColor);
             current_DateTimeColor = msp.getTemplateDateTimeColor(this, currentstamp_type, whiteColor);
+            current_map_type = resolveTemplateMapType();
 
 
             Log.d("Rishi_Color", "Saving BgColor: #" + Integer.toHexString(current_StampBgColor));
@@ -1978,8 +2043,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             FastSave.getInstance().saveInt(MyApplication.STAMP_BG_COLOR, current_StampBgColor);
             FastSave.getInstance().saveInt(MyApplication.STAMP_TEXT_COLOR, current_TextColor);
             FastSave.getInstance().saveInt(MyApplication.STAMP_DATE_TIME_COLOR, current_DateTimeColor);
-        } else {
-            fontStyle = FastSave.getInstance().getString(MyApplication.FONT_STYLE, "SF Pro Display.otf");
+            showWatermark = MyApplication.getShowWatermark();
+        } else if (!hasSessionStampOverride) {
+            StampTemplateDefaults.Settings defaults = StampTemplateDefaults.forTemplate(this, currentstamp_type);
+            fontStyle = defaults.fontStyle;
+            current_StampBgColor = defaults.bgColor;
+            current_TextColor = defaults.textColor;
+            current_DateTimeColor = defaults.dateTimeColor;
+            current_map_type = defaults.mapType;
+            showWatermark = MyApplication.getShowWatermark();
         }
 
 
@@ -2031,7 +2103,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void updateWaterMarkVisibility() {
-        if (MyApplication.getShowWatermark()) {
+        if (showWatermark) {
             appStamp.setVisibility(View.VISIBLE);
         } else if (currentstamp_type == 9) {
             appStamp.setVisibility(GONE);
@@ -2140,74 +2212,85 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     private void updateStampDateTime() {
-        if (txtDate != null && txtTime != null) {
+        if (txtDate == null && txtTime == null && lbl_date == null && lbl_gmt == null) {
+            return;
+        }
 
+        String displayDate;
+        String displayTime;
 
-            // Commenting for the datetime dialog work efficiently
-//            // Get the user's current chosen formats
-//            String format_Date = FastSave.getInstance()
-//                    .getString(MyApplication.FORMAT_DATE, "dd-MM-yyyy");
-//            String format_Time = FastSave.getInstance()
-//                    .getString(MyApplication.FORMAT_TIME, "HH:mm:ss a");
-
-            String displayDate;
-            String displayTime;
-
-            // ----- DATE -----
-            if (savedDate != null && !savedDate.trim().isEmpty()) {
-                try {
-                    // Adjust this to match how it was originally saved
-                    SimpleDateFormat originalDateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-                    Date parsedDate = originalDateFormat.parse(savedDate);
-                    SimpleDateFormat displayDateFormat = new SimpleDateFormat(format_Date, Locale.getDefault());
-                    displayDate = parsedDate != null ? displayDateFormat.format(parsedDate) : savedDate;
-                } catch (Exception e) {
-                    displayDate = savedDate; // fallback if parsing fails
-                }
-            } else {
-                SimpleDateFormat dateFormatter = new SimpleDateFormat(format_Date, Locale.getDefault());
-                displayDate = dateFormatter.format(new Date());
+        // ----- DATE -----
+        if (savedDate != null && !savedDate.trim().isEmpty()) {
+            try {
+                SimpleDateFormat originalDateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
+                Date parsedDate = originalDateFormat.parse(savedDate);
+                SimpleDateFormat displayDateFormat = new SimpleDateFormat(format_Date, Locale.getDefault());
+                displayDate = parsedDate != null ? displayDateFormat.format(parsedDate) : savedDate;
+            } catch (Exception e) {
+                displayDate = savedDate; // fallback if parsing fails
             }
+        } else {
+            SimpleDateFormat dateFormatter = new SimpleDateFormat(format_Date, Locale.getDefault());
+            displayDate = dateFormatter.format(new Date());
+        }
 
-            // ----- TIME -----
-            if (savedTime != null && !savedTime.trim().isEmpty()) {
-                try {
-                    // Adjust this to match how it was originally saved
-                    SimpleDateFormat originalTimeFormat = new SimpleDateFormat("HH:mm:ss aa", Locale.getDefault());
-                    Date parsedTime = originalTimeFormat.parse(savedTime);
-                    SimpleDateFormat displayTimeFormat = new SimpleDateFormat(format_Time, Locale.getDefault());
-                    displayTime = parsedTime != null ? displayTimeFormat.format(parsedTime) : savedTime;
-                } catch (Exception e) {
-                    displayTime = savedTime; // fallback if parsing fails
-                }
-            } else {
-                SimpleDateFormat timeFormatter = new SimpleDateFormat(format_Time, Locale.getDefault());
-                displayTime = timeFormatter.format(new Date());
+        // ----- TIME -----
+        if (savedTime != null && !savedTime.trim().isEmpty()) {
+            try {
+                SimpleDateFormat originalTimeFormat = new SimpleDateFormat("HH:mm:ss aa", Locale.getDefault());
+                Date parsedTime = originalTimeFormat.parse(savedTime);
+                SimpleDateFormat displayTimeFormat = new SimpleDateFormat(format_Time, Locale.getDefault());
+                displayTime = parsedTime != null ? displayTimeFormat.format(parsedTime) : savedTime;
+            } catch (Exception e) {
+                displayTime = savedTime; // fallback if parsing fails
             }
+        } else {
+            SimpleDateFormat timeFormatter = new SimpleDateFormat(format_Time, Locale.getDefault());
+            displayTime = timeFormatter.format(new Date());
+        }
 
-            // Set date
+        // Set date
+        if (txtDate != null) {
             txtDate.setText(displayDate);
             txtDate.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+        }
+        if (lbl_date != null) {
             lbl_date.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+        }
 
-            // Set time
+        // Set time
+        if (txtTime != null) {
             if (format_Time == null || format_Time.isEmpty()) {
-                lbl_gmt.setVisibility(View.GONE);
                 txtTime.setVisibility(GONE);
             } else {
-                lbl_gmt.setVisibility(VISIBLE);
                 txtTime.setVisibility(VISIBLE);
                 txtTime.setText(displayTime);
                 txtTime.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            }
+        }
+
+        if (lbl_gmt != null) {
+            if (format_Time == null || format_Time.isEmpty()) {
+                lbl_gmt.setVisibility(View.GONE);
+            } else {
+                lbl_gmt.setVisibility(VISIBLE);
                 lbl_gmt.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
             }
         }
 
         // Apply colors
-        txtTime.setTextColor(current_DateTimeColor);
-        txtDate.setTextColor(current_DateTimeColor);
-        lbl_date.setTextColor(current_DateTimeColor);
-        lbl_gmt.setTextColor(current_DateTimeColor);
+        if (txtTime != null) {
+            txtTime.setTextColor(current_DateTimeColor);
+        }
+        if (txtDate != null) {
+            txtDate.setTextColor(current_DateTimeColor);
+        }
+        if (lbl_date != null) {
+            lbl_date.setTextColor(current_DateTimeColor);
+        }
+        if (lbl_gmt != null) {
+            lbl_gmt.setTextColor(current_DateTimeColor);
+        }
         Log.d("Rishi_Color", "DateTimeColor (int): " + current_DateTimeColor);
         Log.d("Rishi_Color", "DateTimeColor (hex): #" + Integer.toHexString(current_DateTimeColor));
 
@@ -2343,7 +2426,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "map_open_interstitial", () -> {
                         setInterstitialShowing(false);
                         Intent intent = new Intent(MainActivity.this, Map_Activity.class);
-                        startActivity(intent);
+                        intent.putExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE, getActiveMapTypeForSession());
+                        mapTypeResultLauncher.launch(intent);
 
                     }, errorMsg -> {
                         setInterstitialShowing(false);
@@ -2354,7 +2438,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             } else {
                 Intent intent = new Intent(MainActivity.this, Map_Activity.class);
-                startActivity(intent);
+                intent.putExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE, getActiveMapTypeForSession());
+                mapTypeResultLauncher.launch(intent);
             }
         });
 
@@ -2386,7 +2471,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "template_open_interstitial", () -> {
                         setInterstitialShowing(false);
                         Intent intent = new Intent(MainActivity.this, Template_Activity.class);
-                        startActivity(intent);
+                        templateResultLauncher.launch(intent);
                     }, errorMsg -> {
                         setInterstitialShowing(false);
                         LogUtils.logE("TemplateActivity", "Ad failed: " + errorMsg);
@@ -2396,7 +2481,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             } else {
                 Intent intent = new Intent(MainActivity.this, Template_Activity.class);
-                startActivity(intent);
+                templateResultLauncher.launch(intent);
             }
         });
 
@@ -2590,9 +2675,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fontStyleDialog = new FontStyleDialog(this, fontList, new OnFontSelectedListener() {
             @Override
             public void onFontSelected(String fontName, int position) {
-                // Save selected font position
-                msp.setInteger(getApplicationContext(), SP.LOCATION_FONT_POSITION, position);
-                FastSave.getInstance().saveString(MyApplication.FONT_STYLE, fontViewModel.getFontList().getValue()[position]);
+                hasSessionStampOverride = true;
+                fontStyle = fontName;
                 updateStampContent();
             }
 
@@ -2601,6 +2685,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 fontStyleDialog = null;
             }
         });
+
+        int currentFontPosition = getFontStylePosition(fontList, fontStyle);
+        if (currentFontPosition >= 0) {
+            fontStyleDialog.setSelectedPosition(currentFontPosition);
+        }
 
         new HelperClass().setBottomDialog(fontStyleDialog);
         fontStyleDialog.show();
@@ -2616,7 +2705,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         dateTimeDialog = new DateTimeDialog(this, new OnDateTimeSelectedListener() {
             @Override
             public void onDateTimeSelected(DateFormatModel selectedFormat, int position) {
-                getStampDateTime();
+                hasSessionStampOverride = true;
+                hasSessionDateTimeOverride = true;
+                format_Date = selectedFormat.getFormat_Date();
+                format_Time = selectedFormat.getFormat_Time();
+                format_Combined = selectedFormat.getFormat_Combined();
                 updateStampDateTime();
             }
 
@@ -2629,9 +2722,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // Pass the current active format to the dialog
         // This ensures the dialog shows the correct preselected option
         dateTimeDialog.setCurrentActiveFormat(format_Combined);
+        dateTimeDialog.setPersistSelection(false);
 
         new HelperClass().setBottomDialog(dateTimeDialog);
         dateTimeDialog.show();
+    }
+
+    private int getFontStylePosition(String[] fontList, String selectedFont) {
+        if (fontList == null || selectedFont == null) {
+            return -1;
+        }
+
+        for (int i = 0; i < fontList.length; i++) {
+            if (selectedFont.equalsIgnoreCase(fontList[i])) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void showTimerDialog() {
@@ -2720,8 +2827,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         switchCamera.setChecked(showWatermark);
 
         switchCamera.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            hasSessionStampOverride = true;
             showWatermark = isChecked;
-            MyApplication.setShowWatermark(isChecked);
             updateStampContent();
         });
 
@@ -3234,20 +3341,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void updateMaps() {
-        if (msp.isTemplateEdited(this, currentstamp_type)) {
+        if (!hasSessionDateTimeOverride) {
             getStampDateTime();
-            updateStampDateTime();
-            current_map_type = msp.getTemplateMapType(this, currentstamp_type, current_map_type);
-            MyApplication.setMapType(current_map_type);
-            if (googleMap != null) {
-                googleMap.setMapType(current_map_type);
-            }
-        } else {
-            getStampDateTime();
-            current_map_type = MyApplication.getMapType();
-            if (googleMap != null) {
-                googleMap.setMapType(current_map_type);
-            }
+        }
+        updateStampDateTime();
+        current_map_type = getActiveMapTypeForSession();
+        if (googleMap != null) {
+            googleMap.setMapType(current_map_type);
         }
     }
 
@@ -3290,8 +3390,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (handler != null && dateTimeUpdater != null) {
             handler.post(dateTimeUpdater);
         }
-        updateMaps();
         getStampType();
+        updateMaps();
         renderStamp();
     }
 

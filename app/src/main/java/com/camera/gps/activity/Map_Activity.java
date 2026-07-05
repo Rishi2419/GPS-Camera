@@ -3,6 +3,7 @@ package com.camera.gps.activity;
 import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialShowing;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -80,6 +81,9 @@ import com.camera.gps.model.MarkerModel;
 import com.camera.gps.model.PersonRenderer;
 
 public final class Map_Activity extends AppCompatActivity implements OnMapReadyCallback {
+    public static final String EXTRA_SELECTED_MAP_TYPE = "com.camera.gps.activity.EXTRA_SELECTED_MAP_TYPE";
+    private static final int FALLBACK_MAP_TYPE = Integer.MIN_VALUE;
+
     private Geocoder geocoder;
     private ActivityMapBinding binding;
     private ClusterManager<MarkerModel> mClusterManager;
@@ -125,7 +129,8 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
         binding = ActivityMapBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        current_map_type = MyApplication.getMapType();
+        int requestedMapType = getIntent().getIntExtra(EXTRA_SELECTED_MAP_TYPE, FALLBACK_MAP_TYPE);
+        current_map_type = requestedMapType != FALLBACK_MAP_TYPE ? requestedMapType : MyApplication.getMapType();
 
         Application application = getApplication();
         viewModel = new ViewModelProvider(this, new GlobalViewModelFactory(application)).get(GlobalViewModel.class);
@@ -367,7 +372,6 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
             @Override
             public void onMapTypeSelected(int mapType) {
                 current_map_type = mapType;
-                MyApplication.setMapType(current_map_type);
                 if (mMap != null) {
                     mMap.setMapType(current_map_type);
                 }
@@ -392,6 +396,7 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
 
     @Override
     public void onBackPressed() {
+        setResultForMapType();
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
             if (!InterstitialAdManager.isInterstitialShowing()) {
                 setInterstitialShowing(true);
@@ -410,6 +415,12 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
         } else {
             finish();
         }
+    }
+
+    private void setResultForMapType() {
+        Intent result = new Intent();
+        result.putExtra(EXTRA_SELECTED_MAP_TYPE, current_map_type);
+        setResult(RESULT_OK, result);
     }
 
     @Override

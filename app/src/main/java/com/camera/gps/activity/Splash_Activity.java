@@ -81,12 +81,13 @@ import java.util.Locale;
 public class Splash_Activity extends AppCompatActivity {
 
     private static final String TAG = "Splash_Activity_Rishi";
-    private static final int SPLASH_DELAY = 1300;
+    private static final int SPLASH_DELAY = 2000;
     private SP SP;
 
     private FirebaseRemoteConfig firebaseRemoteConfig;
     private CountDownTimer countDownTimer;
     private RemoteConfigManager remoteConfigManager;
+    private boolean hasNavigated = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,13 +120,14 @@ public class Splash_Activity extends AppCompatActivity {
         remoteConfigManager = RemoteConfigManager.getInstance(this);
 
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
-            LogUtils.logD(TAG, "Network available and not a premium, starting ad flow");
+            LogUtils.logD(TAG, "Network available and not premium, preloading ad config in background");
             getAdsUnitData();
-            getRemoteConfigData();
+            preloadRemoteConfigData();
         } else {
-            LogUtils.logD(TAG, "No network available/ premium member, proceeding to main app after delay");
-            new Handler(getMainLooper()).postDelayed(this::mainNavigation, 4000);
+            LogUtils.logD(TAG, "No network available or premium member, skipping splash ad work");
         }
+
+        new Handler(getMainLooper()).postDelayed(this::mainNavigation, SPLASH_DELAY);
     }
 
     private void getAdsUnitData() {
@@ -200,6 +202,21 @@ public class Splash_Activity extends AppCompatActivity {
         });
     }
 
+    private void preloadRemoteConfigData() {
+        LogUtils.logD(TAG, "Fetching remote config data in background...");
+
+        remoteConfigManager.fetchAndStore(success -> {
+            if (!success || isFinishing() || isDestroyed()) {
+                LogUtils.logD(TAG, "Background remote config skipped/failed: " + success);
+                return;
+            }
+
+            LogUtils.logD(TAG, "Background remote config fetched, preloading ads");
+            InterstitialAdManager.getInstance().preloadPublishersFromConfig(this);
+            OpenAdManager.getInstance().preloadOpenAd(this, "app_resume_ad");
+        });
+    }
+
 
     private void openAdLoad() {
         AdsData config = remoteConfigManager.getAdsDataByName("splash_ad");
@@ -259,6 +276,10 @@ public class Splash_Activity extends AppCompatActivity {
     }
 
     private void mainNavigation() {
+        if (hasNavigated || isFinishing() || isDestroyed()) {
+            return;
+        }
+        hasNavigated = true;
         LogUtils.logI(TAG, "Main navigation started");
 
         if (!MyApplication.getIsLanguage()) {

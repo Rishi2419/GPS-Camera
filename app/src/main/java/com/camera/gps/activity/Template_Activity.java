@@ -162,7 +162,6 @@ package com.camera.gps.activity;
 import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialShowing;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.RelativeLayout;
@@ -170,7 +169,6 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -182,6 +180,7 @@ import com.camera.gps.R;
 import com.camera.gps.adapter.Template_Adapter;
 import com.camera.gps.adsmanager.InterstitialAdManager;
 import com.camera.gps.databinding.ActivityTemplateBinding;
+import com.camera.gps.model.StampTemplateDefaults;
 import com.camera.gps.util.SP;
 import com.camera.gps.util.Utils;
 
@@ -235,133 +234,27 @@ public class Template_Activity extends AppCompatActivity implements Template_Ada
 
     // NEW METHOD: Get predefined values for each template
     private void initializeTemplateWithPredefinedValues(int templateId) {
-        String fontStyle;
-        int bgColor, textColor, dateTimeColor, mapType;
-        String dateFormat, timeFormat, combinedFormat;
-
-        switch (templateId) {
-//            case 1:
-//                fontStyle = "SF Pro Display.otf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.WHITE;
-//                dateTimeColor = Color.WHITE;
-//                mapType = 1; // Normal map
-//                dateFormat = "dd-MM-yyyy";
-//                timeFormat = "HH:mm:ss a";
-//                combinedFormat = "dd-MM-yyyy HH:mm:ss a";
-//                break;
-//            case 2:
-//                fontStyle = "Roboto-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.BLACK;
-//                dateTimeColor = Color.BLACK;
-//                mapType = 2; // Satellite map
-//                dateFormat = "MM/dd/yyyy";
-//                timeFormat = "hh:mm a";
-//                combinedFormat = "MM/dd/yyyy hh:mm a";
-//                break;
-//            case 3:
-//                fontStyle = "OpenSans-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.BLUE;
-//                dateTimeColor = Color.BLUE;
-//                mapType = 3; // Terrain map
-//                dateFormat = "yyyy-MM-dd";
-//                timeFormat = "HH:mm";
-//                combinedFormat = "yyyy-MM-dd HH:mm";
-//                break;
-//            case 4:
-//                fontStyle = "Lato-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.RED;
-//                dateTimeColor = Color.RED;
-//                mapType = 4; // Hybrid map
-//                dateFormat = "dd/MM/yyyy";
-//                timeFormat = "HH:mm:ss";
-//                combinedFormat = "dd/MM/yyyy HH:mm:ss";
-//                break;
-//            case 5:
-//                fontStyle = "Montserrat-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.GREEN;
-//                dateTimeColor = Color.GREEN;
-//                mapType = 1; // Normal map
-//                dateFormat = "MMM dd, yyyy";
-//                timeFormat = "hh:mm:ss a";
-//                combinedFormat = "MMM dd, yyyy hh:mm:ss a";
-//                break;
-//            case 6:
-//                fontStyle = "SourceSansPro-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.MAGENTA;
-//                dateTimeColor = Color.MAGENTA;
-//                mapType = 2; // Satellite map
-//                dateFormat = "EEEE, MMMM dd, yyyy";
-//                timeFormat = "HH:mm a";
-//                combinedFormat = "EEEE, MMMM dd, yyyy HH:mm a";
-//                break;
-//            case 7:
-//                fontStyle = "Poppins-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.CYAN;
-//                dateTimeColor = Color.CYAN;
-//                mapType = 3; // Terrain map
-//                dateFormat = "dd.MM.yyyy";
-//                timeFormat = "HH:mm:ss";
-//                combinedFormat = "dd.MM.yyyy HH:mm:ss";
-//                break;
-//            case 8:
-//                fontStyle = "NunitoSans-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-//                textColor = Color.YELLOW;
-//                dateTimeColor = Color.YELLOW;
-//                mapType = 4; // Hybrid map
-//                dateFormat = "yyyy/MM/dd";
-//                timeFormat = "hh:mm a";
-//                combinedFormat = "yyyy/MM/dd hh:mm a";
-//                break;
-//            case 9:
-//                fontStyle = "Inter-Regular.ttf";
-//                bgColor = ContextCompat.getColor(this, R.color.bg_glass);
-//                textColor = Color.WHITE;
-//                dateTimeColor = Color.WHITE;
-//                mapType = 1; // Normal map
-//                dateFormat = "dd-MMM-yyyy";
-//                timeFormat = "HH:mm:ss a";
-//                combinedFormat = "dd-MMM-yyyy HH:mm:ss a";
-//                break;
-            default:
-                // Default template values
-                fontStyle = "SF Pro Display.otf";
-                bgColor = ContextCompat.getColor(this, R.color.transparent_30);
-                textColor = Color.WHITE;
-                dateTimeColor = Color.WHITE;
-                mapType = 1; // Normal map
-                dateFormat = "dd-MM-yyyy";
-                timeFormat = "HH:mm:ss a";
-                combinedFormat = "dd-MM-yyyy HH:mm:ss a";
-                break;
-        }
+        StampTemplateDefaults.Settings settings = StampTemplateDefaults.forTemplate(this, templateId);
 
         // Save predefined values to SharedPreferences
-        msp.setTemplateFontStyle(this, templateId, fontStyle);
-        msp.setTemplateBgColor(this, templateId, bgColor);
-        msp.setTemplateTextColor(this, templateId, textColor);
-        msp.setTemplateDateTimeColor(this, templateId, dateTimeColor);
-        msp.setTemplateMapType(this, templateId, mapType);
-        msp.setTemplateDateFormat(this, templateId, dateFormat);
-        msp.setTemplateTimeFormat(this, templateId, timeFormat);
-        msp.setTemplateDateTimeCombinedFormat(this, templateId, combinedFormat);
+        msp.setTemplateFontStyle(this, templateId, settings.fontStyle);
+        msp.setTemplateBgColor(this, templateId, settings.bgColor);
+        msp.setTemplateTextColor(this, templateId, settings.textColor);
+        msp.setTemplateDateTimeColor(this, templateId, settings.dateTimeColor);
+        msp.setTemplateMapType(this, templateId, settings.mapType);
+        msp.setTemplateDateFormat(this, templateId, settings.dateFormat);
+        msp.setTemplateTimeFormat(this, templateId, settings.timeFormat);
+        msp.setTemplateDateTimeCombinedFormat(this, templateId, settings.combinedFormat);
 
         // Update global settings with selected template's predefined values
-        FastSave.getInstance().saveString(MyApplication.FONT_STYLE, fontStyle);
-        FastSave.getInstance().saveString(MyApplication.FORMAT_DATE, dateFormat);
-        FastSave.getInstance().saveString(MyApplication.FORMAT_TIME, timeFormat);
-        FastSave.getInstance().saveString(MyApplication.TIME_FORMAT, combinedFormat);
-        MyApplication.setMapType(mapType);
+        FastSave.getInstance().saveString(MyApplication.FONT_STYLE, settings.fontStyle);
+        FastSave.getInstance().saveString(MyApplication.FORMAT_DATE, settings.dateFormat);
+        FastSave.getInstance().saveString(MyApplication.FORMAT_TIME, settings.timeFormat);
+        FastSave.getInstance().saveString(MyApplication.TIME_FORMAT, settings.combinedFormat);
+        MyApplication.setMapType(settings.mapType);
 
         Utils.LogUtils.logD("Template_Activity", "Template " + templateId + " initialized with predefined values");
-        Utils.LogUtils.logD("Template_Activity", "Font: " + fontStyle + ", DateTime: " + combinedFormat);
+        Utils.LogUtils.logD("Template_Activity", "Font: " + settings.fontStyle + ", DateTime: " + settings.combinedFormat);
     }
 
     @Override
@@ -379,8 +272,7 @@ public class Template_Activity extends AppCompatActivity implements Template_Ada
         if (!isTemplateEdited) {
             // Template NEVER used before - initialize with predefined values for FIRST TIME ONLY
             initializeTemplateWithPredefinedValues(current_stamp_id);
-            // Mark as edited so it uses these values from now on
-            msp.setTemplateEdited(this, current_stamp_id, true);
+            msp.setTemplateEdited(this, current_stamp_id, false);
             Utils.LogUtils.logD("Template_Activity", "Template " + current_stamp_id + " - FIRST TIME USE, initialized with predefined values");
         } else {
             // Template used/edited before - load existing saved values (could be predefined or user-modified)
@@ -401,6 +293,7 @@ public class Template_Activity extends AppCompatActivity implements Template_Ada
         }
 
         templateAdapter.notifyDataSetChanged();
+        setResult(RESULT_OK);
         onBackPressed();
     }
 
@@ -446,6 +339,7 @@ public class Template_Activity extends AppCompatActivity implements Template_Ada
         if (requestCode == 100 && resultCode == RESULT_OK) {
             // Edit activity returned with success (Save Template was clicked)
             // Close this Template activity and go back to MainActivity
+            setResult(RESULT_OK);
             finish();
         }
     }

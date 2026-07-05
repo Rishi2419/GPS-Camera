@@ -4,8 +4,16 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.util.TypedValue;
 import android.view.View;
+
+import androidx.cardview.widget.CardView;
 
 import com.google.android.gms.maps.GoogleMap;
 
@@ -57,10 +65,45 @@ public final class StampedPhotoComposer {
             int relativeX = mapLocation[0] - stampLocation[0];
             int relativeY = mapLocation[1] - stampLocation[1];
             Bitmap scaledMap = Bitmap.createScaledBitmap(mapSnapshot, mapView.getWidth(), mapView.getHeight(), true);
-            stampCanvas.drawBitmap(scaledMap, relativeX, relativeY, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
+            Bitmap roundedMap = getRoundedMapBitmap(mapView, scaledMap);
+            stampCanvas.drawBitmap(roundedMap, relativeX, relativeY, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
         }
 
         return stampBitmap;
+    }
+
+    private static Bitmap getRoundedMapBitmap(View mapView, Bitmap bitmap) {
+        float cornerRadius = getMapCornerRadius(mapView);
+        if (cornerRadius <= 0f) {
+            return bitmap;
+        }
+
+        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+        RectF rectF = new RectF(rect);
+
+        canvas.drawColor(Color.TRANSPARENT);
+        paint.setColor(Color.BLACK);
+        canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+        paint.setXfermode(null);
+
+        return output;
+    }
+
+    private static float getMapCornerRadius(View mapView) {
+        if (mapView.getParent() instanceof CardView) {
+            return ((CardView) mapView.getParent()).getRadius();
+        }
+
+        return TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                4f,
+                mapView.getResources().getDisplayMetrics()
+        );
     }
 
     private static void composeIntoImage(File imageFile, View stampView, Bitmap mapSnapshot, View mapView) {

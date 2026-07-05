@@ -267,6 +267,7 @@ public class DateTimeDialog extends Dialog implements DateTimeFormat_Adapter.Dat
     private DateFormatViewModel dateFormatViewModel;
     private ArrayList<DateFormatModel> dateFormats;
     private String currentActiveFormat; // Add this to track current active format
+    private boolean persistSelection = true;
 
     public DateTimeDialog(@NonNull Context context, OnDateTimeSelectedListener listener) {
         super(context);
@@ -283,6 +284,10 @@ public class DateTimeDialog extends Dialog implements DateTimeFormat_Adapter.Dat
     // Add method to set current active format
     public void setCurrentActiveFormat(String currentActiveFormat) {
         this.currentActiveFormat = currentActiveFormat;
+    }
+
+    public void setPersistSelection(boolean persistSelection) {
+        this.persistSelection = persistSelection;
     }
 
     @Override
@@ -384,7 +389,7 @@ public class DateTimeDialog extends Dialog implements DateTimeFormat_Adapter.Dat
                 DateFormatModel selectedFormat = dateFormats.get(selectedPosition);
 
                 // NOW save using ViewModel (only when Save is clicked)
-                if (dateFormatViewModel != null) {
+                if (persistSelection && dateFormatViewModel != null) {
                     dateFormatViewModel.onDoneClicked(selectedPosition);
                 }
 

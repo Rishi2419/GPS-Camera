@@ -204,7 +204,13 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
             initPhotoData();
             setRatio(currentRatioType);
-            setCurrentStampLayout(currentstamp_type);
+            if (isVideo) {
+                stampContainer.removeAllViews();
+                stampContainer.setVisibility(View.GONE);
+            } else {
+                stampContainer.setVisibility(View.VISIBLE);
+                setCurrentStampLayout(currentstamp_type);
+            }
         }
 
         private void setupClickListeners() {
@@ -634,27 +640,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
         }
 
         public void shareVideoWithStamp() {
-            try {
-                if (mapFragment != null) {
-                    mapFragment.getMapAsync(googleMap -> {
-                        googleMap.snapshot(mapSnapshot -> {
-                            try {
-                                Bitmap stampBitmap = createStampOverlay(mapSnapshot);
-                                VideoStampShareHelper.shareVideoWithStamp(requireContext(), photo, stampBitmap);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                shareVideoOnly(photo);
-                            }
-                        });
-                    });
-                } else {
-                    Bitmap stampBitmap = createStampOverlay(null);
-                    VideoStampShareHelper.shareVideoWithStamp(requireContext(), photo, stampBitmap);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                shareVideoOnly(photo);
-            }
+            shareVideoOnly(photo);
         }
 
         private Bitmap getRoundedCornerBitmap(Bitmap bitmap, float cornerRadius) {

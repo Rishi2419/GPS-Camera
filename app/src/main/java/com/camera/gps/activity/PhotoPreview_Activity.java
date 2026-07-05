@@ -421,28 +421,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
 
     private void shareVideoWithStamp(Photo photo) {
-        try {
-            if (mapFragment != null) {
-                mapFragment.getMapAsync(googleMap -> {
-                    googleMap.snapshot(mapSnapshot -> {
-                        try {
-                            Bitmap stampBitmap = createStampOverlay(mapSnapshot);
-                            VideoStampShareHelper.shareVideoWithStamp(this, photo, stampBitmap);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            shareVideoOnly(photo);
-                        }
-                    });
-                });
-            } else {
-                Bitmap stampBitmap = createStampOverlay(null);
-                VideoStampShareHelper.shareVideoWithStamp(this, photo, stampBitmap);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            shareVideoOnly(photo);
-        }
+        shareVideoOnly(photo);
     }
 
     private void shareVideoOnly(Photo photo) {
@@ -477,7 +456,13 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
         Log.d("Rishi", "Details:" + current_address + currentLatitude + currentLongitude + date + time + fontStyle + title);
         setRatio(currentRatioType);
-        setCurrentStampLayout(currentstamp_type);
+        if (isVideo) {
+            relBottomStamp.removeAllViews();
+            relBottomStamp.setVisibility(GONE);
+        } else {
+            relBottomStamp.setVisibility(VISIBLE);
+            setCurrentStampLayout(currentstamp_type);
+        }
     }
 
     private boolean isUIVisible = true;

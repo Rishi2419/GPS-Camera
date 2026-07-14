@@ -80,79 +80,6 @@
             android:layout_height="0.5dp"
             android:background="@color/grey_layout" />
 
-        <!-- 3 Seconds Option -->
-        <LinearLayout
-            android:id="@+id/layout50fps"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/_38sdp"
-            android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="50 fps"
-                android:textColor="@color/black"
-                android:textSize="@dimen/_14ssp"
-                android:paddingHorizontal="@dimen/_4sdp"
-                android:fontFamily="@font/sfprotextregular" />
-
-            <RadioButton
-                android:id="@+id/radio50fps"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:clickable="false"
-                android:focusable="false"
-                android:button="@null"
-                android:paddingHorizontal="@dimen/_4sdp"
-                android:background="@drawable/radio_selector" />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:background="@color/grey_layout" />
-
-        <!-- 5 Seconds Option -->
-        <LinearLayout
-            android:id="@+id/layout40fps"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/_38sdp"
-            android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="40 fps"
-                android:textColor="@color/black"
-                android:textSize="@dimen/_14ssp"
-                android:paddingHorizontal="@dimen/_4sdp"
-                android:fontFamily="@font/sfprotextregular" />
-
-            <RadioButton
-                android:id="@+id/radio40fps"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:clickable="false"
-                android:focusable="false"
-                android:button="@null"
-                android:paddingHorizontal="@dimen/_4sdp"
-                android:background="@drawable/radio_selector" />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:background="@color/grey_layout" />
-
-        <!-- 10 Seconds Option -->
         <LinearLayout
             android:id="@+id/layout30fps"
             android:layout_width="match_parent"
@@ -182,40 +109,6 @@
                 android:background="@drawable/radio_selector" />
 
         </LinearLayout>
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:background="@color/grey_layout" />
-        <LinearLayout
-            android:id="@+id/layout20fps"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/_38sdp"
-            android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="20 fps"
-                android:textColor="@color/black"
-                android:textSize="@dimen/_14ssp"
-                android:paddingHorizontal="@dimen/_4sdp"
-                android:fontFamily="@font/sfprotextregular" />
-
-            <RadioButton
-                android:id="@+id/radio20fps"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:clickable="false"
-                android:focusable="false"
-                android:button="@null"
-                android:paddingHorizontal="@dimen/_4sdp"
-                android:background="@drawable/radio_selector" />
-
-        </LinearLayout>
-
     </LinearLayout>
 
     <!-- Action Buttons -->

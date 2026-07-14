@@ -73,7 +73,8 @@ public class SharedPrefsSettings {
     }
 
     public static int getFps(Context context) {
-        return context.getSharedPreferences(SHARED_PREFS_SETTINGS, 0).getInt(VIDEO_FPS, 30);
+        int fps = context.getSharedPreferences(SHARED_PREFS_SETTINGS, 0).getInt(VIDEO_FPS, 60);
+        return fps == 30 || fps == 60 ? fps : 60;
     }
 
     public static int getVideoSize(Context context) {

@@ -12,8 +12,8 @@ import com.camera.gps.listener.OnFpsSelectedListener;
 
 public class FpsDialog extends Dialog {
 
-    private LinearLayout layout60fps, layout50fps, layout40fps, layout30fps, layout20fps;
-    private RadioButton radio60fps, radio50fps, radio40fps, radio30fps, radio20fps;
+    private LinearLayout layout60fps, layout30fps;
+    private RadioButton radio60fps, radio30fps;
     private TextView btnSaveTimer, btnCancelTimer;
     private ImageView btnCloseDialog;
     private int selectedFps;
@@ -21,10 +21,7 @@ public class FpsDialog extends Dialog {
 
     // FPS constants
     public static final int FPS_60 = 60;
-    public static final int FPS_50 = 50;
-    public static final int FPS_40 = 40;
     public static final int FPS_30 = 30;
-    public static final int FPS_20 = 20;
 
 
 
@@ -46,16 +43,10 @@ public class FpsDialog extends Dialog {
 
     private void initViews() {
         layout60fps = findViewById(R.id.layout60fps);
-        layout50fps = findViewById(R.id.layout50fps);
-        layout40fps = findViewById(R.id.layout40fps);
         layout30fps = findViewById(R.id.layout30fps);
-        layout20fps = findViewById(R.id.layout20fps);
 
         radio60fps = findViewById(R.id.radio60fps);
-        radio50fps = findViewById(R.id.radio50fps);
-        radio40fps = findViewById(R.id.radio40fps);
         radio30fps = findViewById(R.id.radio30fps);
-        radio20fps = findViewById(R.id.radio20fps);
 
         btnSaveTimer = findViewById(R.id.btnSaveTimer);
         btnCancelTimer = findViewById(R.id.btnCancelTimer);
@@ -69,35 +60,20 @@ public class FpsDialog extends Dialog {
             case FPS_60:
                 radio60fps.setChecked(true);
                 break;
-            case FPS_50:
-                radio50fps.setChecked(true);
-                break;
-            case FPS_40:
-                radio40fps.setChecked(true);
-                break;
             case FPS_30:
                 radio30fps.setChecked(true);
-                break;
-            case FPS_20:
-                radio20fps.setChecked(true);
                 break;
         }
     }
 
     private void clearAllSelections() {
         radio60fps.setChecked(false);
-        radio50fps.setChecked(false);
-        radio40fps.setChecked(false);
         radio30fps.setChecked(false);
-        radio20fps.setChecked(false);
     }
 
     private void setClickListeners() {
         layout60fps.setOnClickListener(v -> selectFps(FPS_60));
-        layout50fps.setOnClickListener(v -> selectFps(FPS_50));
-        layout40fps.setOnClickListener(v -> selectFps(FPS_40));
         layout30fps.setOnClickListener(v -> selectFps(FPS_30));
-        layout20fps.setOnClickListener(v -> selectFps(FPS_20));
 
         btnSaveTimer.setOnClickListener(v -> {
             if (listener != null) {

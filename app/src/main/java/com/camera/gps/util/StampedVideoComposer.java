@@ -78,6 +78,7 @@ public final class StampedVideoComposer {
                 .build();
 
         Transformer transformer = new Transformer.Builder(context.getApplicationContext())
+                .setPortraitEncodingEnabled(true)
                 .addListener(new Transformer.Listener() {
                     @Override
                     public void onCompleted(@NonNull Composition composition, @NonNull ExportResult exportResult) {

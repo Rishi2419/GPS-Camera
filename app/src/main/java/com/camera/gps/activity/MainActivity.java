@@ -59,6 +59,7 @@ import android.widget.TextView;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
@@ -129,6 +130,7 @@ import com.camera.gps.model.StampTemplateDefaults;
 import com.camera.gps.repositories.DateFormatRepository;
 import com.camera.gps.util.DirManager;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.util.SP;
 import com.camera.gps.util.StampedVideoComposer;
 import com.camera.gps.viewmodel.DateFormatViewModel;
@@ -294,6 +296,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageButton btnTemplate;
     private ImageButton btnAddLocation;
     private ActivityResultLauncher resultLauncher;
+    private ActivityResultLauncher<IntentSenderRequest> enableLocationLauncher;
     private ActivityResultLauncher<Intent> mapTypeResultLauncher;
     private ActivityResultLauncher<Intent> templateResultLauncher;
     private ActivityResultLauncher<Intent> previewResultLauncher;
@@ -380,6 +383,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public MainActivity() {
         Log.d("Rishi_MainActivity", "Inside mainacti");
+        enableLocationLauncher = registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
+            if (isLocationEnabled()) {
+                isLocationFetched = false;
+                setupLocation();
+            }
+        });
+
         resultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), (ActivityResultCallback<ActivityResult>) result -> {
             Log.d("Rishi_MainActivity", "ResultLauncher callback triggered");
             Log.d("Rishi_MainActivity", "Result code: " + result.getResultCode());
@@ -717,14 +727,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
         // Check if Location (GPS) is enabled
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        boolean isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        boolean isLocationOn = isGpsEnabled || isNetworkEnabled;
+        boolean isLocationOn = isLocationEnabled();
 
 
         if (!isConnected && !isLocationOn) {
-            showInternetLocationDialog();
+            showLocationDialog();
         } else if (!isConnected) {
             Log.d("Rishi_chk", "Internet is OFF");
             showInternetDialog();
@@ -732,6 +739,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.d("Rishi_chk", "Location is OFF");
             showLocationDialog();
         }
+    }
+
+    private boolean isLocationEnabled() {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
 
     private void enableImmersiveMode() {
@@ -3047,6 +3060,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void showLocationDialog() {
+        LocationRequest promptLocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(5000L)
+                .setFastestInterval(2000L);
+        LocationSettingsPrompt.show(this, promptLocationRequest, enableLocationLauncher, this::renderStamp);
+    }
+
+    private void showLocationDialogFallback() {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Location Disabled")
                 .setMessage("Please turn on Location (GPS) to continue.")

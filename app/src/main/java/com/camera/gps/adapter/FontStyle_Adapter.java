@@ -18,6 +18,8 @@ import com.camera.gps.util.Utils;
 
 public class FontStyle_Adapter extends RecyclerView.Adapter<FontStyle_Adapter.SingleListItemHolder> {
 
+    private static final boolean HIDE_PREMIUM_BADGES_FOR_RELEASE = true;
+
     private final Context context;
     private final String[] fontList;
     private int selectedPos = -1;
@@ -48,13 +50,9 @@ public class FontStyle_Adapter extends RecyclerView.Adapter<FontStyle_Adapter.Si
         // Set radio button state
         holder.radioSelect.setChecked(selectedPos == position);
 
-        if (Utils.getIsPremium(context) || position == 0 || position ==1 || position == 4 || position == 5 || position == 6 || position ==8) {
-            holder.premium_img.setVisibility(View.GONE);
-            holder.radioSelect.setVisibility(View.VISIBLE);
-        } else {
-            holder.premium_img.setVisibility(View.VISIBLE);
-            holder.radioSelect.setVisibility(View.INVISIBLE);
-        }
+        boolean shouldShowPremiumBadge = !(Utils.getIsPremium(context) || position == 0 || position ==1 || position == 4 || position == 5 || position == 6 || position ==8);
+        holder.premium_img.setVisibility(shouldShowPremiumBadge && !HIDE_PREMIUM_BADGES_FOR_RELEASE ? View.VISIBLE : View.GONE);
+        holder.radioSelect.setVisibility(View.VISIBLE);
 
         holder.itemView.setOnClickListener(v -> {
             if (Utils.getIsPremium(context) || position == 0 || position ==1 || position == 4 || position == 5 || position == 6 || position ==8) {

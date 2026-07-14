@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -71,6 +72,7 @@ import com.camera.gps.data.GlobalViewModel;
 import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.databinding.FragmentAddCustomLocationBinding;
 import com.camera.gps.util.Constant;
+import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.database.entity.MyLocation;
 
 public class AddCustomLocationFragment extends Fragment implements OnMapReadyCallback {
@@ -83,6 +85,21 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
     private LocationRequest mLocationRequest;
     private GoogleMap mMap;
     private GlobalViewModel viewModel;
+
+    private final ActivityResultLauncher<IntentSenderRequest> enableLocationLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
+                if (!isAdded()) {
+                    return;
+                }
+                if (isLocationEnabled()) {
+                    if (Build.VERSION.SDK_INT >= 23) {
+                        checkLocationPermission();
+                    } else {
+                        getLocation();
+                    }
+                    startLocationUpdates();
+                }
+            });
 
     private final ActivityResultLauncher<String> requestPermission =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(),
@@ -437,6 +454,17 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
     }
 
     private void showAlert() {
+        LocationRequest promptLocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(2000)
+                .setFastestInterval(2000);
+        LocationSettingsPrompt.show(requireContext(), promptLocationRequest, enableLocationLauncher, () -> {});
+    }
+
+    private void showAlertFallback() {
+        if (!isAdded()) {
+            return;
+        }
         MaterialAlertDialogBuilder materialAlertDialogBuilder = new MaterialAlertDialogBuilder(requireContext());
         materialAlertDialogBuilder.setTitle("Enable Location")
                 .setMessage("Your Locations Settings is set to Off.\nPlease Enable Location in settings then refresh the page")

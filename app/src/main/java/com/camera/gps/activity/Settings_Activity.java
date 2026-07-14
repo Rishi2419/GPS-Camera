@@ -5,6 +5,8 @@ import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialSho
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -69,12 +71,26 @@ public class Settings_Activity extends AppCompatActivity {
         msp = new SP(this);
 
 
-        binding.shimmerPremium.startShimmer();
+        binding.shimmerPremium.stopShimmer();
+        binding.shimmerPremium.setVisibility(android.view.View.GONE);
 
+        setupAppVersion();
         setupListeners();
         setupSwitches();
         loadNativeAds();
         loadBottomBannerAd();
+    }
+
+    private void setupAppVersion() {
+        try {
+            PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            binding.tvAppVersion.setText(getString(
+                    R.string.app_version_format,
+                    packageInfo.versionName
+            ));
+        } catch (PackageManager.NameNotFoundException e) {
+            binding.tvAppVersion.setVisibility(android.view.View.GONE);
+        }
     }
 
     private void loadNativeAds() {

@@ -30,6 +30,7 @@ public class Template_Adapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private static final int VIEW_TYPE_NATIVE_AD = 2;
     private static final int FIRST_NATIVE_AD_POSITION = 2;
     private static final int SECOND_NATIVE_AD_POSITION = 6;
+    private static final boolean HIDE_PREMIUM_BADGES_FOR_RELEASE = true;
 
     ArrayList<Integer> arrayList;
     final TemplateClicksListener themeClicksListener;
@@ -74,13 +75,9 @@ public class Template_Adapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         int templatePosition = getTemplatePosition(position);
         holder.imageView.setImageResource(arrayList.get(templatePosition));
 
-        if (templatePosition == 0 || templatePosition == 3 || templatePosition == 7 || templatePosition == 4) {
-            holder.premium_img.setVisibility(View.GONE);
-        } else if (Utils.getIsPremium(context)) {
-            holder.premium_img.setVisibility(View.GONE);
-        } else {
-            holder.premium_img.setVisibility(View.VISIBLE);
-        }
+        boolean shouldShowPremiumBadge = !(templatePosition == 0 || templatePosition == 3 || templatePosition == 7 || templatePosition == 4)
+                && !Utils.getIsPremium(context);
+        holder.premium_img.setVisibility(shouldShowPremiumBadge && !HIDE_PREMIUM_BADGES_FOR_RELEASE ? View.VISIBLE : View.GONE);
 
         // Get currently saved stamp ID
         int savedStampId = FastSave.getInstance().getInt(MyApplication.STAMP_LAYOUT_ID, 1);

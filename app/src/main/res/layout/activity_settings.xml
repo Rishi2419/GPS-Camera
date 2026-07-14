@@ -59,6 +59,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:paddingTop="@dimen/_16sdp"
             android:paddingStart="@dimen/_14sdp"
             android:paddingEnd="@dimen/_10sdp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -71,6 +72,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginVertical="@dimen/_13sdp"
+                android:visibility="gone"
                 app:shimmer_auto_start="true"
                 app:shimmer_duration="1700"
                 app:shimmer_base_alpha="0.9"
@@ -745,7 +747,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="@dimen/_7sdp"
                 android:orientation="horizontal">
 
                 <!-- START ICON -->
@@ -788,6 +789,17 @@
                     android:padding="@dimen/_4sdp"
                     android:src="@drawable/ic_arrow" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvAppVersion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_26sdp"
+                android:layout_marginBottom="@dimen/_42sdp"
+                android:fontFamily="@font/sfprotextregular"
+                android:gravity="center"
+                android:textColor="@color/grey_text"
+                android:textSize="@dimen/_10ssp" />
 
 
         </LinearLayout>

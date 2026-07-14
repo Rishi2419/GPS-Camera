@@ -76,6 +76,7 @@ public final class VideoStampShareHelper {
 
         final Transformer[] transformerHolder = new Transformer[1];
         Transformer transformer = new Transformer.Builder(appContext)
+                .setPortraitEncodingEnabled(true)
                 .addListener(new Transformer.Listener() {
                     @Override
                     public void onCompleted(@NonNull Composition composition, @NonNull ExportResult exportResult) {

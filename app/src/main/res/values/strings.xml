@@ -143,6 +143,7 @@
     <string name="share_desc">Share the app with just one tap</string>
     <string name="help_support"><![CDATA[Help & Support]]></string>
     <string name="help_support_desc">We\'re ready to help whenever you need</string>
+    <string name="app_version_format" translatable="false">Version %1$s</string>
     <string name="submit">Submit</string>
     <string name="how_was_your_experience">How was your experience?</string>
     <string name="rate_us_sub_text">Your answer helps as to improve,\ntap a star to rate your experience</string>

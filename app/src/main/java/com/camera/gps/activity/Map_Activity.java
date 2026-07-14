@@ -31,6 +31,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -44,6 +45,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.camera.gps.adsmanager.InterstitialAdManager;
 import com.camera.gps.adsmanager.admob.AdMobBannerAdHelper;
 import com.camera.gps.databinding.ActivityMapBinding;
+import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.util.Utils;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -97,6 +99,7 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
     private MapTypeDialog mapTypeDialog;
 
     private final ActivityResultLauncher<String> requestPermission;
+    private final ActivityResultLauncher<IntentSenderRequest> enableLocationLauncher;
     private GlobalViewModel viewModel;
     private final List<MarkerModel> allMarkerModels = new ArrayList<>();
     private boolean isMapReady = false;
@@ -110,6 +113,16 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
     private Runnable timeoutRunnable;
 
     public Map_Activity() {
+        this.enableLocationLauncher = registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
+            if (isLocationEnabled()) {
+                if (Build.VERSION.SDK_INT >= 23) {
+                    checkLocationPermission();
+                } else {
+                    getLocation();
+                }
+                startLocationUpdates();
+            }
+        });
         this.requestPermission = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback() {
             @Override
             public void onActivityResult(Object obj) {
@@ -505,6 +518,14 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
     }
 
     private void showAlert() {
+        LocationRequest promptLocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(2000)
+                .setFastestInterval(1000);
+        LocationSettingsPrompt.show(this, promptLocationRequest, enableLocationLauncher, () -> {});
+    }
+
+    private void showAlertFallback() {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
         builder.setTitle(getString(R.string.dialog_enable_location_title))
                 .setMessage(getString(R.string.dialog_enable_location_message))

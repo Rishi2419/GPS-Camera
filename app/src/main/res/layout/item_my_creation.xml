@@ -59,7 +59,11 @@
                 android:layout_width="@dimen/_20sdp"
                 android:layout_height="@dimen/_20sdp"
                 android:layout_margin="@dimen/_8sdp"
-                android:buttonTint="@color/blue_primary"
+                android:background="@drawable/selector_checkbox_white"
+                android:button="@null"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
                 android:visibility="gone"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

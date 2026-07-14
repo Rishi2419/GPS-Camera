@@ -42,6 +42,7 @@ import com.camera.gps.R;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.StampBackgroundUtils;
 import com.camera.gps.util.StampedPhotoShareHelper;
 import com.camera.gps.util.VideoStampShareHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -485,10 +486,15 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
         public void updateStampContent() {
             if (stampBg != null) {
                 if (currentstamp_type == 9) {
-                    dateTimeContainer.setBackgroundColor(current_bg_color);
-                    latLongContainer.setBackgroundColor(current_bg_color);
-                    txtTitle.setBackgroundColor(current_bg_color);
-                    txtLocation.setBackgroundColor(current_bg_color);
+                    StampBackgroundUtils.applyRoundedGlassColor(
+                            requireContext(),
+                            current_bg_color,
+                            dateTimeContainer,
+                            latLongContainer,
+                            txtTitle,
+                            txtLocation
+                    );
+                    StampBackgroundUtils.applyRoundedDefaultGlass(requireContext(), appStamp);
                 }else {
                     stampBg.setCardBackgroundColor(current_bg_color);
                 }

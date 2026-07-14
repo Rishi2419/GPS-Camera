@@ -79,6 +79,7 @@ import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.StampBackgroundUtils;
 import com.camera.gps.util.StampedPhotoShareHelper;
 import com.camera.gps.util.VideoStampShareHelper;
 
@@ -742,10 +743,15 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         if (stampBg != null) {
 
             if (currentstamp_type == 9) {
-                dateTimeContainer.setBackgroundColor(current_bg_color);
-                latLongContainer.setBackgroundColor(current_bg_color);
-                txtTitle.setBackgroundColor(current_bg_color);
-                txtLocation.setBackgroundColor(current_bg_color);
+                StampBackgroundUtils.applyRoundedGlassColor(
+                        this,
+                        current_bg_color,
+                        dateTimeContainer,
+                        latLongContainer,
+                        txtTitle,
+                        txtLocation
+                );
+                StampBackgroundUtils.applyRoundedDefaultGlass(this, appStamp);
             }else {
                 stampBg.setCardBackgroundColor(current_bg_color);
             }

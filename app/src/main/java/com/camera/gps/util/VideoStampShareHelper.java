@@ -140,7 +140,30 @@ public final class VideoStampShareHelper {
         float left = (videoWidth - scaledWidth) / 2f;
         float top = videoHeight - scaledHeight;
         canvas.drawBitmap(scaledStamp, left, top, paint);
-        return overlay;
+        if (scaledStamp != stampBitmap) {
+            scaledStamp.recycle();
+        }
+        return toStraightAlphaBitmap(overlay);
+    }
+
+    /**
+     * Media3's overlay shader expects straight-alpha RGB values and applies alpha while blending.
+     * Canvas bitmaps are premultiplied, which would apply alpha a second time. That is especially
+     * visible for template 9's translucent white glass background, which otherwise turns dark in
+     * the exported video.
+     */
+    private static Bitmap toStraightAlphaBitmap(Bitmap premultipliedBitmap) {
+        int width = premultipliedBitmap.getWidth();
+        int height = premultipliedBitmap.getHeight();
+        int[] row = new int[width];
+        Bitmap straightAlphaBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        straightAlphaBitmap.setPremultiplied(false);
+        for (int y = 0; y < height; y++) {
+            premultipliedBitmap.getPixels(row, 0, width, 0, y, width, 1);
+            straightAlphaBitmap.setPixels(row, 0, width, 0, y, width, 1);
+        }
+        premultipliedBitmap.recycle();
+        return straightAlphaBitmap;
     }
 
     private static int parseMetadataInt(MediaMetadataRetriever retriever, int key, int fallback) {

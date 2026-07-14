@@ -26,8 +26,9 @@ import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaMuxer;
 import android.media.MediaScannerConnection;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -132,6 +133,7 @@ import com.camera.gps.util.DirManager;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.util.SP;
+import com.camera.gps.util.StampBackgroundUtils;
 import com.camera.gps.util.StampedVideoComposer;
 import com.camera.gps.viewmodel.DateFormatViewModel;
 import com.camera.gps.viewmodel.FontStyleViewModel;
@@ -297,6 +299,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageButton btnAddLocation;
     private ActivityResultLauncher resultLauncher;
     private ActivityResultLauncher<IntentSenderRequest> enableLocationLauncher;
+    private ActivityResultLauncher<Intent> internetSettingsLauncher;
     private ActivityResultLauncher<Intent> mapTypeResultLauncher;
     private ActivityResultLauncher<Intent> templateResultLauncher;
     private ActivityResultLauncher<Intent> previewResultLauncher;
@@ -329,6 +332,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String latDMS;
     private boolean isCameraReady = false;
     private boolean isLocationFetched = false;
+    private boolean isLocationPromptActive = false;
+    private AlertDialog internetRequiredDialog;
+    private AlertDialog locationFallbackDialog;
 
     // Stamp UI components
     private RelativeLayout relBottomStamp;
@@ -384,9 +390,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public MainActivity() {
         Log.d("Rishi_MainActivity", "Inside mainacti");
         enableLocationLauncher = registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
+            isLocationPromptActive = false;
             if (isLocationEnabled()) {
                 isLocationFetched = false;
                 setupLocation();
+            }
+            showInternetDialogIfNeeded();
+        });
+
+        internetSettingsLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (hasValidatedInternetConnection()) {
+                retryAddressResolutionIfPossible();
+            } else {
+                showInternetDialog();
             }
         });
 
@@ -721,23 +737,40 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     private void chk_Location_Internet() {
-        // Check Internet connectivity
-        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-
-        // Check if Location (GPS) is enabled
-        boolean isLocationOn = isLocationEnabled();
-
-
-        if (!isConnected && !isLocationOn) {
-            showLocationDialog();
-        } else if (!isConnected) {
-            Log.d("Rishi_chk", "Internet is OFF");
-            showInternetDialog();
-        } else if (!isLocationOn) {
+        // Location is always resolved first. The internet dialog is checked only after the
+        // Android location prompt has closed, so the two dialogs can never overlap.
+        if (!isLocationEnabled()) {
             Log.d("Rishi_chk", "Location is OFF");
             showLocationDialog();
+            return;
+        }
+
+        showInternetDialogIfNeeded();
+    }
+
+    private boolean hasValidatedInternetConnection() {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        Network activeNetwork = connectivityManager.getActiveNetwork();
+        if (activeNetwork == null) {
+            return false;
+        }
+
+        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+        return capabilities != null
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    }
+
+    private void showInternetDialogIfNeeded() {
+        if (isLocationPromptActive
+                || (locationFallbackDialog != null && locationFallbackDialog.isShowing())) {
+            return;
+        }
+
+        if (!hasValidatedInternetConnection()) {
+            Log.d("Rishi_chk", "Validated internet is OFF");
+            showInternetDialog();
         }
     }
 
@@ -1703,6 +1736,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }).start();
     }
 
+    private void retryAddressResolutionIfPossible() {
+        if (currentLatitude == 0.0 && currentLongitude == 0.0) {
+            return;
+        }
+
+        if (currentAddress != null
+                && !currentAddress.equals("Loading location...")
+                && !currentAddress.equals("Address not available")
+                && !currentAddress.equals("Address resolution failed")) {
+            return;
+        }
+
+        currentAddress = "Loading location...";
+        updateStampLocation();
+        Location location = new Location(LocationManager.GPS_PROVIDER);
+        location.setLatitude(currentLatitude);
+        location.setLongitude(currentLongitude);
+        resolveAddressFromLocation(location);
+    }
+
     private String convertToDMS(double decimalCoord) {
         int degrees = (int) decimalCoord;
 
@@ -2106,10 +2159,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 current_StampBgColor = ContextCompat.getColor(this, R.color.bg_glass);
             }
 
-            dateTimeContainer.setBackgroundColor(current_StampBgColor);
-            latLongContainer.setBackgroundColor(current_StampBgColor);
-            txtTitle.setBackgroundColor(current_StampBgColor);
-            txtLocation.setBackgroundColor(current_StampBgColor);
+            StampBackgroundUtils.applyRoundedGlassColor(
+                    this,
+                    current_StampBgColor,
+                    dateTimeContainer,
+                    latLongContainer,
+                    txtTitle,
+                    txtLocation
+            );
+            StampBackgroundUtils.applyRoundedDefaultGlass(this, appStamp);
         }else {
             stampBg.setCardBackgroundColor(current_StampBgColor);
         }
@@ -3015,26 +3073,44 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void showInternetDialog() {
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        if (isFinishing()
+                || isDestroyed()
+                || isLocationPromptActive
+                || (locationFallbackDialog != null && locationFallbackDialog.isShowing())
+                || (internetRequiredDialog != null && internetRequiredDialog.isShowing())) {
+            return;
+        }
+
+        internetRequiredDialog = new AlertDialog.Builder(this)
                 .setTitle("No Internet")
-                .setMessage("Oops! You're not connected to the internet. GPS Map Camera needs internet to show your location.")
+                .setMessage("Please turn on Wi-Fi or mobile data to retrieve the address for your location.")
                 .setCancelable(false)
-//                .setPositiveButton("USE MOBILE DATA", (dialog, which) -> {
-//                    Intent intent = new Intent(Settings.ACTION_DATA_ROAMING_SETTINGS);
-//                    startActivity(intent);
-//                })
-//                .setNegativeButton("CONNECT TO WI-FI", (dialog, which) -> {
-//                    Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
-//                    startActivity(intent);
-//                })
+                .setPositiveButton("Turn On", (dialog, which) -> openInternetSettings())
                 .setNegativeButton("Cancel", (d, which) -> d.dismiss())
                 .setOnDismissListener(d -> {
+                    internetRequiredDialog = null;
                     renderStamp();
                 })
                 .show();
 
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-                .setTextColor(ContextCompat.getColor(this, R.color.blue_primary));
+        int actionColor = ContextCompat.getColor(this, R.color.blue_primary);
+        internetRequiredDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(actionColor);
+        internetRequiredDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(actionColor);
+    }
+
+    private void openInternetSettings() {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            intent = new Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY);
+        } else {
+            intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+        }
+
+        try {
+            internetSettingsLauncher.launch(intent);
+        } catch (Exception exception) {
+            internetSettingsLauncher.launch(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+        }
     }
 
     private void showInternetLocationDialog() {
@@ -3060,15 +3136,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void showLocationDialog() {
+        if (isLocationPromptActive
+                || (locationFallbackDialog != null && locationFallbackDialog.isShowing())) {
+            return;
+        }
+
+        isLocationPromptActive = true;
         LocationRequest promptLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(5000L)
                 .setFastestInterval(2000L);
-        LocationSettingsPrompt.show(this, promptLocationRequest, enableLocationLauncher, this::renderStamp);
+        LocationSettingsPrompt.show(this, promptLocationRequest, enableLocationLauncher, () -> {
+            isLocationPromptActive = false;
+            showLocationDialogFallback();
+        });
     }
 
     private void showLocationDialogFallback() {
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        if (isFinishing()
+                || isDestroyed()
+                || (locationFallbackDialog != null && locationFallbackDialog.isShowing())) {
+            return;
+        }
+
+        locationFallbackDialog = new AlertDialog.Builder(this)
                 .setTitle("Location Disabled")
                 .setMessage("Please turn on Location (GPS) to continue.")
                 .setCancelable(false)
@@ -3078,10 +3169,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                })
                 .setNegativeButton("Cancel", (d, which) -> d.dismiss())
                 .setOnDismissListener(d -> {
+                    locationFallbackDialog = null;
                     renderStamp();
+                    showInternetDialogIfNeeded();
                 })
                 .show();
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+        locationFallbackDialog.getButton(AlertDialog.BUTTON_NEGATIVE)
                 .setTextColor(ContextCompat.getColor(this, R.color.blue_primary));
     }
 

@@ -73,6 +73,22 @@ public final class StampedPhotoComposer {
 
             int relativeX = mapLocation[0] - stampLocation[0];
             int relativeY = mapLocation[1] - stampLocation[1];
+
+            // Template 9 has a fallback map image underneath mapView. It is included when the
+            // stamp hierarchy is drawn and otherwise remains visible in the transparent corners
+            // of the rounded Google Map snapshot. Clear the complete map bounds first so only
+            // the explicitly rounded snapshot is present in the exported photo/video overlay.
+            Paint clearPaint = new Paint();
+            clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+            stampCanvas.drawRect(
+                    relativeX,
+                    relativeY,
+                    relativeX + mapView.getWidth(),
+                    relativeY + mapView.getHeight(),
+                    clearPaint
+            );
+            clearPaint.setXfermode(null);
+
             Bitmap roundedMap = getRoundedMapBitmap(mapView, mapBitmap);
             stampCanvas.drawBitmap(roundedMap, relativeX, relativeY, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
         }

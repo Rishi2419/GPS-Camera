@@ -1,178 +1,12 @@
-//package com.camera.gps.activity;
-//
-//import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialShowing;
-//
-//import android.content.Intent;
-//import android.graphics.Color;
-//import android.os.Bundle;
-//import android.view.View;
-//import android.widget.RelativeLayout;
-//import android.widget.TextView;
-//
-//import androidx.activity.EdgeToEdge;
-//import androidx.appcompat.app.AppCompatActivity;
-//import androidx.core.graphics.Insets;
-//import androidx.core.view.ViewCompat;
-//import androidx.core.view.WindowInsetsCompat;
-//import androidx.recyclerview.widget.RecyclerView;
-//
-//import com.appizona.yehiahd.fastsave.FastSave;
-//import com.camera.gps.MyApplication;
-//import com.camera.gps.R;
-//import com.camera.gps.adapter.Template_Adapter;
-//import com.camera.gps.adsmanager.InterstitialAdManager;
-//import com.camera.gps.databinding.ActivityTemplateBinding;
-//import com.camera.gps.util.SP;
-//import com.camera.gps.util.Utils;
-//
-//import java.util.ArrayList;
-//
-//public class Template_Activity extends AppCompatActivity implements Template_Adapter.TemplateClicksListener {
-//
-//    private ActivityTemplateBinding binding;
-//    int current_bg_alpha;
-//    int current_bg_color;
-//    int current_date_color;
-//    private SP msp;
-//    RelativeLayout rel_category_layouts_select;
-//    int current_map_type;
-//    public static int current_stamp_id;
-//    int current_text_color;
-//    ArrayList<Integer> arrayList = new ArrayList<>();
-//    private Template_Adapter templateAdapter;
-//
-//    public void onCreate(Bundle bundle) {
-//        super.onCreate(bundle);
-//        SetContentView();
-//        msp = new SP(this);
-//    }
-//
-//    private void SetContentView() {
-//        binding = ActivityTemplateBinding.inflate(getLayoutInflater());
-//        setContentView(binding.getRoot());
-//
-//        binding.btBack.setOnClickListener(v -> {
-//            onBackPressed();
-//        });
-//
-//        rel_category_layouts_select = binding.layoutRelLayoutSelect;
-//
-//        current_stamp_id = FastSave.getInstance().getInt(MyApplication.STAMP_LAYOUT_ID, 1);
-//
-//        arrayList.add(R.drawable.theme1);
-//        arrayList.add(R.drawable.theme5);
-//        arrayList.add(R.drawable.theme6);
-//        arrayList.add(R.drawable.theme4);
-//        arrayList.add(R.drawable.theme7);
-//        arrayList.add(R.drawable.theme8);
-//        arrayList.add(R.drawable.theme9);
-//        arrayList.add(R.drawable.theme10);
-//        arrayList.add(R.drawable.theme11);
-//
-//        templateAdapter = new Template_Adapter(arrayList, this, this);
-//        binding.viewPagerMain.setAdapter(templateAdapter);
-//    }
-//
-//    @Override
-//    public void onThemeClick(int position) {
-//        // Just here for interface implementation
-//    }
-//
-//    public void onUseClicked(int position) {
-//        current_stamp_id = position + 1;
-//        FastSave.getInstance().saveInt(MyApplication.STAMP_LAYOUT_ID, current_stamp_id);
-//        templateAdapter.notifyDataSetChanged();
-//        msp.setTemplateEdited(this, current_stamp_id, true);
-//        onBackPressed();
-//    }
-//
-//    public void onEditClicked(int position) {
-//
-//        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
-//            if (!InterstitialAdManager.isInterstitialShowing()) {
-//                setInterstitialShowing(true);
-//                InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "edit_template_open_interstitial", () -> {
-//                    setInterstitialShowing(false);
-//                    editNavigation(position);
-//                }, errorMsg -> {
-//                    setInterstitialShowing(false);
-//                    Utils.LogUtils.logE("EditTemplate", "Ad failed: " + errorMsg);
-//                });
-//            } else {
-//                Utils.LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
-//            }
-//        } else {
-//            editNavigation(position);
-//        }
-//
-//    }
-//
-//    private void editNavigation(int position) {
-//        current_stamp_id = position + 1;
-//        FastSave.getInstance().saveInt(MyApplication.TEMP_STAMP_LAYOUT_ID, current_stamp_id);
-//        startActivityForResult(new Intent(this, Edit_Activity.class), 100);
-//    }
-//
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        if (requestCode == 100 && resultCode == RESULT_OK) {
-//            // Edit activity returned with success (Use Template was clicked)
-//            // Close this Template activity and go back to MainActivity
-//            finish();
-//        }
-//    }
-//
-//    public void hideOverlay() {
-//        templateAdapter.notifyDataSetChanged();
-//    }
-//
-//
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//    }
-//
-//    @Override
-//    public void onBackPressed() {
-//        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
-//            if (!InterstitialAdManager.isInterstitialShowing()) {
-//                setInterstitialShowing(true);
-//                InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "template_close_interstitial",
-//                        () -> {
-//                            setInterstitialShowing(false);
-//                            finish();
-//                        },
-//                        errorMsg -> {
-//                            setInterstitialShowing(false);
-//                            Utils.LogUtils.logE("TemplateActivity", "Ad failed: " + errorMsg);
-//                        });
-//            } else {
-//                Utils.LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
-//            }
-//        } else {
-//            finish();
-//        }
-//    }
-//}
-
-
 package com.camera.gps.activity;
 
 import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialShowing;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.appizona.yehiahd.fastsave.FastSave;
 import com.camera.gps.MyApplication;
@@ -219,14 +53,14 @@ public class Template_Activity extends AppCompatActivity implements Template_Ada
         current_stamp_id = FastSave.getInstance().getInt(MyApplication.STAMP_LAYOUT_ID, 1);
 
         arrayList.add(R.drawable.theme1);
+        arrayList.add(R.drawable.theme2);
+        arrayList.add(R.drawable.theme3);
+        arrayList.add(R.drawable.theme4);
         arrayList.add(R.drawable.theme5);
         arrayList.add(R.drawable.theme6);
-        arrayList.add(R.drawable.theme4);
         arrayList.add(R.drawable.theme7);
         arrayList.add(R.drawable.theme8);
         arrayList.add(R.drawable.theme9);
-        arrayList.add(R.drawable.theme10);
-        arrayList.add(R.drawable.theme11);
 
         templateAdapter = new Template_Adapter(arrayList, this, this);
         binding.viewPagerMain.setAdapter(templateAdapter);

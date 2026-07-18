@@ -657,7 +657,6 @@ import static com.camera.gps.adsmanager.InterstitialAdManager.setInterstitialSho
 
 import android.app.Dialog;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -678,7 +677,6 @@ import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adsmanager.InterstitialAdManager;
 import com.camera.gps.databinding.ActivityEditBinding;
-import com.camera.gps.dialogs.DateTimeDialog;
 import com.camera.gps.dialogs.FontStyleDialog;
 import com.camera.gps.dialogs.MapTypeDialog;
 import com.camera.gps.dialogs.ColorDialog;
@@ -1140,28 +1138,28 @@ public class Edit_Activity extends AppCompatActivity {
                 binding.ThemePreview.setImageResource(R.drawable.theme1);
                 break;
             case 2:
-                binding.ThemePreview.setImageResource(R.drawable.theme5);
+                binding.ThemePreview.setImageResource(R.drawable.theme2);
                 break;
             case 3:
-                binding.ThemePreview.setImageResource(R.drawable.theme6);
+                binding.ThemePreview.setImageResource(R.drawable.theme3);
                 break;
             case 4:
                 binding.ThemePreview.setImageResource(R.drawable.theme4);
                 break;
             case 5:
-                binding.ThemePreview.setImageResource(R.drawable.theme7);
+                binding.ThemePreview.setImageResource(R.drawable.theme5);
                 break;
             case 6:
-                binding.ThemePreview.setImageResource(R.drawable.theme8);
+                binding.ThemePreview.setImageResource(R.drawable.theme6);
                 break;
             case 7:
-                binding.ThemePreview.setImageResource(R.drawable.theme9);
+                binding.ThemePreview.setImageResource(R.drawable.theme7);
                 break;
             case 8:
-                binding.ThemePreview.setImageResource(R.drawable.theme10);
+                binding.ThemePreview.setImageResource(R.drawable.theme8);
                 break;
             case 9:
-                binding.ThemePreview.setImageResource(R.drawable.theme11);
+                binding.ThemePreview.setImageResource(R.drawable.theme9);
                 break;
             default:
                 binding.ThemePreview.setImageResource(R.drawable.theme1);

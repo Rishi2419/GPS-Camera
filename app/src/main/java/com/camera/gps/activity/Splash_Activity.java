@@ -57,7 +57,6 @@ package com.camera.gps.activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.view.View;
 
@@ -85,13 +84,14 @@ public class Splash_Activity extends AppCompatActivity {
     private SP SP;
 
     private FirebaseRemoteConfig firebaseRemoteConfig;
-    private CountDownTimer countDownTimer;
     private RemoteConfigManager remoteConfigManager;
     private boolean hasNavigated = false;
+    private long splashStartedAtMs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        splashStartedAtMs = System.currentTimeMillis();
 
         // Hide navigation bar
         getWindow().getDecorView().setSystemUiVisibility(
@@ -120,14 +120,13 @@ public class Splash_Activity extends AppCompatActivity {
         remoteConfigManager = RemoteConfigManager.getInstance(this);
 
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
-            LogUtils.logD(TAG, "Network available and not premium, preloading ad config in background");
+            LogUtils.logD(TAG, "Network available and not premium, starting splash ad flow");
             getAdsUnitData();
-            preloadRemoteConfigData();
+            getRemoteConfigData();
         } else {
             LogUtils.logD(TAG, "No network available or premium member, skipping splash ad work");
+            runAfterMinimumSplash(this::mainNavigation);
         }
-
-        new Handler(getMainLooper()).postDelayed(this::mainNavigation, SPLASH_DELAY);
     }
 
     private void getAdsUnitData() {
@@ -182,8 +181,7 @@ public class Splash_Activity extends AppCompatActivity {
                 OpenAdManager.getInstance().preloadOpenAd(this, "app_resume_ad");
 
 
-                LogUtils.logD(TAG, "Starting ad timer...");
-                startAdTimer();
+                runAfterMinimumSplash(this::openAdLoad);
 
             } else {
                 LogUtils.logE(TAG, "❌ Remote config fetch FAILED");
@@ -197,23 +195,8 @@ public class Splash_Activity extends AppCompatActivity {
                     LogUtils.logE(TAG, "Error reading fetch info: " + e.getMessage());
                 }
 
-                mainNavigation();
+                runAfterMinimumSplash(this::mainNavigation);
             }
-        });
-    }
-
-    private void preloadRemoteConfigData() {
-        LogUtils.logD(TAG, "Fetching remote config data in background...");
-
-        remoteConfigManager.fetchAndStore(success -> {
-            if (!success || isFinishing() || isDestroyed()) {
-                LogUtils.logD(TAG, "Background remote config skipped/failed: " + success);
-                return;
-            }
-
-            LogUtils.logD(TAG, "Background remote config fetched, preloading ads");
-            InterstitialAdManager.getInstance().preloadPublishersFromConfig(this);
-            OpenAdManager.getInstance().preloadOpenAd(this, "app_resume_ad");
         });
     }
 
@@ -319,22 +302,14 @@ public class Splash_Activity extends AppCompatActivity {
 //        finish();
     }
 
-    private void startAdTimer() {
-        LogUtils.logI(TAG, "Starting ad timer");
-        int timerDuration = MyApplication.isNetworkAvailable(this) ? 7000 : 4000;
-
-        countDownTimer = new CountDownTimer(timerDuration, 1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                // Timer tick - can be used for progress updates if needed
+    private void runAfterMinimumSplash(Runnable action) {
+        long elapsedMs = System.currentTimeMillis() - splashStartedAtMs;
+        long remainingMs = Math.max(0, SPLASH_DELAY - elapsedMs);
+        new Handler(getMainLooper()).postDelayed(() -> {
+            if (!hasNavigated && !isFinishing() && !isDestroyed()) {
+                action.run();
             }
-
-            @Override
-            public void onFinish() {
-                LogUtils.logI(TAG, "Ad timer finished, attempting to load ad");
-                openAdLoad();
-            }
-        }.start();
+        }, remainingMs);
     }
 
     @Override
@@ -346,14 +321,6 @@ public class Splash_Activity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        try {
-            if (countDownTimer != null) {
-                countDownTimer.cancel();
-                countDownTimer = null;
-            }
-            LogUtils.logD(TAG, "Splash_Activity destroyed, timer cancelled");
-        } catch (Exception e) {
-            LogUtils.logE(TAG, "Error cancelling timer: " + e.getMessage());
-        }
+        LogUtils.logD(TAG, "Splash_Activity destroyed");
     }
 }

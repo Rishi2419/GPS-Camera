@@ -13,8 +13,8 @@ android {
     defaultConfig {
         applicationId "com.camera.gps"
         minSdk 28
-        targetSdk 34
-        versionCode 12
+        targetSdk 35
+        versionCode 1
         versionName "1.0.0"
         multiDexEnabled true
 //        manifestPlaceholders = [
@@ -37,7 +37,7 @@ android {
 
         android.applicationVariants.all { variant ->
             variant.outputs.all {
-                outputFileName = "JourneyStamp - GPS Map Camera${defaultConfig.versionName}.apk"
+                outputFileName = "GPS Map Camera - ${defaultConfig.versionName}.apk"
             }
         }
     }

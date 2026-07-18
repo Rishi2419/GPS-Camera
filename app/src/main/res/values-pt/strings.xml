@@ -162,4 +162,19 @@
     <string name="_5_seconds">5 Segundos</string>
     <string name="_10_seconds">10 Segundos</string>
     <string name="full">Completo</string>
+    <string name="temporary_changes_template_hint">As alterações aqui são temporárias – use <annotation key="template_link" value="true">Modelos</annotation> para salvar permanentemente</string>
+    <string name="temporary_changes_template_link">Modelos</string>
+    <string name="preparing_video">Preparando vídeo...</string>
+    <string name="share_video">Compartilhar vídeo!</string>
+    <string name="video_play_pause">Reproduzir ou pausar vídeo</string>
+    <string name="delete_multiple_photos_title">Excluir %1$d fotos?</string>
+    <string name="delete_multiple_photos_message">Tem certeza de que deseja excluir estas %1$d fotos?\n Esta ação não pode ser desfeita.</string>
+    <string name="delete_multiple_videos_title">Excluir %1$d vídeos?</string>
+    <string name="delete_multiple_videos_message">Tem certeza de que deseja excluir estes %1$d vídeos?\n Esta ação não pode ser desfeita.</string>
+    <string name="delete_multiple_mixed_title">Excluir %1$d imagens e vídeos?</string>
+    <string name="delete_multiple_mixed_message">Tem certeza de que deseja excluir estas %1$d fotos e vídeos?\n Esta ação não pode ser desfeita.</string>
+    <string name="please_select_stars">Selecione as estrelas antes de enviar</string>
+    <string name="set_current_location">Definir localização atual</string>
+    <string name="no_preview_available">Nenhuma prévia disponível</string>
+    <string name="go_to_collection">Ir para Coleções</string>
 </resources>

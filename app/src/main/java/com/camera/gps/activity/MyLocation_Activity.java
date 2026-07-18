@@ -167,6 +167,7 @@ public final class MyLocation_Activity extends AppCompatActivity {
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
             if (!InterstitialAdManager.isInterstitialShowing()) {

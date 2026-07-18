@@ -313,6 +313,7 @@ public class Splash_Activity extends AppCompatActivity {
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         // Disable back button during splash
         LogUtils.logD(TAG, "Back button pressed during splash - ignoring");

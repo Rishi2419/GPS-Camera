@@ -2,6 +2,7 @@
 
     <style name="Theme.GPS" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
         <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
         <item name="colorOnPrimary">@color/white</item>

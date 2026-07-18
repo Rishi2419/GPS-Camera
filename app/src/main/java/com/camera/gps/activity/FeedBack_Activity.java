@@ -352,6 +352,7 @@ public class FeedBack_Activity extends AppCompatActivity {
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
             if (!InterstitialAdManager.isInterstitialShowing()) {
@@ -373,4 +374,3 @@ public class FeedBack_Activity extends AppCompatActivity {
         }
     }
 }
-

@@ -134,6 +134,7 @@ import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.util.SP;
 import com.camera.gps.util.StampBackgroundUtils;
+import com.camera.gps.util.StampSettingsBottomSheets;
 import com.camera.gps.util.StampedVideoComposer;
 import com.camera.gps.viewmodel.DateFormatViewModel;
 import com.camera.gps.viewmodel.FontStyleViewModel;
@@ -414,6 +415,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Intent data = result.getData();
                 if (data != null) {
                     Log.d("Rishi_MainActivity", "Data intent is not null");
+                    applySettingsSessionOverrides(data);
 
                     // Check if location data is present
                     if (data.hasExtra(MyApplication.EXTRA_LOCATION)) {
@@ -539,6 +541,41 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         hasSessionStampOverride = false;
         hasSessionDateTimeOverride = false;
         sessionMapType = null;
+    }
+
+    private void applySettingsSessionOverrides(Intent data) {
+        boolean fontUpdated = false;
+        boolean dateTimeUpdated = false;
+        boolean mapUpdated = false;
+
+        if (data.hasExtra(Settings_Activity.EXTRA_SESSION_FONT_STYLE)) {
+            fontStyle = data.getStringExtra(Settings_Activity.EXTRA_SESSION_FONT_STYLE);
+            hasSessionStampOverride = true;
+            fontUpdated = true;
+        }
+        if (data.hasExtra(Settings_Activity.EXTRA_SESSION_DATE_FORMAT)) {
+            format_Date = data.getStringExtra(Settings_Activity.EXTRA_SESSION_DATE_FORMAT);
+            format_Time = data.getStringExtra(Settings_Activity.EXTRA_SESSION_TIME_FORMAT);
+            format_Combined = data.getStringExtra(Settings_Activity.EXTRA_SESSION_COMBINED_FORMAT);
+            hasSessionStampOverride = true;
+            hasSessionDateTimeOverride = true;
+            dateTimeUpdated = true;
+        }
+        if (data.hasExtra(Settings_Activity.EXTRA_SESSION_MAP_TYPE)) {
+            sessionMapType = data.getIntExtra(Settings_Activity.EXTRA_SESSION_MAP_TYPE, current_map_type);
+            current_map_type = sessionMapType;
+            mapUpdated = true;
+        }
+
+        if (fontUpdated) {
+            updateStampContent();
+        }
+        if (dateTimeUpdated) {
+            updateStampDateTime();
+        }
+        if (mapUpdated) {
+            updateMaps();
+        }
     }
 
 
@@ -1135,6 +1172,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MainController.startChronometer(chronometerVideo);
     }
 
+    @androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
     private void finalizeSavedVideo(File recordedFile) {
         if (recordedFile == null || photo == null || photo.getImagePath() == null) {
             return;
@@ -2485,6 +2523,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MyLocation location = new MyLocation(null, "", currentDate, currentTime, currentAddress, String.valueOf(currentLatitude), String.valueOf(currentLongitude), false);
         Intent intent = new Intent(MainActivity.this, Settings_Activity.class);
         intent.putExtra(MyApplication.EXTRA_LOCATION, location);
+        intent.putExtra(Settings_Activity.EXTRA_CURRENT_FONT_STYLE, fontStyle);
+        intent.putExtra(Settings_Activity.EXTRA_CURRENT_DATE_FORMAT, format_Date);
+        intent.putExtra(Settings_Activity.EXTRA_CURRENT_TIME_FORMAT, format_Time);
+        intent.putExtra(Settings_Activity.EXTRA_CURRENT_COMBINED_FORMAT, format_Combined);
+        intent.putExtra(Settings_Activity.EXTRA_CURRENT_MAP_TYPE, getActiveMapTypeForSession());
        // startActivity(intent);
         resultLauncher.launch(intent);
     }
@@ -2743,7 +2786,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Fallback
             fontList = getResources().getStringArray(R.array.font_name_array);
         }
-        fontStyleDialog = new FontStyleDialog(this, fontList, new OnFontSelectedListener() {
+        fontStyleDialog = StampSettingsBottomSheets.showFontStyle(this, fontList, fontStyle, new OnFontSelectedListener() {
             @Override
             public void onFontSelected(String fontName, int position) {
                 hasSessionStampOverride = true;
@@ -2756,14 +2799,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 fontStyleDialog = null;
             }
         });
-
-        int currentFontPosition = getFontStylePosition(fontList, fontStyle);
-        if (currentFontPosition >= 0) {
-            fontStyleDialog.setSelectedPosition(currentFontPosition);
-        }
-
-        new HelperClass().setBottomDialog(fontStyleDialog);
-        fontStyleDialog.show();
     }
 
 
@@ -2773,7 +2808,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return;
         }
 
-        dateTimeDialog = new DateTimeDialog(this, new OnDateTimeSelectedListener() {
+        dateTimeDialog = StampSettingsBottomSheets.showDateTime(this, format_Combined, new OnDateTimeSelectedListener() {
             @Override
             public void onDateTimeSelected(DateFormatModel selectedFormat, int position) {
                 hasSessionStampOverride = true;
@@ -2789,27 +2824,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 dateTimeDialog = null;
             }
         });
-
-        // Pass the current active format to the dialog
-        // This ensures the dialog shows the correct preselected option
-        dateTimeDialog.setCurrentActiveFormat(format_Combined);
-        dateTimeDialog.setPersistSelection(false);
-
-        new HelperClass().setBottomDialog(dateTimeDialog);
-        dateTimeDialog.show();
-    }
-
-    private int getFontStylePosition(String[] fontList, String selectedFont) {
-        if (fontList == null || selectedFont == null) {
-            return -1;
-        }
-
-        for (int i = 0; i < fontList.length; i++) {
-            if (selectedFont.equalsIgnoreCase(fontList[i])) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     private void showTimerDialog() {

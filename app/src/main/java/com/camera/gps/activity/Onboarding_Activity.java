@@ -119,6 +119,7 @@ public class Onboarding_Activity extends AppCompatActivity {
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         startActivity(new Intent(Onboarding_Activity.this, Permissions_Activity.class));
         finish();

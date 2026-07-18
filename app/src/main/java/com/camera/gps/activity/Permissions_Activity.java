@@ -237,6 +237,7 @@ public class Permissions_Activity extends AppCompatActivity {
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         startActivity(new Intent(Permissions_Activity.this, Language_Activity.class));
         finish();

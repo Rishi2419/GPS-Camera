@@ -161,4 +161,19 @@
     <string name="_5_seconds">5 Detik</string>
     <string name="_10_seconds">10 Detik</string>
     <string name="full">Penuh</string>
+    <string name="temporary_changes_template_hint">Perubahan di sini bersifat sementara – gunakan <annotation key="template_link" value="true">Template</annotation> untuk menyimpan secara permanen</string>
+    <string name="temporary_changes_template_link">Template</string>
+    <string name="preparing_video">Menyiapkan video...</string>
+    <string name="share_video">Bagikan Video!</string>
+    <string name="video_play_pause">Putar atau jeda video</string>
+    <string name="delete_multiple_photos_title">Hapus %1$d Foto?</string>
+    <string name="delete_multiple_photos_message">Yakin ingin menghapus %1$d foto ini?\n Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="delete_multiple_videos_title">Hapus %1$d Video?</string>
+    <string name="delete_multiple_videos_message">Yakin ingin menghapus %1$d video ini?\n Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="delete_multiple_mixed_title">Hapus %1$d Gambar &amp; Video?</string>
+    <string name="delete_multiple_mixed_message">Yakin ingin menghapus %1$d foto dan video ini?\n Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="please_select_stars">Pilih bintang sebelum mengirim</string>
+    <string name="set_current_location">Atur lokasi saat ini</string>
+    <string name="no_preview_available">Pratinjau tidak tersedia</string>
+    <string name="go_to_collection">Buka Koleksi</string>
 </resources>

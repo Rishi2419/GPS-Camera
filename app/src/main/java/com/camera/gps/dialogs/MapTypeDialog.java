@@ -16,6 +16,7 @@ import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adsmanager.NativeAdManager;
 import com.camera.gps.listener.OnMapTypeSelectedListener;
+import com.camera.gps.util.TemporarySettingsHint;
 import com.camera.gps.util.Utils;
 
 public class MapTypeDialog extends Dialog {
@@ -134,6 +135,12 @@ public class MapTypeDialog extends Dialog {
             btnCloseDialog.setOnClickListener(v -> dismiss());
         }
 
+    }
+
+    public void setTemporaryMode(boolean temporaryMode) {
+        if (temporaryMode) {
+            TemporarySettingsHint.bind(this);
+        }
     }
 
     private void loadNativeAd() {

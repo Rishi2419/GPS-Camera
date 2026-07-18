@@ -55,14 +55,18 @@ public class FontStyle_Adapter extends RecyclerView.Adapter<FontStyle_Adapter.Si
         holder.radioSelect.setVisibility(View.VISIBLE);
 
         holder.itemView.setOnClickListener(v -> {
-            if (Utils.getIsPremium(context) || position == 0 || position ==1 || position == 4 || position == 5 || position == 6 || position ==8) {
-                selectedPos = position;
+            int adapterPosition = holder.getAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
+                return;
+            }
+            if (Utils.getIsPremium(context) || adapterPosition == 0 || adapterPosition == 1 || adapterPosition == 4 || adapterPosition == 5 || adapterPosition == 6 || adapterPosition == 8) {
+                selectedPos = adapterPosition;
                 notifyDataSetChanged();
-                listener.onFontClick(position);
+                listener.onFontClick(adapterPosition);
             } else {
-                selectedPos = position;
+                selectedPos = adapterPosition;
                 notifyDataSetChanged();
-                listener.onFontClick(position);
+                listener.onFontClick(adapterPosition);
                 //Toast.makeText(context, "Please subscribe to access this feature", Toast.LENGTH_SHORT).show();
             }
         });

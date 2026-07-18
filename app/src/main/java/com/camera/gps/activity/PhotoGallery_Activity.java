@@ -497,6 +497,7 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         if (!isUIVisible) {
             showUI();

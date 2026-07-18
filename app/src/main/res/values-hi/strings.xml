@@ -161,4 +161,19 @@
     <string name="_5_seconds">5 सेकंड</string>
     <string name="_10_seconds">10 सेकंड</string>
     <string name="full">पूरा</string>
+    <string name="temporary_changes_template_hint">यहाँ किए गए बदलाव अस्थायी हैं – स्थायी रूप से सहेजने के लिए <annotation key="template_link" value="true">टेम्प्लेट</annotation> का उपयोग करें</string>
+    <string name="temporary_changes_template_link">टेम्प्लेट</string>
+    <string name="preparing_video">वीडियो तैयार हो रहा है...</string>
+    <string name="share_video">वीडियो साझा करें!</string>
+    <string name="video_play_pause">वीडियो चलाएँ या रोकें</string>
+    <string name="delete_multiple_photos_title">%1$d फ़ोटो हटाएँ?</string>
+    <string name="delete_multiple_photos_message">क्या आप वाकई ये %1$d फ़ोटो हटाना चाहते हैं?\n यह कार्रवाई वापस नहीं की जा सकती।</string>
+    <string name="delete_multiple_videos_title">%1$d वीडियो हटाएँ?</string>
+    <string name="delete_multiple_videos_message">क्या आप वाकई ये %1$d वीडियो हटाना चाहते हैं?\n यह कार्रवाई वापस नहीं की जा सकती।</string>
+    <string name="delete_multiple_mixed_title">%1$d तस्वीरें और वीडियो हटाएँ?</string>
+    <string name="delete_multiple_mixed_message">क्या आप वाकई ये %1$d फ़ोटो और वीडियो हटाना चाहते हैं?\n यह कार्रवाई वापस नहीं की जा सकती।</string>
+    <string name="please_select_stars">सबमिट करने से पहले स्टार चुनें</string>
+    <string name="set_current_location">वर्तमान स्थान सेट करें</string>
+    <string name="no_preview_available">कोई पूर्वावलोकन उपलब्ध नहीं</string>
+    <string name="go_to_collection">कलेक्शन पर जाएँ</string>
 </resources>

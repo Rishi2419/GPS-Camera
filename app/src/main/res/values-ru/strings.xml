@@ -162,4 +162,19 @@
     <string name="_5_seconds">5 секунд</string>
     <string name="_10_seconds">10 секунд</string>
     <string name="full">Полный</string>
+    <string name="temporary_changes_template_hint">Изменения здесь временные – используйте <annotation key="template_link" value="true">Шаблоны</annotation>, чтобы сохранить их навсегда</string>
+    <string name="temporary_changes_template_link">Шаблоны</string>
+    <string name="preparing_video">Подготовка видео...</string>
+    <string name="share_video">Поделиться видео!</string>
+    <string name="video_play_pause">Воспроизвести или приостановить видео</string>
+    <string name="delete_multiple_photos_title">Удалить %1$d фото?</string>
+    <string name="delete_multiple_photos_message">Вы уверены, что хотите удалить эти %1$d фото?\n Это действие нельзя отменить.</string>
+    <string name="delete_multiple_videos_title">Удалить %1$d видео?</string>
+    <string name="delete_multiple_videos_message">Вы уверены, что хотите удалить эти %1$d видео?\n Это действие нельзя отменить.</string>
+    <string name="delete_multiple_mixed_title">Удалить %1$d изображений и видео?</string>
+    <string name="delete_multiple_mixed_message">Вы уверены, что хотите удалить эти %1$d фото и видео?\n Это действие нельзя отменить.</string>
+    <string name="please_select_stars">Выберите звёзды перед отправкой</string>
+    <string name="set_current_location">Установить текущее местоположение</string>
+    <string name="no_preview_available">Предварительный просмотр недоступен</string>
+    <string name="go_to_collection">Перейти в коллекции</string>
 </resources>

@@ -15,7 +15,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.appizona.yehiahd.fastsave.FastSave;
 import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adsmanager.InterstitialAdManager;
@@ -30,13 +29,23 @@ import com.camera.gps.dialogs.RateDialog;
 import com.camera.gps.listener.OnDateTimeSelectedListener;
 import com.camera.gps.listener.OnFontSelectedListener;
 import com.camera.gps.model.DateFormatModel;
-import com.camera.gps.repositories.DateFormatRepository;
 import com.camera.gps.util.HelperClass;
-import com.camera.gps.util.SP;
+import com.camera.gps.util.StampSettingsBottomSheets;
 import com.camera.gps.util.Utils;
 import com.camera.gps.viewmodel.FontStyleViewModel;
 
 public class Settings_Activity extends AppCompatActivity {
+
+    public static final String EXTRA_CURRENT_FONT_STYLE = "settings_current_font_style";
+    public static final String EXTRA_CURRENT_DATE_FORMAT = "settings_current_date_format";
+    public static final String EXTRA_CURRENT_TIME_FORMAT = "settings_current_time_format";
+    public static final String EXTRA_CURRENT_COMBINED_FORMAT = "settings_current_combined_format";
+    public static final String EXTRA_CURRENT_MAP_TYPE = "settings_current_map_type";
+    public static final String EXTRA_SESSION_FONT_STYLE = "settings_session_font_style";
+    public static final String EXTRA_SESSION_DATE_FORMAT = "settings_session_date_format";
+    public static final String EXTRA_SESSION_TIME_FORMAT = "settings_session_time_format";
+    public static final String EXTRA_SESSION_COMBINED_FORMAT = "settings_session_combined_format";
+    public static final String EXTRA_SESSION_MAP_TYPE = "settings_session_map_type";
 
     private ActivitySettingsBinding binding;
     private FontStyleDialog fontStyleDialog;
@@ -45,9 +54,17 @@ public class Settings_Activity extends AppCompatActivity {
     private RateDialog rateDialog;
     private MyLocation selectedLocation;
     private ActivityResultLauncher locationLauncher;
+    private ActivityResultLauncher<Intent> mapTypeLauncher;
 
     private boolean showWatermark;
-    private SP msp;
+    private String currentFontStyle;
+    private String currentDateFormat;
+    private String currentTimeFormat;
+    private String currentCombinedFormat;
+    private int currentMapType;
+    private boolean fontChanged;
+    private boolean dateTimeChanged;
+    private boolean mapTypeChanged;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +84,22 @@ public class Settings_Activity extends AppCompatActivity {
                 }
         );
 
+        mapTypeLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null
+                            && result.getData().hasExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE)) {
+                        currentMapType = result.getData().getIntExtra(
+                                Map_Activity.EXTRA_SELECTED_MAP_TYPE,
+                                currentMapType
+                        );
+                        mapTypeChanged = true;
+                    }
+                }
+        );
+
         fontViewModel = new ViewModelProvider(this).get(FontStyleViewModel.class);
-        msp = new SP(this);
+        loadCurrentSessionSettings();
 
 
         binding.shimmerPremium.stopShimmer();
@@ -79,6 +110,15 @@ public class Settings_Activity extends AppCompatActivity {
         setupSwitches();
         loadNativeAds();
         loadBottomBannerAd();
+    }
+
+    private void loadCurrentSessionSettings() {
+        Intent intent = getIntent();
+        currentFontStyle = intent.getStringExtra(EXTRA_CURRENT_FONT_STYLE);
+        currentDateFormat = intent.getStringExtra(EXTRA_CURRENT_DATE_FORMAT);
+        currentTimeFormat = intent.getStringExtra(EXTRA_CURRENT_TIME_FORMAT);
+        currentCombinedFormat = intent.getStringExtra(EXTRA_CURRENT_COMBINED_FORMAT);
+        currentMapType = intent.getIntExtra(EXTRA_CURRENT_MAP_TYPE, MyApplication.getMapType());
     }
 
     private void setupAppVersion() {
@@ -133,7 +173,7 @@ public class Settings_Activity extends AppCompatActivity {
                     setInterstitialShowing(true);
                     InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "map_open_from_setting_interstitial", () -> {
                         setInterstitialShowing(false);
-                        startActivity(new Intent(this, Map_Activity.class));
+                        openMapForSession();
                     }, errorMsg -> {
                         setInterstitialShowing(false);
                         Utils.LogUtils.logE("Map_fromSettings", "Ad failed: " + errorMsg);
@@ -142,7 +182,7 @@ public class Settings_Activity extends AppCompatActivity {
                     Utils.LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
                 }
             } else {
-                startActivity(new Intent(this, Map_Activity.class));
+                openMapForSession();
             }
 
         });
@@ -222,6 +262,12 @@ public class Settings_Activity extends AppCompatActivity {
         });
     }
 
+    private void openMapForSession() {
+        Intent intent = new Intent(this, Map_Activity.class);
+        intent.putExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE, currentMapType);
+        mapTypeLauncher.launch(intent);
+    }
+
     private void myLocationNavigation() {
         MyLocation receivedLocation = (MyLocation) getIntent().getSerializableExtra(MyApplication.EXTRA_LOCATION);
         Intent intent = new Intent(Settings_Activity.this, MyLocation_Activity.class);
@@ -262,11 +308,11 @@ public class Settings_Activity extends AppCompatActivity {
             fontList = getResources().getStringArray(R.array.font_name_array);
         }
 
-        fontStyleDialog = new FontStyleDialog(this, fontList, new OnFontSelectedListener() {
+        fontStyleDialog = StampSettingsBottomSheets.showFontStyle(this, fontList, currentFontStyle, new OnFontSelectedListener() {
             @Override
             public void onFontSelected(String fontName, int position) {
-                msp.setInteger(getApplicationContext(), SP.LOCATION_FONT_POSITION, position);
-                FastSave.getInstance().saveString(MyApplication.FONT_STYLE, fontViewModel.getFontList().getValue()[position]);
+                currentFontStyle = fontName;
+                fontChanged = true;
             }
 
             @Override
@@ -274,35 +320,26 @@ public class Settings_Activity extends AppCompatActivity {
                 fontStyleDialog = null;
             }
         });
-
-        new HelperClass().setBottomDialog(fontStyleDialog);
-        fontStyleDialog.show();
     }
 
     private void showDateTimeDialog() {
         if (dateTimeDialog != null && dateTimeDialog.isShowing()) {
             return;
         }
-        DateTimeDialog dateTimeDialog = new DateTimeDialog(this, new OnDateTimeSelectedListener() {
+        dateTimeDialog = StampSettingsBottomSheets.showDateTime(this, currentCombinedFormat, new OnDateTimeSelectedListener() {
             @Override
             public void onDateTimeSelected(DateFormatModel selectedFormat, int position) {
-                // Save the selected format
-                DateFormatRepository repo = new DateFormatRepository(Settings_Activity.this);
-                repo.saveSelectedFormat(selectedFormat.getFormat_Combined(), selectedFormat.getFormat_Date(), selectedFormat.getFormat_Time());
+                currentDateFormat = selectedFormat.getFormat_Date();
+                currentTimeFormat = selectedFormat.getFormat_Time();
+                currentCombinedFormat = selectedFormat.getFormat_Combined();
+                dateTimeChanged = true;
             }
 
             @Override
             public void onDialogDismissed() {
-                // Optional: do something when dialog is closed
+                dateTimeDialog = null;
             }
         });
-
-        // Pass currently active format so the dialog highlights it
-        String currentFormat = new DateFormatRepository(this).getCurrentFormat();
-        dateTimeDialog.setCurrentActiveFormat(currentFormat);
-
-        new HelperClass().setBottomDialog(dateTimeDialog);
-        dateTimeDialog.show();
     }
     private void showRateUsDialog() {
         if (rateDialog != null && rateDialog.isShowing()) {
@@ -343,11 +380,29 @@ public class Settings_Activity extends AppCompatActivity {
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
-
+        Intent resultIntent = new Intent();
+        boolean hasResult = false;
         if (selectedLocation != null) {
-            Intent resultIntent = new Intent();
             resultIntent.putExtra(MyApplication.EXTRA_LOCATION, selectedLocation);
+            hasResult = true;
+        }
+        if (fontChanged) {
+            resultIntent.putExtra(EXTRA_SESSION_FONT_STYLE, currentFontStyle);
+            hasResult = true;
+        }
+        if (dateTimeChanged) {
+            resultIntent.putExtra(EXTRA_SESSION_DATE_FORMAT, currentDateFormat);
+            resultIntent.putExtra(EXTRA_SESSION_TIME_FORMAT, currentTimeFormat);
+            resultIntent.putExtra(EXTRA_SESSION_COMBINED_FORMAT, currentCombinedFormat);
+            hasResult = true;
+        }
+        if (mapTypeChanged) {
+            resultIntent.putExtra(EXTRA_SESSION_MAP_TYPE, currentMapType);
+            hasResult = true;
+        }
+        if (hasResult) {
             setResult(Activity.RESULT_OK, resultIntent);
         }
 

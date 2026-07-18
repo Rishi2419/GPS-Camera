@@ -162,4 +162,19 @@
     <string name="_5_seconds">5초</string>
     <string name="_10_seconds">10초</string>
     <string name="full">전체</string>
+    <string name="temporary_changes_template_hint">여기에서 변경한 내용은 임시입니다. 영구적으로 저장하려면 <annotation key="template_link" value="true">템플릿</annotation>을 사용하세요</string>
+    <string name="temporary_changes_template_link">템플릿</string>
+    <string name="preparing_video">동영상 준비 중...</string>
+    <string name="share_video">동영상 공유!</string>
+    <string name="video_play_pause">동영상 재생 또는 일시정지</string>
+    <string name="delete_multiple_photos_title">사진 %1$d개를 삭제할까요?</string>
+    <string name="delete_multiple_photos_message">사진 %1$d개를 삭제하시겠습니까?\n 이 작업은 취소할 수 없습니다.</string>
+    <string name="delete_multiple_videos_title">동영상 %1$d개를 삭제할까요?</string>
+    <string name="delete_multiple_videos_message">동영상 %1$d개를 삭제하시겠습니까?\n 이 작업은 취소할 수 없습니다.</string>
+    <string name="delete_multiple_mixed_title">사진 및 동영상 %1$d개를 삭제할까요?</string>
+    <string name="delete_multiple_mixed_message">사진 및 동영상 %1$d개를 삭제하시겠습니까?\n 이 작업은 취소할 수 없습니다.</string>
+    <string name="please_select_stars">제출하기 전에 별점을 선택하세요</string>
+    <string name="set_current_location">현재 위치 설정</string>
+    <string name="no_preview_available">미리보기를 사용할 수 없음</string>
+    <string name="go_to_collection">컬렉션으로 이동</string>
 </resources>

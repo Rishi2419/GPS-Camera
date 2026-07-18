@@ -6,9 +6,6 @@ import android.util.Log;
 
 public class Utils {
 
-    public static final String weeklykey = "journeystamp_weekly_subscription";
-    public static final String yearlykey = "timestamp_yearly_subscription";
-
     public static void setRated(Context context, boolean z) {
         SharedPreferences.Editor edit = context.getSharedPreferences("GPSCamera", 0).edit();
         edit.putBoolean("is_rated", z);

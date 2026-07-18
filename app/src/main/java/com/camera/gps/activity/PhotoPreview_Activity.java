@@ -442,6 +442,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         shareVideoOnly(photo);
     }
 
+    @androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
     private void shareVideoOnly(Photo photo) {
         VideoStampShareHelper.shareVideoOnly(this, photo);
     }
@@ -922,6 +923,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         // Check if we're in full screen mode and UI is hidden
         if ((currentRatioType == 0 || isLargeRatio()) && !isUIVisible) {

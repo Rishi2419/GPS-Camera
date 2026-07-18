@@ -75,11 +75,11 @@ public final class MyApplication extends Application {
     //LANGUGE
     //return lang code from sharedpref & if not present than return en
     public static String getLanguageCode() {
-        return preferences.getString("languageCodeJourneyStamp", "en");
+        return preferences.getString("languageCode", "en");
     }
 
     public static void setLanguageCode(String lan) {
-        mEditor.putString("languageCodeJourneyStamp", lan).commit();
+        mEditor.putString("languageCode", lan).commit();
     }
     public static boolean getIsLanguage() {
         return preferences.getBoolean("isLanguage", false);

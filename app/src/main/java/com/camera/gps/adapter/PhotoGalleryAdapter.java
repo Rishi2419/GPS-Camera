@@ -703,6 +703,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             startActivity(Intent.createChooser(intent, chooserTitle));
         }
 
+        @androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
         private void shareVideoOnly(Photo photo) {
             VideoStampShareHelper.shareVideoOnly(requireContext(), photo);
         }

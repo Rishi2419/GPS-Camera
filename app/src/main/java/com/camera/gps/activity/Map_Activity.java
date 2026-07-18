@@ -395,6 +395,7 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
 
             }
         });
+        mapTypeDialog.setTemporaryMode(true);
 
         Window window = mapTypeDialog.getWindow();
         if (window != null) {
@@ -408,6 +409,7 @@ public final class Map_Activity extends AppCompatActivity implements OnMapReadyC
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         setResultForMapType();
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {

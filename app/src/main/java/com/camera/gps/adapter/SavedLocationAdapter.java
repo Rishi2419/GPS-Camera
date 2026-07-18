@@ -124,20 +124,24 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
     public final class ViewHolder extends RecyclerView.ViewHolder {
         private final ItemSavedLocationBinding bin;
         GoogleMap mMap;
+        private MyLocation boundLocation;
         private String boundLatitude;
         private String boundLongitude;
+        private boolean hasRenderedMarker;
 
         public ViewHolder(ItemSavedLocationBinding bin) {
             super(bin.getRoot());
             this.bin = bin;
 
             bin.mapView.onCreate(null);
+            bin.mapView.onResume();
             bin.mapView.getMapAsync(map -> {
                 this.mMap = map;
                 map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
                 map.getUiSettings().setAllGesturesEnabled(false);
                 map.getUiSettings().setMapToolbarEnabled(false);
                 map.getUiSettings().setZoomControlsEnabled(false);
+                renderBoundLocation();
             });
         }
 
@@ -147,6 +151,7 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
 
         public void bind(final MyLocation model) {
             ItemSavedLocationBinding itemMyLocationBinding = this.bin;
+            boundLocation = model;
 
             // Show selection indicator based on selection mode and selection state
             if (isSelectionMode) {
@@ -177,14 +182,7 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
             itemMyLocationBinding.tvTime.setText(model.getTime());
             itemMyLocationBinding.tvTitle.setText(model.getTitle());
 
-            if (mMap != null && (!latitude.equals(boundLatitude) || !longitude.equals(boundLongitude))) {
-                mMap.clear();
-                LatLng latLng = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
-                mMap.addMarker(new MarkerOptions().position(latLng).title("Current position"));
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f));
-                boundLatitude = latitude;
-                boundLongitude = longitude;
-            }
+            renderBoundLocation();
 
             itemMyLocationBinding.btnCompass.setOnClickListener(view -> {
                 if (!isSelectionMode) { // Only allow navigation when not in selection mode
@@ -227,6 +225,41 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
             this.itemView.setOnLongClickListener(null);
         }
 
+        private void renderBoundLocation() {
+            if (mMap == null || boundLocation == null) {
+                return;
+            }
+
+            String latitude = boundLocation.getLatitude();
+            String longitude = boundLocation.getLongitude();
+            if (latitude == null || longitude == null) {
+                return;
+            }
+            if (hasRenderedMarker
+                    && latitude.equals(boundLatitude)
+                    && longitude.equals(boundLongitude)) {
+                return;
+            }
+
+            mMap.clear();
+            LatLng latLng = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
+            mMap.addMarker(new MarkerOptions().position(latLng).title("Current position"));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f));
+            boundLatitude = latitude;
+            boundLongitude = longitude;
+            hasRenderedMarker = true;
+        }
+
+        private void recycle() {
+            boundLocation = null;
+            boundLatitude = null;
+            boundLongitude = null;
+            hasRenderedMarker = false;
+            if (mMap != null) {
+                mMap.clear();
+            }
+        }
+
         private void openNavigationApp(MyLocation location) {
             String uri = String.format(
                     "https://www.google.com/maps/dir/?api=1&destination=%s,%s",
@@ -243,7 +276,7 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
         }
 
         private void openGoogleMaps(MyLocation location) {
-            String uri = String.format("http://maps.google.com/maps?q=%s,%s",
+            String uri = String.format("https://maps.google.com/maps?q=%s,%s",
                     location.getLatitude(),
                     location.getLongitude());
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
@@ -256,24 +289,49 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
             }
         }
 
+//        private void shareLocation(MyLocation location) {
+//            String shareText = String.format(
+//                    "📸 Captured with %s\n\n" +
+//                            "📍 %s\n" +
+//                            "🏠 Address: %s\n\n" +
+//                            "🗺 Open in Google Maps:\n" +
+//                            "https://maps.google.com/?q=%s,%s\n\n" +
+//                            "📲 Get the app: https://play.google.com/store/apps/details?id=%s",
+//                    itemView.getContext().getString(R.string.app_name),
+//                    location.getTitle() != null ? location.getTitle() : "My Location",
+//                    location.getAddress() != null ? location.getAddress() : "Unknown Address",
+//                    location.getLatitude(),
+//                    location.getLongitude(),
+//                    itemView.getContext().getPackageName()
+//            );
+//            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+//            shareIntent.setType("text/plain");
+//            shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
+//            itemView.getContext().startActivity(Intent.createChooser(shareIntent, "Share location via"));
+//        }
+
         private void shareLocation(MyLocation location) {
             String shareText = String.format(
-                    "📸 Captured with GeoCamera\n\n" +
                             "📍 %s\n" +
                             "🏠 Address: %s\n\n" +
-                            "🗺 Open in Google Maps:\n" +
-                            "https://maps.google.com/?q=%s,%s\n\n" +
-                            "📲 Get the app: https://play.google.com/store/apps/details?id=com.yourpackage.name",
+                            "🗺️ Open in Google Maps:\n" +
+                            "https://maps.google.com/?q=%s,%s",
+
                     location.getTitle() != null ? location.getTitle() : "My Location",
                     location.getAddress() != null ? location.getAddress() : "Unknown Address",
                     location.getLatitude(),
                     location.getLongitude()
             );
+
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
             shareIntent.setType("text/plain");
             shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
-            itemView.getContext().startActivity(Intent.createChooser(shareIntent, "Share location via"));
+
+            itemView.getContext().startActivity(
+                    Intent.createChooser(shareIntent, "Share location via")
+            );
         }
+
     }
 
     public static final class NativeAdViewHolder extends RecyclerView.ViewHolder {
@@ -312,8 +370,8 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
     @Override
     public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewRecycled(holder);
-        if (holder instanceof ViewHolder && ((ViewHolder) holder).getMMap() != null) {
-            ((ViewHolder) holder).getMMap().clear();
+        if (holder instanceof ViewHolder) {
+            ((ViewHolder) holder).recycle();
         }
     }
 

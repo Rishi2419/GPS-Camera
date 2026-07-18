@@ -129,6 +129,7 @@ public class Language_Activity extends AppCompatActivity implements LanguageList
     }
 
     @Override
+    @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
             if (!InterstitialAdManager.isInterstitialShowing()) {

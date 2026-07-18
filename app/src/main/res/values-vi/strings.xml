@@ -161,4 +161,19 @@
     <string name="_5_seconds">5 giây</string>
     <string name="_10_seconds">10 giây</string>
     <string name="full">Đầy đủ</string>
+    <string name="temporary_changes_template_hint">Các thay đổi ở đây chỉ là tạm thời – hãy dùng <annotation key="template_link" value="true">Mẫu</annotation> để lưu vĩnh viễn</string>
+    <string name="temporary_changes_template_link">Mẫu</string>
+    <string name="preparing_video">Đang chuẩn bị video...</string>
+    <string name="share_video">Chia sẻ video!</string>
+    <string name="video_play_pause">Phát hoặc tạm dừng video</string>
+    <string name="delete_multiple_photos_title">Xóa %1$d ảnh?</string>
+    <string name="delete_multiple_photos_message">Bạn có chắc muốn xóa %1$d ảnh này không?\n Không thể hoàn tác thao tác này.</string>
+    <string name="delete_multiple_videos_title">Xóa %1$d video?</string>
+    <string name="delete_multiple_videos_message">Bạn có chắc muốn xóa %1$d video này không?\n Không thể hoàn tác thao tác này.</string>
+    <string name="delete_multiple_mixed_title">Xóa %1$d hình ảnh và video?</string>
+    <string name="delete_multiple_mixed_message">Bạn có chắc muốn xóa %1$d ảnh và video này không?\n Không thể hoàn tác thao tác này.</string>
+    <string name="please_select_stars">Vui lòng chọn số sao trước khi gửi</string>
+    <string name="set_current_location">Đặt vị trí hiện tại</string>
+    <string name="no_preview_available">Không có bản xem trước</string>
+    <string name="go_to_collection">Đi tới Bộ sưu tập</string>
 </resources>

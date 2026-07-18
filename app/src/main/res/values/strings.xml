@@ -192,4 +192,6 @@
     <string name="set_current_location">Set current</string>
     <string name="no_preview_available">No preview available</string>
     <string name="go_to_collection">Go to Collections</string>
+    <string name="temporary_changes_template_hint">Changes here are temporary – use <annotation key="template_link" value="true">Templates</annotation> to save permanently</string>
+    <string name="temporary_changes_template_link">Templates</string>
 </resources>

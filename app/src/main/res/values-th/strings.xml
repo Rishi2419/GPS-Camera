@@ -161,4 +161,19 @@
     <string name="_5_seconds">5 วินาที</string>
     <string name="_10_seconds">10 วินาที</string>
     <string name="full">เต็ม</string>
+    <string name="temporary_changes_template_hint">การเปลี่ยนแปลงที่นี่เป็นแบบชั่วคราว – ใช้ <annotation key="template_link" value="true">เทมเพลต</annotation> เพื่อบันทึกถาวร</string>
+    <string name="temporary_changes_template_link">เทมเพลต</string>
+    <string name="preparing_video">กำลังเตรียมวิดีโอ...</string>
+    <string name="share_video">แชร์วิดีโอ!</string>
+    <string name="video_play_pause">เล่นหรือหยุดวิดีโอชั่วคราว</string>
+    <string name="delete_multiple_photos_title">ลบรูปภาพ %1$d รูปหรือไม่</string>
+    <string name="delete_multiple_photos_message">คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพ %1$d รูปนี้\n ไม่สามารถเลิกทำได้</string>
+    <string name="delete_multiple_videos_title">ลบวิดีโอ %1$d รายการหรือไม่</string>
+    <string name="delete_multiple_videos_message">คุณแน่ใจหรือไม่ว่าต้องการลบวิดีโอ %1$d รายการนี้\n ไม่สามารถเลิกทำได้</string>
+    <string name="delete_multiple_mixed_title">ลบรูปภาพและวิดีโอ %1$d รายการหรือไม่</string>
+    <string name="delete_multiple_mixed_message">คุณแน่ใจหรือไม่ว่าต้องการลบรูปภาพและวิดีโอ %1$d รายการนี้\n ไม่สามารถเลิกทำได้</string>
+    <string name="please_select_stars">โปรดเลือกดาวก่อนส่ง</string>
+    <string name="set_current_location">ตั้งตำแหน่งปัจจุบัน</string>
+    <string name="no_preview_available">ไม่มีตัวอย่าง</string>
+    <string name="go_to_collection">ไปที่คอลเลกชัน</string>
 </resources>

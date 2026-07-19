@@ -3,8 +3,6 @@ package com.camera.gps.adsmanager;
 import android.app.Activity;
 
 import com.camera.gps.adsmanager.admob.AdMobOpenAdHelper;
-import com.camera.gps.adsmanager.applovin.AppLovinOpenAdHelper;
-import com.camera.gps.adsmanager.pangle.PangleOpenAdHelper;
 import com.camera.gps.model.Ads.AdsData;
 import com.camera.gps.model.Ads.RemoteConfigResponse;
 import com.camera.gps.util.Utils.LogUtils;
@@ -150,12 +148,6 @@ public class OpenAdManager {
                 case "admob":
                     AdMobOpenAdHelper.loadAdmobOpenAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
                     break;
-                case "applovin":
-                    AppLovinOpenAdHelper.loadAppLovinOpenAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "pangle":
-                    PangleOpenAdHelper.loadPangleOpenAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
                 default:
                     onPublisherFailed.onFailure("Unknown publisher: " + publisher);
                     break;
@@ -177,22 +169,6 @@ public class OpenAdManager {
                             error -> onPublisherFailed.onFailure(error)
                     );
                     break;
-                case "applovin":
-                    AppLovinOpenAdHelper.showAppLovinOpenAdIfAvailable(activity,
-                            () -> {
-                                if (onAdClosed != null) onAdClosed.run();
-                            },
-                            error -> onPublisherFailed.onFailure(error)
-                    );
-                    break;
-                case "pangle":
-                    PangleOpenAdHelper.showPangleOpenAdIfAvailable(activity,
-                            () -> {
-                                if (onAdClosed != null) onAdClosed.run();
-                            },
-                            error -> onPublisherFailed.onFailure(error)
-                    );
-                    break;
                 default:
                     onPublisherFailed.onFailure("Unknown publisher: " + publisher);
                     break;
@@ -208,10 +184,6 @@ public class OpenAdManager {
             switch (publisher) {
                 case "admob":
                     return AdMobOpenAdHelper.isAdReady();
-                case "applovin":
-                    return AppLovinOpenAdHelper.isAdReady();
-                case "pangle":
-                    return PangleOpenAdHelper.isAdReady();
                 default:
                     return false;
             }

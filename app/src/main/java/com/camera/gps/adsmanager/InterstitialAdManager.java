@@ -3,11 +3,6 @@ package com.camera.gps.adsmanager;
 import android.app.Activity;
 
 import com.camera.gps.adsmanager.admob.AdMobInterstitialHelper;
-import com.camera.gps.adsmanager.applovin.AppLovinInterstitialHelper;
-import com.camera.gps.adsmanager.inmobi.InMobiInterstitialHelper;
-import com.camera.gps.adsmanager.ironsource.IronSourceInterstitialHelper;
-import com.camera.gps.adsmanager.mintegral.MintegralInterstitialHelper;
-import com.camera.gps.adsmanager.pangle.PangleInterstitialAdHelper;
 import com.camera.gps.adsmanager.unity.UnityInterstitialHelper;
 import com.camera.gps.model.Ads.AdsData;
 import com.camera.gps.model.Ads.RemoteConfigResponse;
@@ -110,23 +105,8 @@ public class InterstitialAdManager {
                 case "admob":
                     AdMobInterstitialHelper.loadAdMobInterstitialAd(activity, clearLoading, error -> clearLoading.run());
                     break;
-                case "applovin":
-                    AppLovinInterstitialHelper.loadAppLovinInterstitialAd(activity, clearLoading, error -> clearLoading.run());
-                    break;
-                case "inmobi":
-                    InMobiInterstitialHelper.loadInmobiInterstitialAd(activity, clearLoading, error -> clearLoading.run());
-                    break;
-                case "pangle":
-                    PangleInterstitialAdHelper.loadPangleInterstitialAd(activity, clearLoading, error -> clearLoading.run());
-                    break;
-                case "mintegral":
-                    MintegralInterstitialHelper.loadMintegralInterstitialAd(activity, clearLoading, error -> clearLoading.run());
-                    break;
                 case "unity":
                     UnityInterstitialHelper.loadUnityInterstitialAd(activity, clearLoading, error -> clearLoading.run());
-                    break;
-                case "ironsource":
-                    IronSourceInterstitialHelper.loadIronSourceInterstitialAd(activity, clearLoading, error -> clearLoading.run());
                     break;
                 default:
                     LogUtils.logW(TAG, "preloadPublisher: Unknown publisher " + normalized + " - skipping");
@@ -501,23 +481,8 @@ public class InterstitialAdManager {
                 case "admob":
                     AdMobInterstitialHelper.loadAdMobInterstitialAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
                     break;
-                case "applovin":
-                    AppLovinInterstitialHelper.loadAppLovinInterstitialAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "inmobi":
-                    InMobiInterstitialHelper.loadInmobiInterstitialAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "pangle":
-                    PangleInterstitialAdHelper.loadPangleInterstitialAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "mintegral":
-                    MintegralInterstitialHelper.loadMintegralInterstitialAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
                 case "unity":
                     UnityInterstitialHelper.loadUnityInterstitialAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "ironsource":
-                    IronSourceInterstitialHelper.loadIronSourceInterstitialAd(activity, onLoaded, error -> onPublisherFailed.onFailure(error));
                     break;
                 default:
                     LogUtils.logW(TAG, "Unknown publisher: " + publisher);
@@ -547,63 +512,6 @@ public class InterstitialAdManager {
                             }
                     );
                     break;
-                case "applovin":
-                    try {
-                        AppLovinInterstitialHelper.showAppLovinInterstitialAd(activity,
-                                () -> {
-                                    int cooldownSeconds = remoteConfig.getInterstitialCooldownSeconds();
-                                    AdCooldownManager.getInstance().onAdClosed(activity, placement, cooldownSeconds, publisher);
-                                    if (onAdClosed != null) onAdClosed.run();
-                                }
-                        );
-                    } catch (Exception e) {
-                        LogUtils.logE(TAG, "AppLovin ad show error: " + e.getMessage());
-                        onPublisherFailed.onFailure("AppLovin failed to show: " + e.getMessage());
-                    }
-                    break;
-                case "inmobi":
-                    try {
-                        InMobiInterstitialHelper.showInmobiInterstitialAd(activity,
-                                () -> {
-                                    int cooldownSeconds = remoteConfig.getInterstitialCooldownSeconds();
-                                    AdCooldownManager.getInstance().onAdClosed(activity, placement, cooldownSeconds, publisher);
-                                    if (onAdClosed != null) onAdClosed.run();
-                                }
-                        );
-                    } catch (Exception e) {
-                        LogUtils.logE(TAG, "InMobi ad show error: " + e.getMessage());
-                        onPublisherFailed.onFailure("InMobi failed to show: " + e.getMessage());
-                    }
-                    break;
-                case "pangle":
-                    try {
-                        PangleInterstitialAdHelper.showPangleInterstitialAd(activity,
-                                () -> { /* Ad started showing */ },
-                                () -> {
-                                    int cooldownSeconds = remoteConfig.getInterstitialCooldownSeconds();
-                                    AdCooldownManager.getInstance().onAdClosed(activity, placement, cooldownSeconds, publisher);
-                                    if (onAdClosed != null) onAdClosed.run();
-                                }
-                        );
-                    } catch (Exception e) {
-                        LogUtils.logE(TAG, "Pangle ad show error: " + e.getMessage());
-                        onPublisherFailed.onFailure("Pangle failed to show: " + e.getMessage());
-                    }
-                    break;
-                case "mintegral":
-                    try {
-                        MintegralInterstitialHelper.showMintegralInterstitialAd(activity,
-                                () -> {
-                                    int cooldownSeconds = remoteConfig.getInterstitialCooldownSeconds();
-                                    AdCooldownManager.getInstance().onAdClosed(activity, placement, cooldownSeconds, publisher);
-                                    if (onAdClosed != null) onAdClosed.run();
-                                }
-                        );
-                    } catch (Exception e) {
-                        LogUtils.logE(TAG, "Mintegral ad show error: " + e.getMessage());
-                        onPublisherFailed.onFailure("Mintegral failed to show: " + e.getMessage());
-                    }
-                    break;
                 case "unity":
                     try {
                         UnityInterstitialHelper.showUnityInterstitialAd(activity,
@@ -619,21 +527,6 @@ public class InterstitialAdManager {
                     } catch (Exception e) {
                         LogUtils.logE(TAG, "Unity ad show error: " + e.getMessage());
                         onPublisherFailed.onFailure("Unity failed to show: " + e.getMessage());
-                    }
-                    break;
-                case "ironsource":
-                    try {
-                        IronSourceInterstitialHelper.showIronSourceInterstitialAd(activity,
-                                () -> {
-                                    int cooldownSeconds = remoteConfig.getInterstitialCooldownSeconds();
-                                    AdCooldownManager.getInstance().onAdClosed(activity, placement, cooldownSeconds, publisher);
-                                    if (onAdClosed != null) onAdClosed.run();
-                                },
-                                () -> onPublisherFailed.onFailure("IronSource failed to show")
-                        );
-                    } catch (Exception e) {
-                        LogUtils.logE(TAG, "IronSource ad show error: " + e.getMessage());
-                        onPublisherFailed.onFailure("IronSource failed to show: " + e.getMessage());
                     }
                     break;
                 default:
@@ -661,18 +554,8 @@ public class InterstitialAdManager {
             switch (publisher) {
                 case "admob":
                     return AdMobInterstitialHelper.isAdReady();
-                case "applovin":
-                    return AppLovinInterstitialHelper.isAdReady();
-                case "inmobi":
-                    return InMobiInterstitialHelper.isAdReady();
-                case "pangle":
-                    return PangleInterstitialAdHelper.isAdReady();
-                case "mintegral":
-                    return MintegralInterstitialHelper.isAdReady();
                 case "unity":
                     return UnityInterstitialHelper.isAdReady();
-                case "ironsource":
-                    return IronSourceInterstitialHelper.isAdReady();
                 default:
                     return false;
             }

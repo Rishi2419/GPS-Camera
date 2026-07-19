@@ -4,10 +4,6 @@ import android.app.Activity;
 import android.view.View;
 import android.widget.FrameLayout;
 import com.camera.gps.adsmanager.admob.AdMobNativeAdHelper;
-import com.camera.gps.adsmanager.applovin.AppLovinNativeAdHelper;
-import com.camera.gps.adsmanager.inmobi.InMobiNativeHelper;
-import com.camera.gps.adsmanager.mintegral.MintegralNativeHelper;
-import com.camera.gps.adsmanager.pangle.PangleNativeAdHelper;
 import com.camera.gps.model.Ads.AdsData;
 import com.camera.gps.util.Utils.LogUtils;
 
@@ -124,18 +120,6 @@ public class NativeAdManager {
             switch (publisher) {
                 case "admob":
                     AdMobNativeAdHelper.loadAdmobNativeAd(activity, container, onLoaded, error -> onPublisherFailed.onFailure(error), adSize, isSizeBig);
-                    break;
-                case "applovin":
-                    AppLovinNativeAdHelper.loadApplovinNativeAd(activity, container, adSize, isSizeBig, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "inmobi":
-                    InMobiNativeHelper.loadInMobiNativeAd(activity, container, adSize, isSizeBig, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "pangle":
-                    PangleNativeAdHelper.loadPangleNativeAd(activity, container, adSize, isSizeBig, onLoaded, error -> onPublisherFailed.onFailure(error));
-                    break;
-                case "mintegral":
-                    MintegralNativeHelper.loadMintegralNativeAd(activity, container, adSize, isSizeBig, onLoaded, error -> onPublisherFailed.onFailure(error));
                     break;
                 default:
                     LogUtils.logW(TAG, "Unknown publisher: " + publisher);

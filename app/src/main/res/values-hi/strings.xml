@@ -176,4 +176,6 @@
     <string name="set_current_location">वर्तमान स्थान सेट करें</string>
     <string name="no_preview_available">कोई पूर्वावलोकन उपलब्ध नहीं</string>
     <string name="go_to_collection">कलेक्शन पर जाएँ</string>
+    <string name="privacy_policy">गोपनीयता नीति</string>
+    <string name="privacy_policy_desc">जानें कि हम आपके डेटा की सुरक्षा और उपयोग कैसे करते हैं</string>
 </resources>

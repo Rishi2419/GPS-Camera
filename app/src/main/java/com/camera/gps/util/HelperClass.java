@@ -23,6 +23,8 @@ import com.camera.gps.R;
 
 public class HelperClass {
 
+    private static final String DEFAULT_FONT = "Roboto Regular.ttf";
+
     public String setDateTime(String str, String str2, Context context) {
         return new SimpleDateFormat(str, Locale.getDefault()).format(Calendar.getInstance().getTime());
     }
@@ -69,15 +71,24 @@ public class HelperClass {
     }
 
     public Typeface getFontStyle(Context context, String str) {
-        File filesDir = context.getFilesDir();
-        File file = new File(filesDir, "font/" + str);
-        if (!file.exists()) {
-            return Typeface.createFromAsset(context.getResources().getAssets(), str);
+        if (context == null) {
+            return Typeface.DEFAULT;
         }
+
+        String fontName = str == null || str.trim().isEmpty() ? DEFAULT_FONT : str;
+        File filesDir = context.getFilesDir();
+        File file = new File(filesDir, "font/" + fontName);
         try {
-            return Typeface.createFromFile(file);
-        } catch (Exception unused) {
-            return Typeface.createFromAsset(context.getResources().getAssets(), "Roboto Regular.ttf");
+            if (file.exists()) {
+                return Typeface.createFromFile(file);
+            }
+            return Typeface.createFromAsset(context.getAssets(), fontName);
+        } catch (Exception ignored) {
+            try {
+                return Typeface.createFromAsset(context.getAssets(), DEFAULT_FONT);
+            } catch (Exception fallbackError) {
+                return Typeface.DEFAULT;
+            }
         }
     }
 }

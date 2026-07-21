@@ -1,0 +1,31 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+
+    <!-- Background Card -->
+    <path
+        android:fillColor="#F2F8FB"
+        android:pathData="M6,0L34,0A6,6 0,0 1,40 6L40,34A6,6 0,0 1,34 40L6,40A6,6 0,0 1,0 34L0,6A6,6 0,0 1,6 0z" />
+
+    <!-- Scaled Group to make the icon larger (Centered) -->
+    <group
+        android:pivotX="15"
+        android:pivotY="15"
+        android:scaleX="1.35"
+        android:scaleY="1.35"
+        android:translateX="5"
+        android:translateY="5">
+
+        <!-- Icon Path: Changed to explicit thin strokes instead of filled shapes -->
+        <path
+            android:strokeColor="#121314"
+            android:strokeWidth="1.0"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M15,6 L22,9 V14.2 C22,18.65 19.02,22.79 15,24 C10.98,22.79 8,18.65 8,14.2 V9 Z
+                             M15,11.5 V17.5
+                             M12,14.5 H18" />
+    </group>
+</vector>

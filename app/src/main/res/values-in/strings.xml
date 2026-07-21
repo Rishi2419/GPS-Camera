@@ -176,4 +176,6 @@
     <string name="set_current_location">Atur lokasi saat ini</string>
     <string name="no_preview_available">Pratinjau tidak tersedia</string>
     <string name="go_to_collection">Buka Koleksi</string>
+    <string name="privacy_policy">Kebijakan privasi</string>
+    <string name="privacy_policy_desc">Pelajari cara kami melindungi dan menggunakan data Anda</string>
 </resources>

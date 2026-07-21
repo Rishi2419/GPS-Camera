@@ -176,4 +176,6 @@
     <string name="set_current_location">Đặt vị trí hiện tại</string>
     <string name="no_preview_available">Không có bản xem trước</string>
     <string name="go_to_collection">Đi tới Bộ sưu tập</string>
+    <string name="privacy_policy">Chính sách quyền riêng tư</string>
+    <string name="privacy_policy_desc">Tìm hiểu cách chúng tôi bảo vệ và sử dụng dữ liệu của bạn</string>
 </resources>

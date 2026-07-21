@@ -176,4 +176,6 @@
     <string name="set_current_location">ตั้งตำแหน่งปัจจุบัน</string>
     <string name="no_preview_available">ไม่มีตัวอย่าง</string>
     <string name="go_to_collection">ไปที่คอลเลกชัน</string>
+    <string name="privacy_policy">นโยบายความเป็นส่วนตัว</string>
+    <string name="privacy_policy_desc">ดูวิธีที่เราปกป้องและใช้ข้อมูลของคุณ</string>
 </resources>

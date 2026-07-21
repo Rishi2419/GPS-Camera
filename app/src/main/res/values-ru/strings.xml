@@ -177,4 +177,6 @@
     <string name="set_current_location">Установить текущее местоположение</string>
     <string name="no_preview_available">Предварительный просмотр недоступен</string>
     <string name="go_to_collection">Перейти в коллекции</string>
+    <string name="privacy_policy">Политика конфиденциальности</string>
+    <string name="privacy_policy_desc">Узнайте, как мы защищаем и используем ваши данные</string>
 </resources>

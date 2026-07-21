@@ -60,6 +60,9 @@
             android:name=".activity.Settings_Activity"
             android:exported="false" />
         <activity
+            android:name=".activity.PrivacyPolicyActivity"
+            android:exported="false" />
+        <activity
             android:name=".activity.Edit_Activity"
             android:exported="false" />
         <activity

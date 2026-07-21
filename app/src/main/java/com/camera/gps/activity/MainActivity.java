@@ -1295,21 +1295,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 if (savedDate != null && !savedDate.trim().isEmpty() && savedTime != null && !savedTime.trim().isEmpty()) {
                     Log.d("Location_date", "If block");
-                    // Parse the saved date string "27-08-2025"
-                    SimpleDateFormat inputDateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
-                    Date parsedDate = inputDateFormat.parse(savedDate);
-
-                    // Convert to your required output format
-                    SimpleDateFormat stampFormat = new SimpleDateFormat(format_Date, Locale.getDefault());
-                    photo.setDate(stampFormat.format(parsedDate));
-
-                    // Parse the saved time string "00:00:46 am"
-                    SimpleDateFormat inputTimeFormat = new SimpleDateFormat("hh:mm:ss a", Locale.getDefault());
-                    Date parsedTime = inputTimeFormat.parse(savedTime);
-
-                    // Convert to your required output format
-                    SimpleDateFormat timeFormat = new SimpleDateFormat(format_Time, Locale.getDefault());
-                    photo.setTime(timeFormat.format(parsedTime));
+                    // Custom locations already contain the user-selected display values. Their
+                    // formats are not guaranteed to be dd-MM-yyyy / hh:mm:ss a, so parsing them
+                    // with fixed patterns can abort the rest of the photo metadata initialization.
+                    photo.setDate(savedDate);
+                    photo.setTime(savedTime);
                 } else {
                     Log.d("Location_date", "Else block");
                     SimpleDateFormat stampFormat = new SimpleDateFormat(format_Date, Locale.getDefault());
@@ -2043,6 +2033,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void initializeStampViews(View stampView) {
+        compactLiveStampText(stampView);
         mapViewContainer = stampView.findViewById(R.id.mapView);
         txtLocation = stampView.findViewById(R.id.txt_gps_stamp_location);
         txtDateTime = stampView.findViewById(R.id.txt_gps_stamp_datetime);
@@ -2065,6 +2056,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         latLongContainer = stampView.findViewById(R.id.latLongContainer);
         dateTimeContainer = stampView.findViewById(R.id.dateTimeContainer);
+    }
+
+    /**
+     * The camera overlay is measured against the tall camera screen, which makes the default
+     * top/bottom font metrics accumulate across every row. The captured-photo renderer is
+     * measured against the media frame and is visibly tighter. Videos reuse this live view, so
+     * normalize every text line here before the view is measured and exported.
+     */
+    private void compactLiveStampText(View view) {
+        if (view instanceof TextView) {
+            TextView textView = (TextView) view;
+            textView.setIncludeFontPadding(false);
+            textView.setMinHeight(0);
+            textView.setMinimumHeight(0);
+            return;
+        }
+
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                compactLiveStampText(group.getChildAt(index));
+            }
+        }
     }
 
     private void setupMapFragment() {

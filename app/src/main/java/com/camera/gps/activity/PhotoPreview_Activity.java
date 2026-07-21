@@ -77,6 +77,7 @@ import com.camera.gps.R;
 import com.camera.gps.data.GlobalViewModel;
 import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
+import com.camera.gps.model.StampTemplateDefaults;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.StampBackgroundUtils;
@@ -460,12 +461,23 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         currentLongitude = Double.parseDouble(photo.getLongitude());
         date = photo.getDate();
         time = photo.getTime();
-        fontStyle = photo.getFontStyle();
         title = photo.getTitle();
-        current_map_type = photo.getMap_type();
+        Integer storedStampType = photo.getType();
+        currentstamp_type = storedStampType != null ? storedStampType : 1;
+        StampTemplateDefaults.Settings templateDefaults =
+                StampTemplateDefaults.forTemplate(this, currentstamp_type);
+
+        String storedFontStyle = photo.getFontStyle();
+        fontStyle = storedFontStyle == null || storedFontStyle.trim().isEmpty()
+                ? templateDefaults.fontStyle
+                : storedFontStyle;
+
+        Integer storedMapType = photo.getMap_type();
+        current_map_type = storedMapType != null
+                ? storedMapType
+                : templateDefaults.mapType;
         mapImagePath = photo.getMapImagePath();
-        show_watermark = photo.getShow_watermark();
-        currentstamp_type = photo.getType();
+        show_watermark = Boolean.TRUE.equals(photo.getShow_watermark());
         lat_dms = photo.getLat_dms();
         long_dms = photo.getLong_dms();
         current_bg_color = photo.getCurrent_bg_color();

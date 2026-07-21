@@ -177,4 +177,6 @@
     <string name="set_current_location">현재 위치 설정</string>
     <string name="no_preview_available">미리보기를 사용할 수 없음</string>
     <string name="go_to_collection">컬렉션으로 이동</string>
+    <string name="privacy_policy">개인정보 처리방침</string>
+    <string name="privacy_policy_desc">데이터 보호 및 이용 방법을 확인하세요</string>
 </resources>

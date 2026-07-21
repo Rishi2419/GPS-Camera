@@ -257,6 +257,10 @@ public class Settings_Activity extends AppCompatActivity {
 
         binding.layoutShare.setOnClickListener(v -> shareApplication(this));
 
+        binding.layoutPrivacyPolicy.setOnClickListener(v ->
+                startActivity(new Intent(this, PrivacyPolicyActivity.class))
+        );
+
         binding.btBack.setOnClickListener(view -> {
             onBackPressed();
         });

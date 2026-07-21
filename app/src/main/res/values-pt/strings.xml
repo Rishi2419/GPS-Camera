@@ -177,4 +177,6 @@
     <string name="set_current_location">Definir localização atual</string>
     <string name="no_preview_available">Nenhuma prévia disponível</string>
     <string name="go_to_collection">Ir para Coleções</string>
+    <string name="privacy_policy">Política de privacidade</string>
+    <string name="privacy_policy_desc">Saiba como protegemos e usamos seus dados</string>
 </resources>

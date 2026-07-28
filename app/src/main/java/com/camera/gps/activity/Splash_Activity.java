@@ -73,7 +73,6 @@ import com.camera.gps.util.Utils;
 import com.camera.gps.util.Utils.LogUtils;
 import com.camera.gps.util.SP;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 import java.util.Locale;
 
@@ -81,17 +80,22 @@ public class Splash_Activity extends AppCompatActivity {
 
     private static final String TAG = "Splash_Activity_Rishi";
     private static final int SPLASH_DELAY = 2000;
+    private static final int MAX_AD_EXTENSION_MS = 5000;
     private SP SP;
 
-    private FirebaseRemoteConfig firebaseRemoteConfig;
     private RemoteConfigManager remoteConfigManager;
     private boolean hasNavigated = false;
+    private boolean splashAdLaunchCommitted = false;
+    private boolean generalInterstitialPreloadStarted = false;
     private long splashStartedAtMs;
+    private Handler splashHandler;
+    private Runnable splashTimeoutRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         splashStartedAtMs = System.currentTimeMillis();
+        splashHandler = new Handler(getMainLooper());
 
         // Hide navigation bar
         getWindow().getDecorView().setSystemUiVisibility(
@@ -121,32 +125,12 @@ public class Splash_Activity extends AppCompatActivity {
 
         if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
             LogUtils.logD(TAG, "Network available and not premium, starting splash ad flow");
-            getAdsUnitData();
+            scheduleSplashTimeout();
             getRemoteConfigData();
         } else {
             LogUtils.logD(TAG, "No network available or premium member, skipping splash ad work");
             runAfterMinimumSplash(this::mainNavigation);
         }
-    }
-
-    private void getAdsUnitData() {
-        firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
-        FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
-                .setMinimumFetchIntervalInSeconds(0)
-                .build();
-        firebaseRemoteConfig.setConfigSettingsAsync(configSettings);
-
-        firebaseRemoteConfig.fetchAndActivate().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                // Save additional remote config values
-                SP.saveString(this, "app_name", firebaseRemoteConfig.getString("app_name"));
-                LogUtils.logI(TAG, "Additional remote config data saved successfully");
-            } else {
-                LogUtils.logE(TAG, "Failed to fetch additional remote config data");
-            }
-        }).addOnFailureListener(e -> {
-            LogUtils.logE(TAG, "Error fetching additional remote config: " + e.getMessage());
-        });
     }
 
     private void getRemoteConfigData() {
@@ -156,6 +140,8 @@ public class Splash_Activity extends AppCompatActivity {
             LogUtils.logD(TAG, "fetchAndStore() callback → success = " + success);
 
             if (success) {
+                SP.saveString(this, "app_name",
+                        FirebaseRemoteConfig.getInstance().getString("app_name"));
                 boolean showAds = remoteConfigManager.isShowAds();
                 String admobInterstitial = remoteConfigManager.getAdId("admob", "interstitial");
                 AdsData splashConfig = remoteConfigManager.getAdsDataByName("splash_ad");
@@ -172,16 +158,7 @@ public class Splash_Activity extends AppCompatActivity {
                     LogUtils.logE(TAG, "Splash Config is NULL");
                 }
 
-                // Preload ads for faster display
-                LogUtils.logD(TAG, "Calling preloadPublishersFromConfig()");
-                InterstitialAdManager.getInstance().preloadPublishersFromConfig(this);
-
-                // Also preload specific app resume ad
-                LogUtils.logD(TAG, "Preloading specific app_resume_ad");
-                OpenAdManager.getInstance().preloadOpenAd(this, "app_resume_ad");
-
-
-                runAfterMinimumSplash(this::openAdLoad);
+                prepareSplashAd(splashConfig);
 
             } else {
                 LogUtils.logE(TAG, "❌ Remote config fetch FAILED");
@@ -198,6 +175,93 @@ public class Splash_Activity extends AppCompatActivity {
                 runAfterMinimumSplash(this::mainNavigation);
             }
         });
+    }
+
+    private void prepareSplashAd(AdsData config) {
+        if (config == null
+                || !remoteConfigManager.isShowAds()
+                || !"splash_ad".equals(config.getAdsName())
+                || !config.isEnableAds()) {
+            LogUtils.logD(TAG, "Splash ad is unavailable or disabled");
+            startGeneralInterstitialPreload();
+            runAfterMinimumSplash(this::mainNavigation);
+            return;
+        }
+
+        Runnable onLoaded = () -> runOnUiThread(() -> {
+            startGeneralInterstitialPreload();
+            if (hasNavigated || splashAdLaunchCommitted || isFinishing() || isDestroyed()) {
+                return;
+            }
+            LogUtils.logI(TAG, "Splash ad prepared; waiting for minimum splash duration");
+            runAfterMinimumSplash(this::showPreparedSplashAd);
+        });
+
+        if ("interstitial".equals(config.getAdsType())) {
+            InterstitialAdManager.getInstance().preloadPlacement(
+                    this,
+                    "splash_ad",
+                    onLoaded,
+                    error -> onSplashAdPreparationFailed("Interstitial", error)
+            );
+        } else {
+            // App-open and interstitial ads use different caches, so both can preload together.
+            startGeneralInterstitialPreload();
+            OpenAdManager.getInstance().preloadOpenAd(
+                    this,
+                    "splash_ad",
+                    onLoaded,
+                    error -> onSplashAdPreparationFailed("Open ad", error)
+            );
+        }
+    }
+
+    private void onSplashAdPreparationFailed(String adType, String error) {
+        runOnUiThread(() -> {
+            startGeneralInterstitialPreload();
+            if (hasNavigated || splashAdLaunchCommitted || isFinishing() || isDestroyed()) {
+                return;
+            }
+            LogUtils.logE(TAG, adType + " preparation failed: " + error);
+            runAfterMinimumSplash(this::mainNavigation);
+        });
+    }
+
+    private void startGeneralInterstitialPreload() {
+        if (generalInterstitialPreloadStarted
+                || !remoteConfigManager.isShowAds()
+                || isFinishing()
+                || isDestroyed()) {
+            return;
+        }
+        generalInterstitialPreloadStarted = true;
+        LogUtils.logD(TAG, "Preloading configured interstitial publishers");
+        InterstitialAdManager.getInstance().preloadPublishersFromConfig(this);
+    }
+
+    private void showPreparedSplashAd() {
+        if (hasNavigated || splashAdLaunchCommitted || isFinishing() || isDestroyed()) {
+            return;
+        }
+        splashAdLaunchCommitted = true;
+        cancelSplashTimeout();
+        openAdLoad();
+    }
+
+    private void scheduleSplashTimeout() {
+        splashTimeoutRunnable = () -> {
+            if (!hasNavigated && !splashAdLaunchCommitted && !isFinishing() && !isDestroyed()) {
+                LogUtils.logW(TAG, "Splash ad exceeded the 5-second extension; continuing without ad");
+                mainNavigation();
+            }
+        };
+        splashHandler.postDelayed(splashTimeoutRunnable, SPLASH_DELAY + MAX_AD_EXTENSION_MS);
+    }
+
+    private void cancelSplashTimeout() {
+        if (splashHandler != null && splashTimeoutRunnable != null) {
+            splashHandler.removeCallbacks(splashTimeoutRunnable);
+        }
     }
 
 
@@ -263,6 +327,7 @@ public class Splash_Activity extends AppCompatActivity {
             return;
         }
         hasNavigated = true;
+        cancelSplashTimeout();
         LogUtils.logI(TAG, "Main navigation started");
 
         if (!MyApplication.getIsLanguage()) {
@@ -321,6 +386,7 @@ public class Splash_Activity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        cancelSplashTimeout();
         super.onDestroy();
         LogUtils.logD(TAG, "Splash_Activity destroyed");
     }

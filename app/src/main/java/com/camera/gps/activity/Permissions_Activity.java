@@ -19,6 +19,11 @@ import com.camera.gps.R;
 
 public class Permissions_Activity extends AppCompatActivity {
 
+    private static final String[] LOCATION_PERMISSIONS = new String[]{
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+    };
+
 
 //    Request codes used to identify which permission result was received in onRequestPermissionsResult
     private static final int REQ_CAMERA = 100;
@@ -98,15 +103,22 @@ public class Permissions_Activity extends AppCompatActivity {
     }
 
     private void requestLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (!isLocationPermissionGranted()) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQ_LOCATION);
+                    LOCATION_PERMISSIONS, REQ_LOCATION);
         } else {
             MyApplication.setLocationPermissionGranted(true);
             switchLocation.setChecked(true);
         }
         updateContinueVisibility();
+    }
+
+    private boolean isLocationPermissionGranted() {
+        boolean fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        return fine || coarse;
     }
     private void requestMicrophonePermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
@@ -172,12 +184,13 @@ public class Permissions_Activity extends AppCompatActivity {
                 break;
 
             case REQ_LOCATION:
-                MyApplication.setLocationPermissionGranted(granted);
+                boolean locGranted = isLocationPermissionGranted();
+                MyApplication.setLocationPermissionGranted(locGranted);
                 suppressLocationListener = true;
-                switchLocation.setChecked(granted);
+                switchLocation.setChecked(locGranted);
                 suppressLocationListener = false;
 
-                if (!granted) showPermissionDeniedDialog();
+                if (!locGranted) showPermissionDeniedDialog();
                 break;
 
             case REQ_MICROPHONE:

@@ -48,7 +48,7 @@ public interface GpsMapPhotoDatabaseDao {
     @Query("SELECT * FROM MyLocation WHERE LOWER(title) = LOWER(:title) LIMIT 1")
     MyLocation getLocationByTitle(String title);
 
-    @Query("SELECT * FROM Photo")
+    @Query("SELECT * FROM Photo ORDER BY id DESC")
     List<Photo> getAllPhoto();
 
     @Insert

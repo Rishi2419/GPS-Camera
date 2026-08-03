@@ -79,6 +79,7 @@ import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.SharedMediaStore;
 import com.camera.gps.util.Utils;
 
 import java.text.SimpleDateFormat;
@@ -139,6 +140,40 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
         }
 
         setupClickListeners();
+        updateCounter();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (galleryAdapter == null || photoList.isEmpty()) {
+            return;
+        }
+
+        List<Photo> missing = new ArrayList<>();
+        for (Photo photo : new ArrayList<>(photoList)) {
+            if (!SharedMediaStore.exists(this, photo.getMediaUri(), photo.getImagePath())) {
+                SharedMediaStore.delete(this, photo);
+                missing.add(photo);
+                photoList.remove(photo);
+            } else {
+                photo.setImagePath(SharedMediaStore.resolveCurrentPath(
+                        this, photo.getMediaUri(), photo.getImagePath()));
+            }
+        }
+
+        if (missing.isEmpty()) {
+            return;
+        }
+        viewModel.deletePhotos(missing);
+        if (photoList.isEmpty()) {
+            finish();
+            return;
+        }
+
+        currentPosition = Math.min(currentPosition, photoList.size() - 1);
+        galleryAdapter.updatePhotoList(photoList);
+        binding.viewPager.setCurrentItem(currentPosition, false);
         updateCounter();
     }
 
@@ -245,7 +280,7 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
         binding.btnDelete.setOnClickListener(view -> {
             if (currentPosition < photoList.size()) {
                 Photo currentPhoto = photoList.get(currentPosition);
-                boolean isVideo = currentPhoto.getImagePath().endsWith(".mp4");
+                boolean isVideo = SharedMediaStore.isVideo(currentPhoto);
                 deleteAlert(currentPhoto, isVideo);
             }
         });
@@ -332,6 +367,13 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
     }
 
     private void delete(List<Photo> list) {
+        Photo mediaToDelete = list.get(0);
+        if (!SharedMediaStore.delete(this, mediaToDelete)) {
+            Toast.makeText(this, "Unable to delete photo/video from Gallery",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         viewModel.deletePhotos(list).observe(this, result -> {
             if (result != null && result > 0) {
                 // Remove from current list
@@ -357,7 +399,7 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
                     updateCounter();
                 }
 
-                boolean isVideo = deletedPhoto.getImagePath().endsWith(".mp4");
+                boolean isVideo = SharedMediaStore.isVideo(deletedPhoto);
                 String message = isVideo ? "Video deleted successfully" : "Photo deleted successfully";
                 Toast.makeText(PhotoGallery_Activity.this, message, Toast.LENGTH_SHORT).show();
             } else {
@@ -367,7 +409,7 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
     }
 
     private void share(Photo photo) {
-        if (photo.getImagePath().endsWith(".mp4")) {
+        if (SharedMediaStore.isVideo(photo)) {
             shareVideoWithStamp(photo);
         } else {
             shareImageWithStamp(photo);
@@ -470,7 +512,7 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
     private boolean isCurrentPhotoVideo() {
         return currentPosition >= 0
                 && currentPosition < photoList.size()
-                && photoList.get(currentPosition).getImagePath().endsWith(".mp4");
+                && SharedMediaStore.isVideo(photoList.get(currentPosition));
     }
 
     private String formatVideoTime(int milliseconds) {
@@ -512,7 +554,7 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
             // Determine if current photo is video to set correct tab
             if (currentPosition < photoList.size()) {
                 Photo currentPhoto = photoList.get(currentPosition);
-                boolean isVideo = currentPhoto.getImagePath().endsWith(".mp4");
+                boolean isVideo = SharedMediaStore.isVideo(currentPhoto);
                 intent.putExtra("selectedTab", isVideo ? 1 : 0);
             }
             startActivity(intent);

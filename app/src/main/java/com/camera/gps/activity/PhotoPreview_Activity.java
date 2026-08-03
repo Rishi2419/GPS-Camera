@@ -80,6 +80,7 @@ import com.camera.gps.database.entity.Photo;
 import com.camera.gps.model.StampTemplateDefaults;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.SharedMediaStore;
 import com.camera.gps.util.StampBackgroundUtils;
 import com.camera.gps.util.StampedPhotoShareHelper;
 import com.camera.gps.util.VideoStampShareHelper;
@@ -147,6 +148,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     HelperClass mHelperClass = new HelperClass();
     private ActivityPhotoPreviewBinding binding;
     private GlobalViewModel viewModel;
+    private Photo displayedPhoto;
     public String fontStyle;
 
     @Override
@@ -166,18 +168,21 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
 
         final Photo photo = (Photo) serializableExtra;
+        displayedPhoto = photo;
         boolean fromCreation = getIntent().getBooleanExtra("fromCreation", false);
-        if (photo.getImagePath().endsWith(".mp4")) {
+        if (SharedMediaStore.isVideo(photo)) {
             isVideo = true;
             binding.videoView.setVisibility(VISIBLE);
             isVideo = true;
             binding.imageview.setVisibility(GONE);
-            setupVideoPreview(photo.getImagePath());
-        } else if (photo.getImagePath().endsWith(".jpeg")) {
+            setupVideoPreview(SharedMediaStore.getContentUri(
+                    this, photo.getMediaUri(), photo.getImagePath()));
+        } else {
             binding.videoView.setVisibility(GONE);
             binding.videoPlaybackPill.setVisibility(GONE);
             binding.imageview.setVisibility(VISIBLE);
-            RequestBuilder<Drawable> load = Glide.with(this).load(photo.getImagePath());
+            RequestBuilder<Drawable> load = Glide.with(this)
+                    .load(SharedMediaStore.getLoadSource(photo));
             load.into(binding.imageview);
         }
 
@@ -189,12 +194,32 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         initCardInfoVisibility(photo);
     }
 
-    private void setupVideoPreview(String videoPath) {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (displayedPhoto == null) {
+            return;
+        }
+        if (!SharedMediaStore.exists(this,
+                displayedPhoto.getMediaUri(), displayedPhoto.getImagePath())) {
+            SharedMediaStore.delete(this, displayedPhoto);
+            List<Photo> missing = new ArrayList<>();
+            missing.add(displayedPhoto);
+            viewModel.deletePhotos(missing);
+            setDeletedResult(displayedPhoto);
+            finish();
+        } else {
+            displayedPhoto.setImagePath(SharedMediaStore.resolveCurrentPath(
+                    this, displayedPhoto.getMediaUri(), displayedPhoto.getImagePath()));
+        }
+    }
+
+    private void setupVideoPreview(Uri videoUri) {
         binding.videoPlaybackPill.setVisibility(VISIBLE);
         binding.videoCurrentTime.setText(formatVideoTime(0));
         binding.videoDuration.setText(formatVideoTime(0));
         binding.videoPlayPauseIcon.setImageResource(R.drawable.ic_video_play);
-        binding.videoView.setVideoURI(Uri.parse(videoPath));
+        binding.videoView.setVideoURI(videoUri);
         binding.videoView.setOnClickListener(v -> toggleUI());
         binding.videoPlaybackPill.setOnClickListener(v -> toggleVideoPlayback());
         binding.videoView.setOnPreparedListener(mediaPlayer -> {
@@ -290,6 +315,13 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
     private void delete(List<Photo> list) {
+        Photo mediaToDelete = list.get(0);
+        if (!SharedMediaStore.delete(this, mediaToDelete)) {
+            Toast.makeText(this, "Unable to delete photo/video from Gallery",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         viewModel.deletePhotos(list).observe(this, result -> {
             if (result != null && result > 0 && isVideo) {
                 Toast.makeText(PhotoPreview_Activity.this, "Video deleted successfully", Toast.LENGTH_SHORT).show();
@@ -317,7 +349,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
     private void share(Photo photo) {
-        if (photo.getImagePath().endsWith(".mp4")) {
+        if (SharedMediaStore.isVideo(photo)) {
             shareVideoWithStamp(photo);
         } else {
             shareImageWithStamp(photo);
@@ -349,7 +381,9 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     }
 
     private void shareImageWithStamp(Photo photo) {
-        StampedPhotoShareHelper.shareImageWithStamp(this, mapFragment, binding.previewFrame, mapViewContainer, getMapCornerRadiusPx());
+        if (!SharedMediaStore.share(this, photo)) {
+            Toast.makeText(this, R.string.error_in_creating_file, Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -488,13 +522,9 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         updatePreviewDateTime(photo);
         Log.d("Rishi", "Details:" + current_address + currentLatitude + currentLongitude + date + time + fontStyle + title);
         setRatio(currentRatioType);
-        if (isVideo) {
-            relBottomStamp.removeAllViews();
-            relBottomStamp.setVisibility(GONE);
-        } else {
-            relBottomStamp.setVisibility(VISIBLE);
-            setCurrentStampLayout(currentstamp_type);
-        }
+        // The shared Gallery file already contains its rendered stamp.
+        relBottomStamp.removeAllViews();
+        relBottomStamp.setVisibility(GONE);
     }
 
     private void updatePreviewDateTime(Photo photo) {

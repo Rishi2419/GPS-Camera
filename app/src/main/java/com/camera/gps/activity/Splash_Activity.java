@@ -80,7 +80,7 @@ public class Splash_Activity extends AppCompatActivity {
 
     private static final String TAG = "Splash_Activity_Rishi";
     private static final int SPLASH_DELAY = 2000;
-    private static final int MAX_AD_EXTENSION_MS = 5000;
+    private static final int MAX_AD_EXTENSION_MS = 10000;
     private SP SP;
 
     private RemoteConfigManager remoteConfigManager;

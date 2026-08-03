@@ -159,6 +159,7 @@ import android.view.Gravity;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -166,6 +167,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.camera.gps.MyApplication;
@@ -178,9 +180,9 @@ import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.databinding.ActivityMyCreationBinding;
 import com.camera.gps.util.Utils;
+import com.camera.gps.util.SharedMediaStore;
 import com.google.android.material.tabs.TabLayoutMediator;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -213,7 +215,6 @@ public class MyCreation_Activity extends AppCompatActivity implements CreationVi
         initViews();
         initViewModel();
         setupViewPager();
-        getPhotos();
         loadBottomBannerAd();
 
         // Check if we need to select a specific tab
@@ -221,6 +222,12 @@ public class MyCreation_Activity extends AppCompatActivity implements CreationVi
         if (selectedTab >= 0 && selectedTab < 2) {
             binding.viewPager.setCurrentItem(selectedTab, false);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        getPhotos();
     }
 
     @Override
@@ -294,7 +301,7 @@ public class MyCreation_Activity extends AppCompatActivity implements CreationVi
 
         for (Photo photo : selectedItems) {
             if (photo.getImagePath() != null) {
-                if (photo.getImagePath().endsWith(".mp4")) {
+                if (SharedMediaStore.isVideo(photo)) {
                     hasVideos = true;
                 } else {
                     hasPhotos = true;
@@ -337,23 +344,24 @@ public class MyCreation_Activity extends AppCompatActivity implements CreationVi
     }
 
     private void delete(List<Photo> photoList) {
-        // Delete files from storage
+        List<Photo> deletedItems = new ArrayList<>();
         for (Photo photo : photoList) {
-            if (photo.getImagePath() != null) {
-                File file = new File(photo.getImagePath());
-                if (file.exists()) {
-                    file.delete();
-                }
+            if (SharedMediaStore.delete(this, photo)) {
+                deletedItems.add(photo);
             }
         }
 
-        // Delete from database
-        viewModel.deletePhotos(photoList).observe(this, new Observer<Integer>() {
+        if (deletedItems.isEmpty()) {
+            Toast.makeText(this, "Unable to delete selected media", Toast.LENGTH_SHORT).show();
+            getPhotos();
+            return;
+        }
+
+        viewModel.deletePhotos(deletedItems).observe(this, new Observer<Integer>() {
             @Override
             public void onChanged(Integer result) {
                 if (result > 0) {
                     getPhotos();
-                } else {
                 }
             }
         });
@@ -385,11 +393,33 @@ public class MyCreation_Activity extends AppCompatActivity implements CreationVi
     }
 
     private void getPhotos() {
-        this.viewModel.getAllPhoto().observe(this, new Observer<List<Photo>>() {
+        LiveData<List<Photo>> source = this.viewModel.getAllPhoto();
+        source.observe(this, new Observer<List<Photo>>() {
             @Override
             public void onChanged(List<Photo> photos) {
+                source.removeObserver(this);
                 if (photos != null) {
-                    viewPagerAdapter.updateData(photos);
+                    List<Photo> validPhotos = new ArrayList<>();
+                    List<Photo> missingPhotos = new ArrayList<>();
+                    for (Photo photo : photos) {
+                        if (SharedMediaStore.exists(MyCreation_Activity.this,
+                                photo.getMediaUri(), photo.getImagePath())) {
+                            photo.setImagePath(SharedMediaStore.resolveCurrentPath(
+                                    MyCreation_Activity.this,
+                                    photo.getMediaUri(),
+                                    photo.getImagePath()));
+                            validPhotos.add(photo);
+                        } else {
+                            missingPhotos.add(photo);
+                        }
+                    }
+                    viewPagerAdapter.updateData(validPhotos);
+                    if (!missingPhotos.isEmpty()) {
+                        for (Photo missingPhoto : missingPhotos) {
+                            SharedMediaStore.delete(MyCreation_Activity.this, missingPhoto);
+                        }
+                        viewModel.deletePhotos(missingPhotos);
+                    }
                 }
             }
         });

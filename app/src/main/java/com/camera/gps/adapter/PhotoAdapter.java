@@ -364,6 +364,7 @@ import com.camera.gps.model.CreationItem;
 import com.camera.gps.model.DateHeaderItem;
 import com.camera.gps.model.NativeAdItem;
 import com.camera.gps.model.PhotoItem;
+import com.camera.gps.util.SharedMediaStore;
 import com.camera.gps.util.Utils;
 
 import java.text.ParseException;
@@ -622,12 +623,12 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
             // Load image/video thumbnail
             if (photo.getImagePath() != null) {
-                if (photo.getImagePath().endsWith(".mp4")) {
+                if (SharedMediaStore.isVideo(photo)) {
                     binding.playVideo.setVisibility(VISIBLE);
-                    Glide.with(context).load(photo.getImagePath()).into(binding.image);
-                } else if (photo.getImagePath().endsWith(".jpeg") || photo.getImagePath().endsWith(".jpg") || photo.getImagePath().endsWith(".png")) {
+                    Glide.with(context).load(SharedMediaStore.getLoadSource(photo)).into(binding.image);
+                } else {
                     binding.playVideo.setVisibility(GONE);
-                    Glide.with(context).load(photo.getImagePath()).into(binding.image);
+                    Glide.with(context).load(SharedMediaStore.getLoadSource(photo)).into(binding.image);
                 }
             }
 

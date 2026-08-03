@@ -101,7 +101,18 @@ public final class VideoStampShareHelper {
     }
 
     public static void shareVideoOnly(Context context, Photo photo) {
-        shareFile(context, new File(photo.getImagePath()), "video/mp4", context.getString(R.string.share_video));
+        Uri mediaUri = SharedMediaStore.getContentUri(
+                context, photo.getMediaUri(), photo.getImagePath());
+        if (mediaUri == null) {
+            Toast.makeText(context, R.string.error_in_creating_file, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.putExtra(Intent.EXTRA_STREAM, mediaUri);
+        intent.setType("video/mp4");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        context.startActivity(Intent.createChooser(
+                intent, context.getString(R.string.share_video)));
     }
 
     public static Bitmap createFullFrameOverlay(File videoFile, Bitmap stampBitmap) {

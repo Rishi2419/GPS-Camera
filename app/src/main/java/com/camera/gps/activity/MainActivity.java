@@ -25,7 +25,6 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaMuxer;
-import android.media.MediaScannerConnection;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.ConnectivityManager;
@@ -91,6 +90,7 @@ import androidx.core.content.ContextCompat;
 
 import androidx.core.graphics.ColorUtils;
 import androidx.lifecycle.Observer;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager.widget.ViewPager;
 
@@ -132,9 +132,11 @@ import com.camera.gps.repositories.DateFormatRepository;
 import com.camera.gps.util.DirManager;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.LocationSettingsPrompt;
+import com.camera.gps.util.SharedMediaStore;
 import com.camera.gps.util.SP;
 import com.camera.gps.util.StampBackgroundUtils;
 import com.camera.gps.util.StampSettingsBottomSheets;
+import com.camera.gps.util.StampedPhotoComposer;
 import com.camera.gps.util.StampedVideoComposer;
 import com.camera.gps.viewmodel.DateFormatViewModel;
 import com.camera.gps.viewmodel.FontStyleViewModel;
@@ -373,7 +375,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Photo photoOld;
     private boolean isCapture = false;
     private boolean isMapSetup = false;
-    private boolean latestPhotoObserverRegistered = false;
 
 //
 //    private void updateLocationData(MyLocation location) {
@@ -1057,14 +1058,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         this.imageCapture.takePicture(build, ContextCompat.getMainExecutor(this), new ImageCapture.OnImageSavedCallback() {
             @Override
             public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                MediaScannerConnection.scanFile(getBaseContext(), new String[]{mediaFile.toString()}, null, null);
-                Glide.with(getBaseContext()).load(mediaFile.toString()).into(ivMyCapture);
-
-                mediaFilePath = mediaFile.toString();
-                btnTakeAction.setEnabled(true);
-
-                // Set the capture flag to true
-                isCapture = true;
+                StampedPhotoComposer.writeStampedPhoto(
+                        MainActivity.this,
+                        mediaFile,
+                        relBottomStamp,
+                        googleMap,
+                        mapViewContainer,
+                        success -> {
+                            if (success) {
+                                publishCapturedMedia(mediaFile, false);
+                            } else {
+                                if (mediaFile.exists()) {
+                                    mediaFile.delete();
+                                }
+                                btnTakeAction.setEnabled(true);
+                                Toast.makeText(MainActivity.this,
+                                        "Unable to apply stamp to photo",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
 
                 // Hide front camera flash overlay
                 if (flashOverlay.getVisibility() == VISIBLE) {
@@ -1074,6 +1086,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             public void onError(@NonNull ImageCaptureException imageCaptureException) {
+                if (mediaFile.exists()) {
+                    mediaFile.delete();
+                }
                 btnTakeAction.setEnabled(true);
                 Toast.makeText(getBaseContext(), "Error taking photo: " + imageCaptureException.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
 
@@ -1139,10 +1154,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 isVideoRecordingPreparing = false;
                 isRecording = false;
                 activeRecording = null;
+                btnTakeAction.setEnabled(false);
                 MainController.stopChronometer(chronometerVideo);
                 MainController.stopRecAnimation(animationRecVideo);
 
                 if (finalizeEvent.hasError()) {
+                    if (videoFile != null && videoFile.exists()) {
+                        videoFile.delete();
+                    }
+                    btnTakeAction.setEnabled(true);
                     String message = "Video recording error: " + finalizeEvent.getError();
                     Toast.makeText(getBaseContext(), message, Toast.LENGTH_SHORT).show();
                     Log.e("Rishi_Video", message, finalizeEvent.getCause());
@@ -1181,13 +1201,45 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         StampedVideoComposer.writeStampedVideo(this, photo, relBottomStamp, googleMap, mapViewContainer, () -> {
-            String savedPath = recordedFile.getAbsolutePath();
-            MediaScannerConnection.scanFile(getBaseContext(), new String[]{savedPath}, null, null);
-            mediaFilePath = savedPath;
-            isCapture = true;
-            Glide.with(getBaseContext()).load(recordedFile).into(ivMyCapture);
-            saveMapSnapshotAndInsertPhoto(photo.getDateTimeTaken());
+            publishCapturedMedia(recordedFile, true);
         });
+    }
+
+    private void publishCapturedMedia(File capturedFile, boolean video) {
+        SharedMediaStore.publishAsync(this, capturedFile, video,
+                new SharedMediaStore.PublishCallback() {
+                    @Override
+                    public void onSuccess(SharedMediaStore.PublishedMedia media) {
+                        if (photo == null) {
+                            SharedMediaStore.delete(MainActivity.this,
+                                    media.getUri().toString(), media.getPath());
+                            btnTakeAction.setEnabled(true);
+                            return;
+                        }
+
+                        photo.setImagePath(media.getPath());
+                        photo.setMediaUri(media.getUri().toString());
+                        photo.setMediaType(video ? "video" : "image");
+                        mediaFilePath = media.getPath();
+                        isCapture = true;
+
+                        Glide.with(MainActivity.this)
+                                .load(media.getUri())
+                                .into(ivMyCapture);
+                        saveMapSnapshotAndInsertPhoto(photo.getDateTimeTaken());
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        if (capturedFile.exists()) {
+                            capturedFile.delete();
+                        }
+                        btnTakeAction.setEnabled(true);
+                        Toast.makeText(MainActivity.this,
+                                "Unable to save to Gallery: " + error,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @SuppressLint("WrongConstant")
@@ -1341,9 +1393,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("PhotoCapture", "datetime col: " + photo.getCurrent_datetime_color());
                 Log.d("PhotoCapture", "ratio " + photo.getRatio());
 
-                if (type == MEDIA_TYPE_IMAGE) {
-                    saveMapSnapshotAndInsertPhoto(timeStamp);
-                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1394,6 +1443,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             this.viewModel.insertPhoto(photo).observe(this, new Observer() {
                 @Override
                 public void onChanged(Object obj) {
+                    btnTakeAction.setEnabled(true);
                     if (obj != null) {
 
                         long insertedId = (long) obj;
@@ -1405,6 +1455,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         photoOld = new Photo();
                         photoOld.setId((int) insertedId);
                         photoOld.setImagePath(photo.getImagePath());
+                        photoOld.setMediaUri(photo.getMediaUri());
+                        photoOld.setMediaType(photo.getMediaType());
                         photoOld.setLatitude(photo.getLatitude());
                         photoOld.setLongitude(photo.getLongitude());
                         photoOld.setAddress(photo.getAddress());
@@ -1427,6 +1479,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         initializePhotoObject();
                     } else {
                         Log.e("PhotoCapture", "Failed to insert photo");
+                        SharedMediaStore.delete(MainActivity.this, photo);
+                        isCapture = false;
+                        ivMyCapture.setImageResource(R.drawable.my_capture_icon);
+                        initializePhotoObject();
                     }
                 }
             });
@@ -3501,28 +3557,46 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void refreshLatestPhoto() {
-        if (latestPhotoObserverRegistered) {
-            return;
-        }
-        latestPhotoObserverRegistered = true;
+        LiveData<List<Photo>> source = viewModel.getAllPhoto();
+        source.observe(this, new Observer<List<Photo>>() {
+            @Override
+            public void onChanged(List<Photo> photos) {
+                source.removeObserver(this);
+                List<Photo> validPhotos = new ArrayList<>();
+                List<Photo> missingPhotos = new ArrayList<>();
 
-        viewModel.getAllPhoto().observe(this, photos -> {
-            if (photos != null && !photos.isEmpty()) {
-                Photo latestPhoto = photos.get(0);
-                boolean exists = false;
-                for (Photo p : photos) {
-                    if (photoOld != null && photoOld.getId() == p.getId()) {
-                        exists = true;
-                        break;
+                if (photos != null) {
+                    for (Photo candidate : photos) {
+                        if (SharedMediaStore.exists(MainActivity.this,
+                                candidate.getMediaUri(), candidate.getImagePath())) {
+                            candidate.setImagePath(SharedMediaStore.resolveCurrentPath(
+                                    MainActivity.this,
+                                    candidate.getMediaUri(),
+                                    candidate.getImagePath()));
+                            validPhotos.add(candidate);
+                        } else {
+                            missingPhotos.add(candidate);
+                        }
                     }
                 }
-                if (!exists) {
+
+                if (!missingPhotos.isEmpty()) {
+                    for (Photo missingPhoto : missingPhotos) {
+                        SharedMediaStore.delete(MainActivity.this, missingPhoto);
+                    }
+                    viewModel.deletePhotos(missingPhotos);
+                }
+
+                if (!validPhotos.isEmpty()) {
+                    photoOld = validPhotos.get(0);
+                    Glide.with(MainActivity.this)
+                            .load(SharedMediaStore.getLoadSource(photoOld))
+                            .into(ivMyCapture);
+                } else {
                     photoOld = null;
+                    isCapture = false;
                     ivMyCapture.setImageResource(R.drawable.my_capture_icon);
                 }
-            } else {
-                photoOld = null;
-                ivMyCapture.setImageResource(R.drawable.my_capture_icon);
             }
         });
     }

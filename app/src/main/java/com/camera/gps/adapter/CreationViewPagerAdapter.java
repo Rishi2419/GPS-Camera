@@ -127,6 +127,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.camera.gps.database.entity.Photo;
 import com.camera.gps.fragment.CreationFragment;
+import com.camera.gps.util.SharedMediaStore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -198,10 +199,8 @@ public class CreationViewPagerAdapter extends FragmentStateAdapter {
         List<Photo> filteredList = new ArrayList<>();
         for (Photo photo : allPhotos) {
             if (photo.getImagePath() != null) {
-                boolean isPhotoFile = photo.getImagePath().endsWith(".jpg") ||
-                        photo.getImagePath().endsWith(".jpeg") ||
-                        photo.getImagePath().endsWith(".png");
-                boolean isVideoFile = photo.getImagePath().endsWith(".mp4");
+                boolean isVideoFile = SharedMediaStore.isVideo(photo);
+                boolean isPhotoFile = !isVideoFile;
 
                 if (isPhoto && isPhotoFile) {
                     filteredList.add(photo);

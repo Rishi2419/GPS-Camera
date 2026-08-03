@@ -45,6 +45,7 @@ import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.StampBackgroundUtils;
 import com.camera.gps.util.StampedPhotoShareHelper;
+import com.camera.gps.util.SharedMediaStore;
 import com.camera.gps.util.VideoStampShareHelper;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.MapsInitializer;
@@ -190,12 +191,13 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
         private void setupPhoto() {
             if (photo == null) return;
 
-            isVideo = photo.getImagePath().endsWith(".mp4");
+            isVideo = SharedMediaStore.isVideo(photo);
 
             if (isVideo) {
                 imageView.setVisibility(View.GONE);
                 videoView.setVisibility(View.VISIBLE);
-                videoView.setVideoURI(Uri.parse(photo.getImagePath()));
+                videoView.setVideoURI(SharedMediaStore.getContentUri(
+                        requireContext(), photo.getMediaUri(), photo.getImagePath()));
                 videoView.setOnPreparedListener(mediaPlayer -> {
                     if (listener != null) {
                         listener.onVideoStatusChanged(videoView.isPlaying());
@@ -211,19 +213,15 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
                 videoView.setVisibility(View.GONE);
                 imageView.setVisibility(View.VISIBLE);
                 if (getContext() != null) {
-                    Glide.with(this).load(photo.getImagePath()).into(imageView);
+                    Glide.with(this).load(SharedMediaStore.getLoadSource(photo)).into(imageView);
                 }
             }
 
             initPhotoData();
             setRatio(currentRatioType);
-            if (isVideo) {
-                stampContainer.removeAllViews();
-                stampContainer.setVisibility(View.GONE);
-            } else {
-                stampContainer.setVisibility(View.VISIBLE);
-                setCurrentStampLayout(currentstamp_type);
-            }
+            // The shared Gallery file already contains its rendered stamp.
+            stampContainer.removeAllViews();
+            stampContainer.setVisibility(View.GONE);
         }
 
         private void setupClickListeners() {
@@ -656,7 +654,7 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
         // Share methods
         public void shareImageWithStamp() {
-            StampedPhotoShareHelper.shareImageWithStamp(requireContext(), mapFragment, previewFrame, mapViewContainer, getMapCornerRadiusPx());
+            SharedMediaStore.share(requireContext(), photo);
         }
 
         public void shareVideoWithStamp() {

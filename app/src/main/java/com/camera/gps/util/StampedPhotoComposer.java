@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -14,6 +15,7 @@ import android.util.TypedValue;
 import android.view.View;
 
 import androidx.cardview.widget.CardView;
+import androidx.exifinterface.media.ExifInterface;
 
 import com.google.android.gms.maps.GoogleMap;
 
@@ -23,7 +25,7 @@ import java.io.FileOutputStream;
 public final class StampedPhotoComposer {
 
     public interface Callback {
-        void onComplete();
+        void onComplete(boolean success);
     }
 
     private StampedPhotoComposer() {
@@ -36,18 +38,17 @@ public final class StampedPhotoComposer {
                                          View mapView,
                                          Callback callback) {
         if (imageFile == null || stampView == null || stampView.getWidth() == 0 || stampView.getHeight() == 0) {
-            callback.onComplete();
+            callback.onComplete(false);
             return;
         }
 
         if (googleMap != null && mapView != null && mapView.getWidth() > 0 && mapView.getHeight() > 0) {
             googleMap.snapshot(mapSnapshot -> {
-                composeIntoImage(imageFile, stampView, mapSnapshot, mapView);
-                callback.onComplete();
+                callback.onComplete(composeIntoImage(
+                        imageFile, stampView, mapSnapshot, mapView));
             });
         } else {
-            composeIntoImage(imageFile, stampView, null, mapView);
-            callback.onComplete();
+            callback.onComplete(composeIntoImage(imageFile, stampView, null, mapView));
         }
     }
 
@@ -145,10 +146,22 @@ public final class StampedPhotoComposer {
         );
     }
 
-    private static void composeIntoImage(File imageFile, View stampView, Bitmap mapSnapshot, View mapView) {
-        Bitmap source = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-        if (source == null) {
-            return;
+    private static boolean composeIntoImage(File imageFile, View stampView,
+                                            Bitmap mapSnapshot, View mapView) {
+        int orientation = ExifInterface.ORIENTATION_NORMAL;
+        try {
+            orientation = new ExifInterface(imageFile.getAbsolutePath()).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+        } catch (Exception ignored) {
+        }
+
+        Bitmap decoded = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+        if (decoded == null) {
+            return false;
+        }
+        Bitmap source = applyExifOrientation(decoded, orientation);
+        if (source != decoded) {
+            decoded.recycle();
         }
 
         Bitmap result = source.copy(Bitmap.Config.ARGB_8888, true);
@@ -162,8 +175,53 @@ public final class StampedPhotoComposer {
         canvas.drawBitmap(scaledStamp, 0f, result.getHeight() - scaledHeight, paint);
 
         try (FileOutputStream fos = new FileOutputStream(imageFile, false)) {
-            result.compress(Bitmap.CompressFormat.JPEG, 95, fos);
+            boolean compressed = result.compress(Bitmap.CompressFormat.JPEG, 95, fos);
+            fos.flush();
+            return compressed && imageFile.length() > 0L;
         } catch (Exception ignored) {
+            return false;
+        } finally {
+            if (scaledStamp != stampBitmap) {
+                scaledStamp.recycle();
+            }
+            stampBitmap.recycle();
+            result.recycle();
+            source.recycle();
         }
+    }
+
+    private static Bitmap applyExifOrientation(Bitmap source, int orientation) {
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1f, 1f);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180f);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setRotate(180f);
+                matrix.postScale(-1f, 1f);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90f);
+                matrix.postScale(-1f, 1f);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90f);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90f);
+                matrix.postScale(-1f, 1f);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(270f);
+                break;
+            default:
+                return source;
+        }
+
+        return Bitmap.createBitmap(
+                source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
     }
 }

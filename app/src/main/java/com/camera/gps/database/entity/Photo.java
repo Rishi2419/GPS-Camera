@@ -15,6 +15,8 @@ public final class Photo implements Serializable {
     @PrimaryKey
     private Integer id;
     private String imagePath;
+    private String mediaUri;
+    private String mediaType;
     private Boolean isSelected;
     private String latitude;
     private String longitude;
@@ -222,6 +224,22 @@ public final class Photo implements Serializable {
 
     public void setImagePath(String str) {
         this.imagePath = str;
+    }
+
+    public String getMediaUri() {
+        return mediaUri;
+    }
+
+    public void setMediaUri(String mediaUri) {
+        this.mediaUri = mediaUri;
+    }
+
+    public String getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
     }
 
     public Integer getType() {

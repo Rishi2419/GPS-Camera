@@ -67,7 +67,7 @@
 
             <androidx.cardview.widget.CardView
                 android:layout_width="@dimen/_75sdp"
-                android:layout_height="@dimen/_95sdp"
+                android:layout_height="match_parent"
                 android:layout_gravity="center_vertical"
                 app:cardCornerRadius="@dimen/_4sdp"
                 app:cardElevation="0dp">
@@ -98,21 +98,29 @@
                     android:maxLines="1"
                     android:visibility="gone"
                     android:gravity="start"
-                    android:fontFamily="@font/poppins_medium"
+                    android:fontFamily="@font/sfprotextmedium"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/_13ssp" />
+                    android:textSize="@dimen/_10ssp" />
+
+                <TextView
+                    android:id="@+id/txt_gps_stamp_default_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/sfprotextmedium"
+                    android:layout_marginBottom="@dimen/_2sdp"
+                    android:text=""
+                    android:textColor="@android:color/white"
+                    android:textSize="@dimen/_12ssp" />
 
                 <TextView
                     android:id="@+id/txt_gps_stamp_location"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:fontFamily="@font/sfprotextmedium"
-                    android:maxLines="2"
+                    android:fontFamily="@font/sfprotextregular"
                     android:layout_marginBottom="@dimen/_2sdp"
                     android:text="@string/lbl_default_address"
                     android:textColor="@android:color/white"
-                    android:textSize="@dimen/_11ssp" />
+                    android:textSize="@dimen/_8ssp" />
 
                 <!-- Fixed Size Table Container -->
                 <LinearLayout
@@ -142,7 +150,7 @@
                                 android:fontFamily="@font/sfprotextmedium"
                                 android:text="@string/type"
                                 android:textColor="@color/white"
-                                android:textSize="@dimen/_11ssp"
+                                android:textSize="@dimen/_9ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -161,7 +169,7 @@
                                 android:fontFamily="@font/sfprotextmedium"
                                 android:text="@string/degree"
                                 android:textColor="@color/white"
-                                android:textSize="@dimen/_11ssp"
+                                android:textSize="@dimen/_9ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -180,7 +188,7 @@
                                 android:fontFamily="@font/sfprotextmedium"
                                 android:text="@string/dms"
                                 android:textColor="@color/white"
-                                android:textSize="@dimen/_11ssp"
+                                android:textSize="@dimen/_9ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -207,7 +215,7 @@
                                 android:text="@string/label_latitude"
                                 android:fontFamily="@font/sfprotextregular"
                                 android:textColor="@color/white"
-                                android:textSize="@dimen/_10ssp"
+                                android:textSize="@dimen/_8ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -226,7 +234,7 @@
                                 android:text="--"
                                 android:fontFamily="@font/sfprotextregular"
                                 android:textColor="@android:color/white"
-                                android:textSize="@dimen/_10ssp"
+                                android:textSize="@dimen/_8ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -245,7 +253,7 @@
                                 android:fontFamily="@font/sfprotextregular"
                                 android:text="--"
                                 android:textColor="@color/white"
-                                android:textSize="@dimen/_10ssp"
+                                android:textSize="@dimen/_8ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -272,7 +280,7 @@
                                 android:text="@string/label_longitude"
                                 android:fontFamily="@font/sfprotextregular"
                                 android:textColor="@android:color/white"
-                                android:textSize="@dimen/_10ssp"
+                                android:textSize="@dimen/_8ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -291,7 +299,7 @@
                                 android:text="--"
                                 android:fontFamily="@font/sfprotextregular"
                                 android:textColor="@android:color/white"
-                                android:textSize="@dimen/_10ssp"
+                                android:textSize="@dimen/_8ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -310,7 +318,7 @@
                                 android:fontFamily="@font/sfprotextregular"
                                 android:text="--"
                                 android:textColor="@color/white"
-                                android:textSize="@dimen/_10ssp"
+                                android:textSize="@dimen/_8ssp"
                                 android:gravity="center"
                                 android:maxLines="1" />
                         </LinearLayout>
@@ -341,7 +349,7 @@
                             android:textColor="@android:color/white"
                             android:layout_marginEnd="@dimen/_2sdp"
                             android:visibility="gone"
-                            android:textSize="@dimen/_10ssp"
+                            android:textSize="@dimen/_8ssp"
                             android:maxLines="1" />
 
                         <TextView
@@ -351,7 +359,7 @@
                             android:text="--"
                             android:fontFamily="@font/sfprotextregular"
                             android:textColor="@android:color/white"
-                            android:textSize="@dimen/_10ssp"
+                            android:textSize="@dimen/_8ssp"
                             android:maxLines="1" />
                     </LinearLayout>
 
@@ -369,7 +377,7 @@
                             android:fontFamily="@font/sfprotextregular"
                             android:textColor="@android:color/white"
                             android:layout_marginEnd="@dimen/_2sdp"
-                            android:textSize="@dimen/_10ssp"
+                            android:textSize="@dimen/_8ssp"
                             android:visibility="gone"
                             android:maxLines="1" />
 
@@ -380,7 +388,7 @@
                             android:text="--"
                             android:fontFamily="@font/sfprotextregular"
                             android:textColor="@android:color/white"
-                            android:textSize="@dimen/_10ssp"
+                            android:textSize="@dimen/_8ssp"
                             android:visibility="visible"
                             android:maxLines="1" />
                     </LinearLayout>

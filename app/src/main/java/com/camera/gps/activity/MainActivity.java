@@ -330,6 +330,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private double currentLatitude = 0.0;
     private double currentLongitude = 0.0;
     private String currentAddress = "Loading location...";
+    private String currentDefaultTitle = "";
     private String currentTitle;
     private String savedDate;
     private String savedTime;
@@ -337,6 +338,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String latDMS;
     private boolean isCameraReady = false;
     private boolean isLocationFetched = false;
+    private boolean isLiveLocationMode = true;
+    private Location lastGeocodedLocation;
+    private long lastAddressLookupTime = 0L;
+    private int addressLookupGeneration = 0;
+    private static final long ADDRESS_LOOKUP_INTERVAL_MS = 15000L;
+    private static final float ADDRESS_LOOKUP_DISTANCE_METERS = 30f;
     private boolean isLocationPromptActive = false;
     private AlertDialog internetRequiredDialog;
     private AlertDialog locationFallbackDialog;
@@ -349,8 +356,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int currentstamp_type, current_DateTimeColor, current_TextColor, current_StampBgColor;
     private boolean hasSessionStampOverride = false;
     private boolean hasSessionDateTimeOverride = false;
-    private TextView txtLocation, txtDateTime, txtLatitude, txtLongitude, txtDate, txtTime, txtTitle, txt_lat_dms, txt_long_dms;
-    private LinearLayout dateTimeContainer, latLongContainer;
+    private TextView txtLocation, txtDefaultTitle, txtDateTime, txtLatitude, txtLongitude, txtDate, txtTime, txtTitle, txt_lat_dms, txt_long_dms;
+    private LinearLayout dateTimeContainer, latLongContainer, defaultTitleAddressContainer;
     private CardView stampBg;
     private TextView lbl_lat, lbl_long, lbl_date, lbl_gmt, lbl_type, lbl_degree, lbl_dms;
     private SP msp;
@@ -427,6 +434,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Serializable locationExtra = data.getSerializableExtra(MyApplication.EXTRA_LOCATION);
                         if (locationExtra instanceof MyLocation) {
                             MyLocation receivedLocation = (MyLocation) locationExtra;
+                            isLiveLocationMode = false;
                             Log.d("Rishi_MainActivity", "Received Location Details:");
                             Log.d("Rishi_MainActivity", "ID: " + receivedLocation.getId());
                             Log.d("Rishi_MainActivity", "Title: " + receivedLocation.getTitle());
@@ -940,12 +948,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void setupLocation() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        locationRequest = LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY).setInterval(5000L).setFastestInterval(2000L);
+        locationRequest = new LocationRequest.Builder(
+                com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                5000L)
+                .setMinUpdateIntervalMillis(2000L)
+                .setMinUpdateDistanceMeters(5f)
+                .build();
 
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult result) {
-                if (isLocationFetched) return;
+                if (!isLiveLocationMode) return;
 
                 Location location = result.getLastLocation();
                 if (location != null) {
@@ -954,6 +967,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
+        // setupLocation can finish after onResume (for example, after permission or
+        // location-settings flows), so start immediately instead of waiting for the
+        // next lifecycle transition.
         requestLocationUpdates();
     }
 
@@ -1766,20 +1782,31 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void handleLocationUpdate(Location location) {
-        if (isLocationFetched) return; // Only capture location once
+        // Do not replace a usable fix with a poor update while driving.
+        if (isLocationFetched && location.hasAccuracy() && location.getAccuracy() > 100f) {
+            return;
+        }
 
         isLocationFetched = true;
-        fusedLocationClient.removeLocationUpdates(locationCallback);
 
-        // Store the captured location
+        // Keep the stamp in sync with the latest location while the camera is active.
         currentLatitude = location.getLatitude();
         currentLongitude = location.getLongitude();
 
         Log.d("Location", "Location captured: " + currentLatitude + ", " + currentLongitude);
 
-        resolveAddressFromLocation(location);
         LoadDMS();
         renderStamp();
+
+        long now = System.currentTimeMillis();
+        boolean movedEnough = lastGeocodedLocation == null
+                || location.distanceTo(lastGeocodedLocation) >= ADDRESS_LOOKUP_DISTANCE_METERS;
+        boolean waitedEnough = now - lastAddressLookupTime >= ADDRESS_LOOKUP_INTERVAL_MS;
+        if (movedEnough || waitedEnough) {
+            lastGeocodedLocation = new Location(location);
+            lastAddressLookupTime = now;
+            resolveAddressFromLocation(location);
+        }
     }
 
     private void LoadDMS() {
@@ -1795,31 +1822,80 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void resolveAddressFromLocation(Location location) {
+        final int requestGeneration = ++addressLookupGeneration;
         new Thread(() -> {
+            String resolvedAddress;
+            String resolvedDefaultTitle;
             try {
                 Geocoder geocoder = new Geocoder(this, Locale.getDefault());
                 List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
 
                 if (addresses != null && !addresses.isEmpty()) {
-                    String resolvedAddress = addresses.get(0).getAddressLine(0);
-                    if (resolvedAddress != null && !resolvedAddress.isEmpty()) {
-                        currentAddress = resolvedAddress;
-
-                        Log.d("Location", "Address resolved: " + currentAddress);
-                    } else {
-                        currentAddress = "Address not available";
+                    Address address = addresses.get(0);
+                    resolvedAddress = address.getAddressLine(0);
+                    resolvedDefaultTitle = buildDefaultTitle(address);
+                    if (resolvedAddress == null || resolvedAddress.isEmpty()) {
+                        resolvedAddress = "Address not available";
                     }
                 } else {
-                    currentAddress = "Address not available";
+                    resolvedAddress = "Address not available";
+                    resolvedDefaultTitle = "";
                 }
-
-                runOnUiThread(this::updateStampLocation);
             } catch (IOException e) {
                 e.printStackTrace();
-                currentAddress = "Address resolution failed";
-                runOnUiThread(this::updateStampLocation);
+                resolvedAddress = "Address resolution failed";
+                resolvedDefaultTitle = "";
             }
+
+            final String addressResult = resolvedAddress;
+            final String defaultTitleResult = resolvedDefaultTitle;
+            runOnUiThread(() -> {
+                if (requestGeneration != addressLookupGeneration || !isLiveLocationMode) {
+                    return;
+                }
+                currentAddress = addressResult;
+                currentDefaultTitle = defaultTitleResult;
+                Log.d("Location", "Address resolved: " + currentAddress);
+                updateStampLocation();
+            });
         }).start();
+    }
+
+    private String buildDefaultTitle(Address address) {
+        StringBuilder title = new StringBuilder();
+        appendAddressPart(title, address.getLocality());
+        appendAddressPart(title, address.getAdminArea());
+        appendAddressPart(title, address.getCountryName());
+
+        String countryFlag = countryCodeToFlag(address.getCountryCode());
+        if (!countryFlag.isEmpty()) {
+            if (title.length() > 0) {
+                title.append(' ');
+            }
+            title.append(countryFlag);
+        }
+        return title.toString();
+    }
+
+    private void appendAddressPart(StringBuilder title, String part) {
+        if (part == null || part.trim().isEmpty()) {
+            return;
+        }
+        if (title.length() > 0) {
+            title.append(", ");
+        }
+        title.append(part.trim());
+    }
+
+    private String countryCodeToFlag(String countryCode) {
+        if (countryCode == null || countryCode.length() != 2) {
+            return "";
+        }
+        String normalizedCode = countryCode.toUpperCase(Locale.US);
+        int firstLetter = Character.codePointAt(normalizedCode, 0) - 'A' + 0x1F1E6;
+        int secondLetter = Character.codePointAt(normalizedCode, 1) - 'A' + 0x1F1E6;
+        return new String(Character.toChars(firstLetter))
+                + new String(Character.toChars(secondLetter));
     }
 
     private void retryAddressResolutionIfPossible() {
@@ -2094,6 +2170,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         compactLiveStampText(stampView);
         mapViewContainer = stampView.findViewById(R.id.mapView);
         txtLocation = stampView.findViewById(R.id.txt_gps_stamp_location);
+        txtDefaultTitle = stampView.findViewById(R.id.txt_gps_stamp_default_title);
         txtDateTime = stampView.findViewById(R.id.txt_gps_stamp_datetime);
         txtLatitude = stampView.findViewById(R.id.txt_latitude);
         txtLongitude = stampView.findViewById(R.id.txt_longitude);
@@ -2114,6 +2191,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         latLongContainer = stampView.findViewById(R.id.latLongContainer);
         dateTimeContainer = stampView.findViewById(R.id.dateTimeContainer);
+        defaultTitleAddressContainer = stampView.findViewById(R.id.defaultTitleAddressContainer);
     }
 
     /**
@@ -2274,8 +2352,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     current_StampBgColor,
                     dateTimeContainer,
                     latLongContainer,
-                    txtTitle,
-                    txtLocation
+                    defaultTitleAddressContainer
             );
             StampBackgroundUtils.applyRoundedDefaultGlass(this, appStamp);
         }else {
@@ -2303,6 +2380,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void updateStampLocation() {
+        if (txtDefaultTitle != null) {
+            txtDefaultTitle.setText(currentDefaultTitle);
+            txtDefaultTitle.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            txtDefaultTitle.setTextColor(current_TextColor);
+            txtDefaultTitle.setVisibility(VISIBLE);
+        }
         if (txtLocation != null) {
             txtLocation.setText(currentAddress);
             txtLocation.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
@@ -3525,6 +3608,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onPause() {
         super.onPause();
+        if (fusedLocationClient != null && locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
 
         if (countDownTimer != null) {
             countDownTimer.cancel();
@@ -3605,6 +3691,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onResume() {
 
         super.onResume();
+        if (fusedLocationClient != null && locationCallback != null && locationRequest != null
+                && (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
+            requestLocationUpdates();
+        }
         refreshLatestPhoto();
         setZoomRatio(currentZoomRatio);
         // Re-enable immersive mode

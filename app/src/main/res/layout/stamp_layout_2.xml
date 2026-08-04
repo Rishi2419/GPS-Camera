@@ -67,7 +67,7 @@
 
             <androidx.cardview.widget.CardView
                 android:layout_width="@dimen/_75sdp"
-                android:layout_height="@dimen/_85sdp"
+                android:layout_height="match_parent"
                 android:layout_gravity="center_vertical"
                 app:cardCornerRadius="@dimen/_4sdp"
                 app:cardElevation="0dp">
@@ -101,7 +101,7 @@
                     android:fontFamily="@font/poppins_medium"
                     android:textColor="@color/white"
                     android:layout_marginBottom="@dimen/_4sdp"
-                    android:textSize="@dimen/_15ssp" />
+                    android:textSize="@dimen/_12ssp" />
 
                 <!-- Fixed Size Table Container -->
                 <LinearLayout

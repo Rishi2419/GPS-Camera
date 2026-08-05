@@ -643,14 +643,16 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             } else {
                 binding.selectionOverlay.setVisibility(GONE);
                 binding.checkBox.setVisibility(GONE);
+                binding.checkBox.setChecked(false);
             }
 
-            // Click listeners for the item (not checkbox)
             itemView.setOnClickListener(v -> {
                 if (isSelectionMode) {
-                    // Toggle selection
-                    photo.setSelected(!isSelected);
-                    notifyItemChanged(getAdapterPosition());
+                    boolean currentlySelected = photo.isSelected() != null && photo.isSelected();
+                    boolean newSelectionState = !currentlySelected;
+                    photo.setSelected(newSelectionState);
+                    binding.checkBox.setChecked(newSelectionState);
+                    binding.selectionOverlay.setVisibility(newSelectionState ? VISIBLE : GONE);
                     notifySelectionChange();
                 } else {
                     // Normal click - open preview
@@ -658,16 +660,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                 }
             });
 
-            // Separate click listener for checkbox
-            binding.checkBox.setOnClickListener(v -> {
-                if (isSelectionMode) {
-                    // Toggle selection when checkbox is clicked
-                    boolean newSelectionState = binding.checkBox.isChecked();
-                    photo.setSelected(newSelectionState);
-                    binding.selectionOverlay.setVisibility(newSelectionState ? VISIBLE : GONE);
-                    notifySelectionChange();
-                }
-            });
+            binding.checkBox.setOnClickListener(v -> itemView.performClick());
 
             // Remove long press functionality since delete button handles selection mode
         }

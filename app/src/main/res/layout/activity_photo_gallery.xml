@@ -160,7 +160,7 @@
         android:paddingEnd="@dimen/_8sdp"
         android:paddingTop="@dimen/_8sdp"
         android:paddingBottom="@dimen/_38sdp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/flPhotoGalleryBanner"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -190,5 +190,13 @@
             app:srcCompat="@drawable/ic_delete"
             app:tint="@android:color/white" />
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/flPhotoGalleryBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

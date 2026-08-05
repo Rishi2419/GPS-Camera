@@ -83,6 +83,19 @@ public final class MyLocation_Activity extends AppCompatActivity {
             MyApplication.set_to_current_location = true;
             onBackPressed();
         });
+
+        binding.header.post(this::updateSetCurrentLocationMaxWidth);
+    }
+
+    private void updateSetCurrentLocationMaxWidth() {
+        android.view.ViewGroup.MarginLayoutParams params =
+                (android.view.ViewGroup.MarginLayoutParams) binding.btnSetCurrentLocation.getLayoutParams();
+        boolean isRtl = binding.header.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+        int availableWidth = isRtl
+                ? binding.tvHeaderTitle.getLeft() - params.getMarginStart() - params.getMarginEnd()
+                : binding.header.getWidth() - binding.tvHeaderTitle.getRight()
+                - params.getMarginStart() - params.getMarginEnd();
+        binding.btnSetCurrentLocation.setMaxWidth(Math.max(0, availableWidth));
     }
 
     public void setDeleteClickListener(OnDeleteClickListener listener) {

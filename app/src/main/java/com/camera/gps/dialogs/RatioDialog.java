@@ -19,7 +19,7 @@
         private ImageView btnCloseDialog;
         private int selectedRatio;
         private OnRatioSelectedListener listener;
-        private boolean showFullRatio = true;
+        private boolean showFullRatio = false;
 
         // Ratio constants
         public static final int RATIO_FULL = 0;
@@ -30,15 +30,15 @@
 
         public RatioDialog(Context context, int currentRatio, OnRatioSelectedListener listener) {
             super(context);
-            this.selectedRatio = currentRatio;
+            this.selectedRatio = currentRatio == RATIO_FULL ? RATIO_16_9 : currentRatio;
             this.listener = listener;
             init();
         }
 
         public RatioDialog(Context context, int currentRatio, boolean showFullRatio, OnRatioSelectedListener listener) {
             super(context);
-            this.selectedRatio = showFullRatio || currentRatio != RATIO_FULL ? currentRatio : RATIO_16_9;
-            this.showFullRatio = showFullRatio;
+            this.selectedRatio = currentRatio == RATIO_FULL ? RATIO_16_9 : currentRatio;
+            this.showFullRatio = false;
             this.listener = listener;
             init();
         }

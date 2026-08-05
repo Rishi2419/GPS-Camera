@@ -57,6 +57,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.request.RequestOptions;
 import com.camera.gps.adsmanager.InterstitialAdManager;
+import com.camera.gps.adsmanager.admob.AdMobBannerAdHelper;
 import com.camera.gps.databinding.ActivityPhotoPreviewBinding;
 import com.camera.gps.util.Utils;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -157,6 +158,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         binding = ActivityPhotoPreviewBinding.inflate(getLayoutInflater());
 
         setContentView(binding.getRoot());
+        loadBottomBannerAd();
         Application application = getApplication();
 
         getWindow().setFlags(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
@@ -170,6 +172,12 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         final Photo photo = (Photo) serializableExtra;
         displayedPhoto = photo;
         boolean fromCreation = getIntent().getBooleanExtra("fromCreation", false);
+        boolean fromMain = getIntent().getBooleanExtra("isMain", false);
+        binding.collectionNavigation.setVisibility(fromMain ? VISIBLE : GONE);
+        binding.collectionNavigation.setOnClickListener(view -> {
+            startActivity(new Intent(PhotoPreview_Activity.this, MyCreation_Activity.class));
+            finish();
+        });
         if (SharedMediaStore.isVideo(photo)) {
             isVideo = true;
             binding.videoView.setVisibility(VISIBLE);
@@ -192,6 +200,15 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         binding.btnDelete.setOnClickListener(view -> deleteAlert(photo, isVideo));
         binding.btnShare.setOnClickListener(view -> share(photo));
         initCardInfoVisibility(photo);
+    }
+
+    private void loadBottomBannerAd() {
+        if (!Utils.getIsPremium(this)) {
+            binding.flPhotoPreviewBanner.post(() -> AdMobBannerAdHelper.loadBannerAd(
+                    this, binding.flPhotoPreviewBanner, "photo_preview_banner"));
+        } else {
+            binding.flPhotoPreviewBanner.setVisibility(GONE);
+        }
     }
 
     @Override

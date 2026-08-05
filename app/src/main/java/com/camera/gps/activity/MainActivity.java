@@ -347,6 +347,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean isLocationPromptActive = false;
     private AlertDialog internetRequiredDialog;
     private AlertDialog locationFallbackDialog;
+    private ConnectivityManager.NetworkCallback internetNetworkCallback;
+    private boolean internetNetworkCallbackRegistered = false;
 
     // Stamp UI components
     private RelativeLayout relBottomStamp;
@@ -376,6 +378,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Chronometer chronometerVideo;
     private File videoFile;
     private ImageView ivMyCapture;
+    private View previewLoadingIndicator;
+    private boolean isPreviewLoading = false;
 
 
     private GlobalViewModel viewModel;
@@ -410,11 +414,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         internetSettingsLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-            if (hasValidatedInternetConnection()) {
-                retryAddressResolutionIfPossible();
-            } else {
-                showInternetDialog();
-            }
+            reconcileInternetDialogState();
+            handler.postDelayed(this::reconcileInternetDialogState, 1200L);
         });
 
         resultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), (ActivityResultCallback<ActivityResult>) result -> {
@@ -600,6 +601,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         initializeViews();
         initializePhotoObject();
         viewModel = new ViewModelProvider(this, new GlobalViewModelFactory(getApplication())).get(GlobalViewModel.class);
+        loadBottomBannerAd();
 
 
         // Check permissions first
@@ -690,6 +692,45 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void initializePhotoObject() {
         photo = new Photo();
         photo.setSelected(false);
+    }
+
+    private void loadBottomBannerAd() {
+        FrameLayout bannerContainer = findViewById(R.id.flMainBanner);
+        bannerContainer.addOnLayoutChangeListener((view, left, top, right, bottom,
+                                                   oldLeft, oldTop, oldRight, oldBottom) ->
+                updateBottomOptionsBannerOffset(bannerContainer));
+        updateBottomOptionsBannerOffset(bannerContainer);
+        if (!Utils.getIsPremium(this)) {
+            bannerContainer.post(() -> com.camera.gps.adsmanager.admob.AdMobBannerAdHelper
+                    .loadBannerAd(this, bannerContainer, "main_banner"));
+        } else {
+            bannerContainer.setVisibility(GONE);
+            updateBottomOptionsBannerOffset(bannerContainer);
+        }
+    }
+
+    private void updateBottomOptionsBannerOffset(FrameLayout bannerContainer) {
+        if (layoutBottom == null) {
+            return;
+        }
+        ViewGroup.LayoutParams rawParams = layoutBottom.getLayoutParams();
+        if (!(rawParams instanceof RelativeLayout.LayoutParams)) {
+            return;
+        }
+
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) rawParams;
+        int bannerOffset = 0;
+        if (bannerContainer.getVisibility() == VISIBLE && bannerContainer.getHeight() > 0) {
+            bannerOffset = bannerContainer.getHeight();
+            ViewGroup.LayoutParams bannerParams = bannerContainer.getLayoutParams();
+            if (bannerParams instanceof ViewGroup.MarginLayoutParams) {
+                bannerOffset += ((ViewGroup.MarginLayoutParams) bannerParams).bottomMargin;
+            }
+        }
+        if (params.bottomMargin != bannerOffset) {
+            params.bottomMargin = bannerOffset;
+            layoutBottom.setLayoutParams(params);
+        }
     }
 
     private boolean hasAllPermissions() {
@@ -822,6 +863,63 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private void reconcileInternetDialogState() {
+        if (hasValidatedInternetConnection()) {
+            if (internetRequiredDialog != null && internetRequiredDialog.isShowing()) {
+                internetRequiredDialog.dismiss();
+            }
+            retryAddressResolutionIfPossible();
+        } else {
+            showInternetDialogIfNeeded();
+        }
+    }
+
+    private void registerInternetNetworkCallback() {
+        if (internetNetworkCallbackRegistered) {
+            return;
+        }
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        internetNetworkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                handler.post(MainActivity.this::reconcileInternetDialogState);
+            }
+
+            @Override
+            public void onCapabilitiesChanged(@NonNull Network network,
+                                              @NonNull NetworkCapabilities networkCapabilities) {
+                handler.post(MainActivity.this::reconcileInternetDialogState);
+            }
+
+            @Override
+            public void onLost(@NonNull Network network) {
+                handler.post(MainActivity.this::reconcileInternetDialogState);
+            }
+        };
+        try {
+            connectivityManager.registerDefaultNetworkCallback(internetNetworkCallback);
+            internetNetworkCallbackRegistered = true;
+        } catch (RuntimeException exception) {
+            Log.e("Internet", "Unable to register network callback", exception);
+        }
+    }
+
+    private void unregisterInternetNetworkCallback() {
+        if (!internetNetworkCallbackRegistered || internetNetworkCallback == null) {
+            return;
+        }
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        try {
+            connectivityManager.unregisterNetworkCallback(internetNetworkCallback);
+        } catch (RuntimeException exception) {
+            Log.e("Internet", "Unable to unregister network callback", exception);
+        }
+        internetNetworkCallbackRegistered = false;
+        internetNetworkCallback = null;
+    }
+
     private boolean isLocationEnabled() {
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
@@ -923,6 +1021,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         animationRecVideo = AnimationUtils.loadAnimation(getBaseContext(), R.anim.anim_recording);
         chronometerVideo = findViewById(R.id.chronometerVideo);
         ivMyCapture = findViewById(R.id.ivMyCapture);
+        previewLoadingIndicator = findViewById(R.id.previewLoadingIndicator);
 
         // Create flash overlay for front camera flash
         createFlashOverlay();
@@ -1066,6 +1165,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         UtilsX.playSound(R.raw.take_photo_sound, this);
         this.btnTakeAction.setEnabled(false);
+        setPreviewLoading(true);
         UtilsX.animateBtnTakePhoto(this.btnTakeAction);
         ImageCapture.OutputFileOptions build = new ImageCapture.OutputFileOptions.Builder(mediaFile).build();
 
@@ -1088,6 +1188,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     mediaFile.delete();
                                 }
                                 btnTakeAction.setEnabled(true);
+                                setPreviewLoading(false);
                                 Toast.makeText(MainActivity.this,
                                         "Unable to apply stamp to photo",
                                         Toast.LENGTH_SHORT).show();
@@ -1106,6 +1207,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     mediaFile.delete();
                 }
                 btnTakeAction.setEnabled(true);
+                setPreviewLoading(false);
                 Toast.makeText(getBaseContext(), "Error taking photo: " + imageCaptureException.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
 
                 // Hide front camera flash overlay
@@ -1185,6 +1287,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     return;
                 }
 
+                setPreviewLoading(true);
+
                 // Update UI with captured video
                 Uri outputUri = finalizeEvent.getOutputResults().getOutputUri();
                 if (outputUri != null && outputUri != Uri.EMPTY) {
@@ -1213,6 +1317,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
     private void finalizeSavedVideo(File recordedFile) {
         if (recordedFile == null || photo == null || photo.getImagePath() == null) {
+            setPreviewLoading(false);
+            btnTakeAction.setEnabled(true);
             return;
         }
 
@@ -1230,6 +1336,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             SharedMediaStore.delete(MainActivity.this,
                                     media.getUri().toString(), media.getPath());
                             btnTakeAction.setEnabled(true);
+                            setPreviewLoading(false);
                             return;
                         }
 
@@ -1251,6 +1358,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             capturedFile.delete();
                         }
                         btnTakeAction.setEnabled(true);
+                        setPreviewLoading(false);
                         Toast.makeText(MainActivity.this,
                                 "Unable to save to Gallery: " + error,
                                 Toast.LENGTH_SHORT).show();
@@ -1460,6 +1568,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void onChanged(Object obj) {
                     btnTakeAction.setEnabled(true);
+                    setPreviewLoading(false);
                     if (obj != null) {
 
                         long insertedId = (long) obj;
@@ -1502,6 +1611,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 }
             });
+        } else {
+            setPreviewLoading(false);
+            btnTakeAction.setEnabled(true);
+        }
+    }
+
+    private void setPreviewLoading(boolean loading) {
+        if (isPreviewLoading == loading) {
+            return;
+        }
+        isPreviewLoading = loading;
+        if (previewLoadingIndicator != null) {
+            previewLoadingIndicator.setVisibility(loading ? VISIBLE : GONE);
+        }
+        if (ivMyCapture != null) {
+            ivMyCapture.setEnabled(!loading);
         }
     }
 
@@ -1658,6 +1783,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         cameraControl = camera.getCameraControl();
         cameraInfo = camera.getCameraInfo();
         setZoomRatio(currentZoomRatio);
+        updateZoomVisibility();
     }
 
     private void initializeImageCaptureWithRatio(int aspectRatio) {
@@ -1693,6 +1819,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void updateCameraPreviewSizeFull() {
         if (cameraContainer != null && cameraPreview != null) {
+            positionCameraContainer(false);
             // Make the container full height
             ViewGroup.LayoutParams containerParams = cameraContainer.getLayoutParams();
             containerParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -1710,6 +1837,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void updateCameraPreviewFor16_9() {
         if (cameraContainer != null && cameraPreview != null) {
+            positionCameraContainer(false);
             DisplayMetrics displayMetrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             int screenWidth = displayMetrics.widthPixels;
@@ -1744,6 +1872,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             containerParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
             containerParams.height = height4_3;
             cameraContainer.setLayoutParams(containerParams);
+            positionCameraContainer(true);
 
             // Update preview height to match container
             ViewGroup.LayoutParams previewParams = cameraPreview.getLayoutParams();
@@ -1752,6 +1881,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             cameraPreview.setLayoutParams(previewParams);
 
             centerPreviewInContainer(height4_3);
+        }
+    }
+
+    private void positionCameraContainer(boolean useFourThreeBias) {
+        ViewGroup.LayoutParams rawParams = cameraContainer.getLayoutParams();
+        if (!(rawParams instanceof RelativeLayout.LayoutParams)) {
+            return;
+        }
+
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) rawParams;
+        params.removeRule(RelativeLayout.CENTER_IN_PARENT);
+        params.removeRule(RelativeLayout.CENTER_HORIZONTAL);
+        params.removeRule(RelativeLayout.ABOVE);
+        params.addRule(RelativeLayout.CENTER_IN_PARENT);
+        cameraContainer.setLayoutParams(params);
+
+        cameraContainer.setTranslationY(0f);
+        if (useFourThreeBias) {
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            int frameHeight = cameraContainer.getLayoutParams().height;
+            int unusedVerticalSpace = Math.max(0, displayMetrics.heightPixels - frameHeight);
+            cameraContainer.setTranslationY(-unusedVerticalSpace * 0.20f);
         }
     }
 
@@ -2779,6 +2931,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         ivMyCapture.setOnClickListener(view -> {
+            if (isPreviewLoading) {
+                return;
+            }
             // Check if location is loaded
 
 
@@ -3688,9 +3843,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        registerInternetNetworkCallback();
+        reconcileInternetDialogState();
+    }
+
+    @Override
     protected void onResume() {
 
         super.onResume();
+        reconcileInternetDialogState();
+        handler.postDelayed(this::reconcileInternetDialogState, 1200L);
         if (fusedLocationClient != null && locationCallback != null && locationRequest != null
                 && (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
@@ -3698,6 +3862,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         refreshLatestPhoto();
         setZoomRatio(currentZoomRatio);
+        updateZoomVisibility();
         // Re-enable immersive mode
         enableImmersiveMode();
 
@@ -3714,6 +3879,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onStop() {
         super.onStop();
+        unregisterInternetNetworkCallback();
 
         // Ensure recording is stopped when activity stops
         if (isRecording) {

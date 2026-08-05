@@ -25,6 +25,7 @@
             app:srcCompat="@drawable/ic_back" />
 
         <TextView
+            android:id="@+id/tvHeaderTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
@@ -79,6 +80,8 @@
             android:gravity="center_vertical"
             android:drawableStart="@drawable/ic_my_location_small"
             android:drawablePadding="3dp"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:text="@string/set_current_location"
             android:textColor="@color/white"
             android:textSize="@dimen/_12ssp"
@@ -113,6 +116,8 @@
         app:tabIndicatorHeight="0dp"
         app:tabMode="fixed"
         app:tabMinWidth="0dp"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabUnboundedRipple="false"
         app:tabTextAppearance="@android:style/TextAppearance.Small"
         app:tabSelectedTextColor="@android:color/white"
         app:tabTextColor="@color/black" />

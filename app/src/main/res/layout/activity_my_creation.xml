@@ -78,6 +78,8 @@
         app:tabIndicatorHeight="0dp"
         app:tabMinWidth="0dp"
         app:tabMode="fixed"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabUnboundedRipple="false"
         app:tabSelectedTextColor="@android:color/white"
         app:tabTextAppearance="@android:style/TextAppearance.Small"
         app:tabTextColor="@color/black" />

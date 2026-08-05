@@ -74,6 +74,7 @@ import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.adapter.PhotoGalleryAdapter;
 import com.camera.gps.adsmanager.InterstitialAdManager;
+import com.camera.gps.adsmanager.admob.AdMobBannerAdHelper;
 import com.camera.gps.data.GlobalViewModel;
 import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.database.entity.Photo;
@@ -121,6 +122,7 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
         super.onCreate(bundle);
         binding = ActivityPhotoGalleryBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        loadBottomBannerAd();
 
         Application application = getApplication();
         getWindow().setFlags(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
@@ -141,6 +143,15 @@ public final class PhotoGallery_Activity extends AppCompatActivity {
 
         setupClickListeners();
         updateCounter();
+    }
+
+    private void loadBottomBannerAd() {
+        if (!Utils.getIsPremium(this)) {
+            binding.flPhotoGalleryBanner.post(() -> AdMobBannerAdHelper.loadBannerAd(
+                    this, binding.flPhotoGalleryBanner, "photo_gallery_banner"));
+        } else {
+            binding.flPhotoGalleryBanner.setVisibility(GONE);
+        }
     }
 
     @Override

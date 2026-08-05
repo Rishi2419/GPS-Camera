@@ -656,44 +656,47 @@
         android:id="@+id/zoomLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@id/layoutBottom"
+        android:layout_above="@id/viewPagerSwitchAction"
         android:layout_centerHorizontal="true"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginBottom="@dimen/_44sdp"
+        android:layout_marginBottom="8dp"
         android:visibility="visible"
         android:elevation="4dp">
 
         <TextView
             android:id="@+id/btnZoom1x"
-            android:layout_width="@dimen/_28sdp"
-            android:layout_height="@dimen/_28sdp"
+            android:layout_width="@dimen/_22sdp"
+            android:layout_height="@dimen/_22sdp"
             android:text="1x"
-            android:textSize="14sp"
-            android:layout_marginEnd="@dimen/_6sdp"
-            android:textColor="@color/zoom_text_selector"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="@dimen/_4sdp"
+            android:textColor="@android:color/white"
             android:background="@drawable/bg_zoom_button_selector"
             android:gravity="center"/>
 
         <TextView
             android:id="@+id/btnZoom2x"
-            android:layout_width="@dimen/_28sdp"
-            android:layout_height="@dimen/_28sdp"
+            android:layout_width="@dimen/_22sdp"
+            android:layout_height="@dimen/_22sdp"
             android:text="2x"
-            android:textSize="14sp"
-            android:layout_marginEnd="@dimen/_6sdp"
-            android:textColor="@color/zoom_text_selector"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="@dimen/_4sdp"
+            android:textColor="@android:color/white"
             android:background="@drawable/bg_zoom_button_selector"
             android:gravity="center"/>
 
         <TextView
             android:id="@+id/btnZoom3x"
-            android:layout_width="@dimen/_28sdp"
-            android:layout_height="@dimen/_28sdp"
+            android:layout_width="@dimen/_22sdp"
+            android:layout_height="@dimen/_22sdp"
             android:text="3x"
-            android:textSize="14sp"
-            android:layout_marginEnd="@dimen/_6sdp"
-            android:textColor="@color/zoom_text_selector"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="@dimen/_4sdp"
+            android:textColor="@android:color/white"
             android:background="@drawable/bg_zoom_button_selector"
             android:gravity="center"/>
     </LinearLayout>
@@ -709,25 +712,29 @@
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/viewPagerSwitchAction"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_60sdp"
+        android:layout_height="30dp"
         android:layout_above="@+id/layoutBottom">
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabLayout"
             android:layout_width="wrap_content"
-            android:layout_height="@dimen/_40sdp"
+            android:layout_height="30dp"
             android:layout_centerInParent="true"
             android:layout_gravity="bottom"
             android:background="@color/transparent_30"
             android:clipToPadding="false"
             app:tabGravity="center"
-            app:tabIndicator="@drawable/shape_indicator"
+            app:tabIndicator="@drawable/bg_camera_mode_selected"
             app:tabIndicatorColor="@android:color/transparent"
-            app:tabIndicatorFullWidth="false"
-            app:tabIndicatorGravity="bottom"
+            app:tabIndicatorFullWidth="true"
+            app:tabIndicatorGravity="stretch"
             app:tabMode="scrollable"
+            app:tabPaddingBottom="0dp"
+            app:tabPaddingEnd="5dp"
+            app:tabPaddingStart="5dp"
+            app:tabPaddingTop="7dp"
             app:tabRippleColor="@android:color/transparent"
-            app:tabSelectedTextColor="@color/blue_primary"
+            app:tabSelectedTextColor="@android:color/white"
             app:tabTextColor="#FFFFFF" />
     </androidx.viewpager.widget.ViewPager>
 
@@ -885,14 +892,27 @@
             android:gravity="center"
             android:orientation="vertical">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/ivMyCapture"
+            <FrameLayout
                 android:layout_width="@dimen/_38sdp"
-                android:layout_height="@dimen/_38sdp"
-                android:foreground="?actionBarItemBackground"
-                android:scaleType="centerCrop"
-                android:src="@drawable/my_capture_icon"
-                app:shapeAppearance="@style/ShapeAppearanceOverlay.App.Circular" />
+                android:layout_height="@dimen/_38sdp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivMyCapture"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:foreground="?actionBarItemBackground"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/my_capture_icon"
+                    app:shapeAppearance="@style/ShapeAppearanceOverlay.App.Circular" />
+
+                <com.camera.gps.camerax.view.CircularFillProgressView
+                    android:id="@+id/previewLoadingIndicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -904,5 +924,11 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/flMainBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

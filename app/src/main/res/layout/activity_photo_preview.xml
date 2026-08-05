@@ -90,6 +90,39 @@
                 android:textSize="@dimen/_11sdp" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/collectionNavigation"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_30sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignTop="@id/btBack"
+            android:layout_alignBottom="@id/btBack"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:background="?actionBarItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/_6sdp"
+            android:visibility="gone">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:contentDescription="@string/collection"
+                app:srcCompat="@drawable/ic_photos" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_4sdp"
+                android:fontFamily="@font/sfprotextmedium"
+                android:text="@string/collection"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/_11ssp" />
+
+        </LinearLayout>
+
     </RelativeLayout>
 
     <!-- Separator line -->
@@ -170,7 +203,7 @@
         android:paddingEnd="@dimen/_8sdp"
         android:paddingTop="@dimen/_8sdp"
         android:paddingBottom="@dimen/_38sdp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/flPhotoPreviewBanner"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -200,5 +233,13 @@
             app:srcCompat="@drawable/ic_delete"
             app:tint="@android:color/white" />
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/flPhotoPreviewBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

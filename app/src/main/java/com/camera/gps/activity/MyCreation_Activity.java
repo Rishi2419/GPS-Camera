@@ -186,7 +186,7 @@ import com.google.android.material.tabs.TabLayoutMediator;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MyCreation_Activity extends AppCompatActivity implements CreationViewPagerAdapter.OnSelectionChangeListener {
+public class MyCreation_Activity extends InsetAwareActivity implements CreationViewPagerAdapter.OnSelectionChangeListener {
 
     private ActivityMyCreationBinding binding;
     private final ActivityResultLauncher<Intent> resultLauncher;

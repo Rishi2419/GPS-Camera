@@ -82,7 +82,7 @@ import com.camera.gps.database.entity.Photo;
 import com.camera.gps.model.MarkerModel;
 import com.camera.gps.model.PersonRenderer;
 
-public final class Map_Activity extends AppCompatActivity implements OnMapReadyCallback {
+public final class Map_Activity extends InsetAwareActivity implements OnMapReadyCallback {
     public static final String EXTRA_SELECTED_MAP_TYPE = "com.camera.gps.activity.EXTRA_SELECTED_MAP_TYPE";
     private static final int FALLBACK_MAP_TYPE = Integer.MIN_VALUE;
 

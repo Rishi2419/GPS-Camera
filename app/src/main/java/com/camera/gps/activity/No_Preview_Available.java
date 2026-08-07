@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.camera.gps.databinding.ActivityNoPreviewAvailableBinding;
 
-public class No_Preview_Available extends AppCompatActivity {
+public class No_Preview_Available extends InsetAwareActivity {
 
     private ActivityNoPreviewAvailableBinding binding;
 

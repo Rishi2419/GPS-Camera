@@ -34,7 +34,7 @@ import com.camera.gps.util.StampSettingsBottomSheets;
 import com.camera.gps.util.Utils;
 import com.camera.gps.viewmodel.FontStyleViewModel;
 
-public class Settings_Activity extends AppCompatActivity {
+public class Settings_Activity extends InsetAwareActivity {
 
     public static final String EXTRA_CURRENT_FONT_STYLE = "settings_current_font_style";
     public static final String EXTRA_CURRENT_DATE_FORMAT = "settings_current_date_format";

@@ -691,7 +691,7 @@ import com.camera.gps.util.SP;
 import com.camera.gps.util.Utils;
 import com.camera.gps.viewmodel.FontStyleViewModel;
 
-public class Edit_Activity extends AppCompatActivity {
+public class Edit_Activity extends InsetAwareActivity {
 
     private ActivityEditBinding binding;
     private int tempstamp_type;

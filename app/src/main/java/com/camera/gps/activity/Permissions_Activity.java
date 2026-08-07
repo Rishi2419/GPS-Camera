@@ -17,7 +17,7 @@ import androidx.core.content.ContextCompat;
 import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 
-public class Permissions_Activity extends AppCompatActivity {
+public class Permissions_Activity extends InsetAwareActivity {
 
     private static final String[] LOCATION_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,

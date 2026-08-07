@@ -238,7 +238,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-public class FeedBack_Activity extends AppCompatActivity {
+public class FeedBack_Activity extends InsetAwareActivity {
 
     private ActivityFeedBackBinding binding;
     private int selectedRating = 0; // keeping as before if needed later

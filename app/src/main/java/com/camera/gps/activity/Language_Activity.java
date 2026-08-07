@@ -23,7 +23,7 @@ import com.camera.gps.MyApplication;
 
 import java.util.Locale;
 
-public class Language_Activity extends AppCompatActivity implements LanguageListener {
+public class Language_Activity extends InsetAwareActivity implements LanguageListener {
 
     //Flow
 //    App Starts ➝ Language_Activity opens ➝ ViewModel loads language list ➝

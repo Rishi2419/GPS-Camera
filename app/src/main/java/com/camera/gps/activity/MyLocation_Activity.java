@@ -23,7 +23,7 @@ import com.camera.gps.R;
 import com.camera.gps.fragment.AddCustomLocationFragment;
 import com.camera.gps.fragment.SavedLocationFragment;
 
-public final class MyLocation_Activity extends AppCompatActivity {
+public final class MyLocation_Activity extends InsetAwareActivity {
 
     private ActivityMyLocationBinding binding;
     private String source;

@@ -18,7 +18,7 @@ import com.camera.gps.adapter.ViewPagerAdapter;
 import com.camera.gps.adsmanager.NativeAdManager;
 import com.camera.gps.util.Utils;
 
-public class Onboarding_Activity extends AppCompatActivity {
+public class Onboarding_Activity extends InsetAwareActivity {
 
     ViewPager2 slideViewPager;
     ViewPagerAdapter viewPagerAdapter;

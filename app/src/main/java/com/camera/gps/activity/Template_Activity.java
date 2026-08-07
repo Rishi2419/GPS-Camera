@@ -20,7 +20,7 @@ import com.camera.gps.util.Utils;
 
 import java.util.ArrayList;
 
-public class Template_Activity extends AppCompatActivity implements Template_Adapter.TemplateClicksListener {
+public class Template_Activity extends InsetAwareActivity implements Template_Adapter.TemplateClicksListener {
 
     private ActivityTemplateBinding binding;
     int current_bg_alpha;

@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.camera.gps.databinding.ActivityPrivacyPolicyBinding;
 
-public class PrivacyPolicyActivity extends AppCompatActivity {
+public class PrivacyPolicyActivity extends InsetAwareActivity {
 
     private static final String PRIVACY_POLICY_URL =
             "https://gps-camera-privacypolicy.vercel.app/";

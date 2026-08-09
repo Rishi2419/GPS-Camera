@@ -40,7 +40,7 @@
                     app:cardCornerRadius="@dimen/_10sdp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:strokeColor="@color/blue_primary"
+                    app:strokeColor="@color/grey_layout"
                     app:strokeWidth="@dimen/_1sdp">
 
                     <com.google.android.gms.maps.MapView

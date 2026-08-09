@@ -106,7 +106,7 @@ public final class Map_Activity extends InsetAwareActivity implements OnMapReady
     private MarkerModel clickedMarker = null;
     private boolean isLocationObtained = false;
     private boolean hasZoomedToUserLocation = false;
-    private boolean storageObserversRegistered = false;
+    private boolean markerCameraListenerRegistered = false;
     private Handler timeoutHandler = new Handler(Looper.getMainLooper());
     private final List<Photo> currentPhotoList = new ArrayList<>();
 
@@ -342,38 +342,24 @@ public final class Map_Activity extends InsetAwareActivity implements OnMapReady
                         mClusterManager.cluster();
                     }
                 }
-                searchStorage();
+                showCapturedMediaMarkers();
             }
         });
     }
 
-    private void searchStorage() {
-        if (storageObserversRegistered) {
-            return;
+    private void showCapturedMediaMarkers() {
+        if (!markerCameraListenerRegistered) {
+            markerCameraListenerRegistered = true;
+            mMap.setOnCameraIdleListener(this::refreshVisibleMarkers);
         }
-        storageObserversRegistered = true;
+        refreshVisibleMarkers();
+    }
 
-        viewModel.getMarkerOpMutableLiveData().observe(this, new Observer() {
-            @Override
-            public void onChanged(Object obj) {
-                if (obj != null) {
-                    mClusterManager.addItem((MarkerModel) obj);
-                }
-            }
-        });
-        viewModel.getImagesFromGalleyOnlyLocation(this).observe(this, new Observer() {
-            @Override
-            public void onChanged(Object obj) {
-                if (obj != null) {
-                    mMap.setOnCameraIdleListener(() -> {
-                        LatLngBounds latLngBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
-                        mClusterManager.clearItems();
-                        mClusterManager.addItems(getVisibleItems(latLngBounds));
-                        mClusterManager.cluster();
-                    });
-                }
-            }
-        });
+    private void refreshVisibleMarkers() {
+        LatLngBounds visibleBounds = mMap.getProjection().getVisibleRegion().latLngBounds;
+        mClusterManager.clearItems();
+        mClusterManager.addItems(getVisibleItems(visibleBounds));
+        mClusterManager.cluster();
     }
 
     @SuppressLint("ResourceType")

@@ -65,12 +65,16 @@ public class Settings_Activity extends InsetAwareActivity {
     private boolean fontChanged;
     private boolean dateTimeChanged;
     private boolean mapTypeChanged;
+    private Integer activeSavedLocationId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivitySettingsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        int activeLocationId = getIntent().getIntExtra(
+                MyLocation_Activity.EXTRA_ACTIVE_SAVED_LOCATION_ID, -1);
+        activeSavedLocationId = activeLocationId >= 0 ? activeLocationId : null;
 
         locationLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -79,6 +83,9 @@ public class Settings_Activity extends InsetAwareActivity {
                         Intent data = result.getData();
                         if (data.hasExtra(MyApplication.EXTRA_LOCATION)) {
                             selectedLocation = (MyLocation) data.getSerializableExtra(MyApplication.EXTRA_LOCATION);
+                            activeSavedLocationId = selectedLocation != null
+                                    ? selectedLocation.getId()
+                                    : null;
                         }
                     }
                 }
@@ -220,7 +227,7 @@ public class Settings_Activity extends InsetAwareActivity {
                             setInterstitialShowing(true);
                             InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "language_open_interstitial", () -> {
                                 setInterstitialShowing(false);
-                                startActivity(new Intent(this, Language_Activity.class));
+                                openLanguageSettings();
                             }, errorMsg -> {
                                 setInterstitialShowing(false);
                                 Utils.LogUtils.logE("Language", "Ad failed: " + errorMsg);
@@ -229,7 +236,7 @@ public class Settings_Activity extends InsetAwareActivity {
                             Utils.LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
                         }
                     } else {
-                        startActivity(new Intent(this, Language_Activity.class));
+                        openLanguageSettings();
                     }
                 }
         );
@@ -272,10 +279,20 @@ public class Settings_Activity extends InsetAwareActivity {
         mapTypeLauncher.launch(intent);
     }
 
+    private void openLanguageSettings() {
+        Intent intent = new Intent(this, Language_Activity.class);
+        intent.putExtra(Language_Activity.EXTRA_IS_SETTING, true);
+        startActivity(intent);
+    }
+
     private void myLocationNavigation() {
         MyLocation receivedLocation = (MyLocation) getIntent().getSerializableExtra(MyApplication.EXTRA_LOCATION);
         Intent intent = new Intent(Settings_Activity.this, MyLocation_Activity.class);
         intent.putExtra(MyApplication.EXTRA_LOCATION, receivedLocation);
+        if (activeSavedLocationId != null) {
+            intent.putExtra(MyLocation_Activity.EXTRA_ACTIVE_SAVED_LOCATION_ID,
+                    activeSavedLocationId);
+        }
 
         intent.putExtra("SOURCE", "SETTINGS");
        // startActivity(intent);

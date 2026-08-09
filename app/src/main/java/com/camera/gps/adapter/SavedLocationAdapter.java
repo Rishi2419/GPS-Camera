@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.camera.gps.MyApplication;
@@ -33,6 +34,7 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
 
     private final List<MyLocation> list;
     private final LocationAdapterInterface listener;
+    private final Integer activeLocationId;
     private boolean isSelectionMode = false;
 
     public interface LocationAdapterInterface {
@@ -45,9 +47,11 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
         void checkValidation();
     }
 
-    public SavedLocationAdapter(List<MyLocation> list, LocationAdapterInterface listener) {
+    public SavedLocationAdapter(List<MyLocation> list, LocationAdapterInterface listener,
+                                Integer activeLocationId) {
         this.list = list;
         this.listener = listener;
+        this.activeLocationId = activeLocationId;
     }
 
     public List<MyLocation> getList() {
@@ -152,6 +156,14 @@ public final class SavedLocationAdapter extends RecyclerView.Adapter<RecyclerVie
         public void bind(final MyLocation model) {
             ItemSavedLocationBinding itemMyLocationBinding = this.bin;
             boundLocation = model;
+
+            boolean isActiveLocation = activeLocationId != null
+                    && activeLocationId.equals(model.getId());
+            itemMyLocationBinding.cardBackround.setStrokeColor(ContextCompat.getColor(
+                    itemView.getContext(), R.color.blue_primary));
+            itemMyLocationBinding.cardBackround.setStrokeWidth(isActiveLocation
+                    ? Math.max(1, Math.round(itemView.getResources().getDisplayMetrics().density))
+                    : 0);
 
             // Show selection indicator based on selection mode and selection state
             if (isSelectionMode) {

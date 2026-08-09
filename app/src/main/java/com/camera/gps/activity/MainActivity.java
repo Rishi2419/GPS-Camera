@@ -225,6 +225,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private int lensFacingType = CameraSelector.LENS_FACING_BACK;
     private int flashMode = ImageCapture.FLASH_MODE_OFF;
     private float currentZoomRatio = 1.0f;
+    private float backCameraZoomRatio = 1.0f;
     private boolean isSwitching = false;
 
     //Horizontal menu
@@ -340,6 +341,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private boolean isCameraReady = false;
     private boolean isLocationFetched = false;
     private boolean isLiveLocationMode = true;
+    private Integer activeSavedLocationId;
     private Location lastGeocodedLocation;
     private long lastAddressLookupTime = 0L;
     private int addressLookupGeneration = 0;
@@ -437,6 +439,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (locationExtra instanceof MyLocation) {
                             MyLocation receivedLocation = (MyLocation) locationExtra;
                             isLiveLocationMode = false;
+                            activeSavedLocationId = receivedLocation.getId();
                             Log.d("Rishi_MainActivity", "Received Location Details:");
                             Log.d("Rishi_MainActivity", "ID: " + receivedLocation.getId());
                             Log.d("Rishi_MainActivity", "Title: " + receivedLocation.getTitle());
@@ -474,6 +477,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     // A saved/custom location disables live updates while it is selected.
                     // Re-enable live mode before restarting the location request.
                     isLiveLocationMode = true;
+                    activeSavedLocationId = null;
                     currentAddress = null;
                     currentTitle = null;
                     currentDefaultTitle = "";
@@ -495,6 +499,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     viewModel.getLocationByTitle(currentTitle).observe(this, location -> {
                         if (location == null) {
                             isLiveLocationMode = true;
+                            activeSavedLocationId = null;
                             currentAddress = null;
                             currentTitle = null;
                             currentDefaultTitle = "";
@@ -1802,7 +1807,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         cameraControl = camera.getCameraControl();
         cameraInfo = camera.getCameraInfo();
-        setZoomRatio(currentZoomRatio);
+        setZoomRatio(getZoomRatioForCurrentLens());
         updateZoomVisibility();
     }
 
@@ -2868,6 +2873,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 false, currentDefaultTitle);
         Intent intent = new Intent(MainActivity.this, Settings_Activity.class);
         intent.putExtra(MyApplication.EXTRA_LOCATION, location);
+        if (activeSavedLocationId != null) {
+            intent.putExtra(MyLocation_Activity.EXTRA_ACTIVE_SAVED_LOCATION_ID,
+                    activeSavedLocationId);
+        }
         intent.putExtra(Settings_Activity.EXTRA_CURRENT_FONT_STYLE, fontStyle);
         intent.putExtra(Settings_Activity.EXTRA_CURRENT_DATE_FORMAT, format_Date);
         intent.putExtra(Settings_Activity.EXTRA_CURRENT_TIME_FORMAT, format_Time);
@@ -3050,6 +3059,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 false, currentDefaultTitle);
         Intent intent = new Intent(MainActivity.this, MyLocation_Activity.class);
         intent.putExtra(MyApplication.EXTRA_LOCATION, location);
+        if (activeSavedLocationId != null) {
+            intent.putExtra(MyLocation_Activity.EXTRA_ACTIVE_SAVED_LOCATION_ID,
+                    activeSavedLocationId);
+        }
         resultLauncher.launch(intent);
     }
 
@@ -3663,6 +3676,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         lensFacingType = lensFacingType == CameraSelector.LENS_FACING_BACK ? CameraSelector.LENS_FACING_FRONT : CameraSelector.LENS_FACING_BACK;
+        currentZoomRatio = getZoomRatioForCurrentLens();
 
         // Auto-disable flash for front camera in video mode
         if (lensFacingType == CameraSelector.LENS_FACING_FRONT && viewPagerSwitchAction.getCurrentItem() == 1) {
@@ -3694,14 +3708,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void setZoomRatio(float ratio) {
         if (cameraControl != null && cameraInfo != null) {
+            float requestedRatio = lensFacingType == CameraSelector.LENS_FACING_FRONT
+                    ? 1.0f
+                    : ratio;
             float minZoom = cameraInfo.getZoomState().getValue().getMinZoomRatio();
             float maxZoom = cameraInfo.getZoomState().getValue().getMaxZoomRatio();
-            float clampedRatio = Math.max(minZoom, Math.min(maxZoom, ratio));
+            float clampedRatio = Math.max(minZoom, Math.min(maxZoom, requestedRatio));
 
             cameraControl.setZoomRatio(clampedRatio);
             currentZoomRatio = clampedRatio;
+            if (lensFacingType == CameraSelector.LENS_FACING_BACK) {
+                backCameraZoomRatio = clampedRatio;
+            }
             UtilsX.updateZoomButtons(btnZoom1x, btnZoom2x, btnZoom3x, currentZoomRatio);
         }
+    }
+
+    private float getZoomRatioForCurrentLens() {
+        return lensFacingType == CameraSelector.LENS_FACING_FRONT
+                ? 1.0f
+                : backCameraZoomRatio;
     }
 
     private void updateZoomVisibility() {
@@ -3901,7 +3927,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             requestLocationUpdates();
         }
         refreshLatestPhoto();
-        setZoomRatio(currentZoomRatio);
+        setZoomRatio(getZoomRatioForCurrentLens());
         updateZoomVisibility();
         // Re-enable immersive mode
         enableImmersiveMode();

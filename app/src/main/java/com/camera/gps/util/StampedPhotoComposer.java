@@ -1,6 +1,7 @@
 package com.camera.gps.util;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -13,10 +14,12 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewParent;
 
 import androidx.cardview.widget.CardView;
 import androidx.exifinterface.media.ExifInterface;
 
+import com.camera.gps.R;
 import com.google.android.gms.maps.GoogleMap;
 
 import java.io.File;
@@ -75,10 +78,9 @@ public final class StampedPhotoComposer {
             int relativeX = mapLocation[0] - stampLocation[0];
             int relativeY = mapLocation[1] - stampLocation[1];
 
-            // Template 9 has a fallback map image underneath mapView. It is included when the
-            // stamp hierarchy is drawn and otherwise remains visible in the transparent corners
-            // of the rounded Google Map snapshot. Clear the complete map bounds first so only
-            // the explicitly rounded snapshot is present in the exported photo/video overlay.
+            // Replace the map rectangle with the active stamp background before
+            // drawing its rounded snapshot. Clearing it makes the clipped map
+            // corners transparent, exposing the photo/video below the stamp.
             Paint clearPaint = new Paint();
             clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
             stampCanvas.drawRect(
@@ -89,6 +91,16 @@ public final class StampedPhotoComposer {
                     clearPaint
             );
             clearPaint.setXfermode(null);
+
+            Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            backgroundPaint.setColor(getStampBackgroundColor(mapView));
+            stampCanvas.drawRect(
+                    relativeX,
+                    relativeY,
+                    relativeX + mapView.getWidth(),
+                    relativeY + mapView.getHeight(),
+                    backgroundPaint
+            );
 
             Bitmap roundedMap = getRoundedMapBitmap(mapView, mapBitmap);
             stampCanvas.drawBitmap(roundedMap, relativeX, relativeY, new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG));
@@ -144,6 +156,20 @@ public final class StampedPhotoComposer {
                 4f,
                 mapView.getResources().getDisplayMetrics()
         );
+    }
+
+    private static int getStampBackgroundColor(View mapView) {
+        View current = mapView;
+        while (current != null) {
+            if (current.getId() == R.id.rel_gps_stamp && current instanceof CardView) {
+                ColorStateList color = ((CardView) current).getCardBackgroundColor();
+                return color != null ? color.getDefaultColor() : Color.TRANSPARENT;
+            }
+
+            ViewParent parent = current.getParent();
+            current = parent instanceof View ? (View) parent : null;
+        }
+        return Color.TRANSPARENT;
     }
 
     private static boolean composeIntoImage(File imageFile, View stampView,

@@ -44,6 +44,9 @@ public final class MyApplication extends Application {
 
     private static AppOpenManager appOpenManager;
     private static MyApplication mApp;
+    // Deliberately not persisted: this value is valid only while the app
+    // process is alive and must reset after an app kill.
+    private static Integer sessionMapType;
 
     public static Context context() {
         return Companion.context();
@@ -153,6 +156,18 @@ public final class MyApplication extends Application {
 
     public static int getMapType() {
         return preferences.getInt(STAMP_MAP_TYPE, 1);
+    }
+
+    public static void setSessionMapType(int mapType) {
+        sessionMapType = mapType;
+    }
+
+    public static Integer getSessionMapType() {
+        return sessionMapType;
+    }
+
+    public static void clearSessionMapType() {
+        sessionMapType = null;
     }
 
     //For checking the internet

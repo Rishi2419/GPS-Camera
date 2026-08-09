@@ -1,6 +1,7 @@
 package com.camera.gps.database.entity;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import java.io.Serializable;
@@ -9,6 +10,7 @@ import java.io.Serializable;
 public class MyLocation implements Serializable {
     private String address;
     private String date;
+    private String defaultTitle;
     @PrimaryKey
     private Integer id;
     private Boolean isSelected;
@@ -18,10 +20,17 @@ public class MyLocation implements Serializable {
     private String title;
 
     public MyLocation() {
-        this(null, null, null, null, null, null, null, null);
+        this(null, null, null, null, null, null, null, null, null);
     }
 
+    @Ignore
     public MyLocation(Integer num, String str, String str2, String str3, String str4, String str5, String str6, Boolean bool) {
+        this(num, str, str2, str3, str4, str5, str6, bool, null);
+    }
+
+    @Ignore
+    public MyLocation(Integer num, String str, String str2, String str3, String str4,
+                      String str5, String str6, Boolean bool, String defaultTitle) {
         this.id = num;
         this.title = str;
         this.date = str2;
@@ -30,6 +39,7 @@ public class MyLocation implements Serializable {
         this.latitude = str5;
         this.longitude = str6;
         this.isSelected = bool;
+        this.defaultTitle = defaultTitle;
     }
 
     public final Integer getId() {
@@ -70,6 +80,14 @@ public class MyLocation implements Serializable {
 
     public final void setAddress(String str) {
         this.address = str;
+    }
+
+    public final String getDefaultTitle() {
+        return this.defaultTitle;
+    }
+
+    public final void setDefaultTitle(String defaultTitle) {
+        this.defaultTitle = defaultTitle;
     }
 
     public final String getLatitude() {

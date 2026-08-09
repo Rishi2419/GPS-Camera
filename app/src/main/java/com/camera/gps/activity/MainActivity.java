@@ -131,6 +131,7 @@ import com.camera.gps.model.StampTemplateDefaults;
 import com.camera.gps.repositories.DateFormatRepository;
 import com.camera.gps.util.DirManager;
 import com.camera.gps.util.HelperClass;
+import com.camera.gps.util.LocationAddressFormatter;
 import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.util.SharedMediaStore;
 import com.camera.gps.util.SP;
@@ -448,6 +449,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                             currentAddress = receivedLocation.getAddress();
                             currentTitle = receivedLocation.getTitle();
+                            applySavedDefaultTitle(receivedLocation);
                             currentLatitude = Double.parseDouble(receivedLocation.getLatitude());
                             currentLongitude = Double.parseDouble(receivedLocation.getLongitude());
                             savedDate = receivedLocation.getDate();
@@ -468,17 +470,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             else {
                 Log.d("Rishi_MainActivity", "Result code is not RESULT_OK");
-                if (currentTitle != null && !currentTitle.trim().isEmpty() && set_to_current_location) {
+                if (set_to_current_location) {
+                    // A saved/custom location disables live updates while it is selected.
+                    // Re-enable live mode before restarting the location request.
+                    isLiveLocationMode = true;
                     currentAddress = null;
                     currentTitle = null;
+                    currentDefaultTitle = "";
                     currentLatitude = 0.0;
                     currentLongitude = 0.0;
                     savedDate = null;
                     savedTime = null;
                     isLocationFetched = false;
+                    lastGeocodedLocation = null;
+                    lastAddressLookupTime = 0L;
                     setupLocation();
                     set_to_current_location = false;
-                    //initAfterPermissionsGranted();
                     Log.d("Rishi_MainActivity", "Setting current location");
                 }
 
@@ -487,8 +494,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     viewModel.getLocationByTitle(currentTitle).observe(this, location -> {
                         if (location == null) {
+                            isLiveLocationMode = true;
                             currentAddress = null;
                             currentTitle = null;
+                            currentDefaultTitle = "";
                             currentLatitude = 0.0;
                             currentLongitude = 0.0;
                             savedDate = null;
@@ -509,9 +518,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                 Intent data = result.getData();
                 if (data.hasExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE)) {
-                    sessionMapType = data.getIntExtra(Map_Activity.EXTRA_SELECTED_MAP_TYPE, current_map_type);
-                    current_map_type = sessionMapType;
-                    updateMaps();
+                    applyTemporaryMapType(data.getIntExtra(
+                            Map_Activity.EXTRA_SELECTED_MAP_TYPE,
+                            current_map_type
+                    ));
                 }
             }
         });
@@ -537,7 +547,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (sessionMapType != null) {
             return sessionMapType;
         }
+        Integer applicationSessionMapType = MyApplication.getSessionMapType();
+        if (applicationSessionMapType != null) {
+            return applicationSessionMapType;
+        }
         return resolveTemplateMapType();
+    }
+
+    private void applyTemporaryMapType(int mapType) {
+        hasSessionStampOverride = true;
+        sessionMapType = mapType;
+        MyApplication.setSessionMapType(mapType);
+        current_map_type = mapType;
+        updateMaps();
     }
 
     private int resolveTemplateMapType() {
@@ -553,12 +575,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         hasSessionStampOverride = false;
         hasSessionDateTimeOverride = false;
         sessionMapType = null;
+        MyApplication.clearSessionMapType();
     }
 
     private void applySettingsSessionOverrides(Intent data) {
         boolean fontUpdated = false;
         boolean dateTimeUpdated = false;
-        boolean mapUpdated = false;
 
         if (data.hasExtra(Settings_Activity.EXTRA_SESSION_FONT_STYLE)) {
             fontStyle = data.getStringExtra(Settings_Activity.EXTRA_SESSION_FONT_STYLE);
@@ -574,9 +596,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             dateTimeUpdated = true;
         }
         if (data.hasExtra(Settings_Activity.EXTRA_SESSION_MAP_TYPE)) {
-            sessionMapType = data.getIntExtra(Settings_Activity.EXTRA_SESSION_MAP_TYPE, current_map_type);
-            current_map_type = sessionMapType;
-            mapUpdated = true;
+            applyTemporaryMapType(data.getIntExtra(
+                    Settings_Activity.EXTRA_SESSION_MAP_TYPE,
+                    current_map_type
+            ));
         }
 
         if (fontUpdated) {
@@ -584,9 +607,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         if (dateTimeUpdated) {
             updateStampDateTime();
-        }
-        if (mapUpdated) {
-            updateMaps();
         }
     }
 
@@ -1985,7 +2005,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (addresses != null && !addresses.isEmpty()) {
                     Address address = addresses.get(0);
                     resolvedAddress = address.getAddressLine(0);
-                    resolvedDefaultTitle = buildDefaultTitle(address);
+                    resolvedDefaultTitle = LocationAddressFormatter.buildDefaultTitle(address);
                     if (resolvedAddress == null || resolvedAddress.isEmpty()) {
                         resolvedAddress = "Address not available";
                     }
@@ -2013,41 +2033,52 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }).start();
     }
 
-    private String buildDefaultTitle(Address address) {
-        StringBuilder title = new StringBuilder();
-        appendAddressPart(title, address.getLocality());
-        appendAddressPart(title, address.getAdminArea());
-        appendAddressPart(title, address.getCountryName());
-
-        String countryFlag = countryCodeToFlag(address.getCountryCode());
-        if (!countryFlag.isEmpty()) {
-            if (title.length() > 0) {
-                title.append(' ');
-            }
-            title.append(countryFlag);
-        }
-        return title.toString();
-    }
-
-    private void appendAddressPart(StringBuilder title, String part) {
-        if (part == null || part.trim().isEmpty()) {
+    private void applySavedDefaultTitle(MyLocation location) {
+        String storedDefaultTitle = location.getDefaultTitle();
+        if (storedDefaultTitle != null && !storedDefaultTitle.trim().isEmpty()) {
+            currentDefaultTitle = storedDefaultTitle;
             return;
         }
-        if (title.length() > 0) {
-            title.append(", ");
-        }
-        title.append(part.trim());
-    }
 
-    private String countryCodeToFlag(String countryCode) {
-        if (countryCode == null || countryCode.length() != 2) {
-            return "";
+        currentDefaultTitle = "";
+        String selectedTitle = location.getTitle();
+        double selectedLatitude;
+        double selectedLongitude;
+        try {
+            selectedLatitude = Double.parseDouble(location.getLatitude());
+            selectedLongitude = Double.parseDouble(location.getLongitude());
+        } catch (NumberFormatException exception) {
+            return;
         }
-        String normalizedCode = countryCode.toUpperCase(Locale.US);
-        int firstLetter = Character.codePointAt(normalizedCode, 0) - 'A' + 0x1F1E6;
-        int secondLetter = Character.codePointAt(normalizedCode, 1) - 'A' + 0x1F1E6;
-        return new String(Character.toChars(firstLetter))
-                + new String(Character.toChars(secondLetter));
+
+        new Thread(() -> {
+            String resolvedDefaultTitle = "";
+            try {
+                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                List<Address> addresses = geocoder.getFromLocation(
+                        selectedLatitude, selectedLongitude, 1);
+                if (addresses != null && !addresses.isEmpty()) {
+                    resolvedDefaultTitle = LocationAddressFormatter.buildDefaultTitle(addresses.get(0));
+                }
+            } catch (IOException exception) {
+                Log.e("Location", "Failed to resolve saved location title", exception);
+            }
+
+            String titleResult = resolvedDefaultTitle;
+            runOnUiThread(() -> {
+                if (isLiveLocationMode || selectedTitle == null
+                        || !selectedTitle.equals(currentTitle)) {
+                    return;
+                }
+                currentDefaultTitle = titleResult;
+                updateStampLocation();
+
+                if (!titleResult.isEmpty() && location.getId() != null) {
+                    location.setDefaultTitle(titleResult);
+                    viewModel.updateLocation(location);
+                }
+            });
+        }).start();
     }
 
     private void retryAddressResolutionIfPossible() {
@@ -2124,6 +2155,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             hasSessionStampOverride = false;
             hasSessionDateTimeOverride = false;
             sessionMapType = null;
+            MyApplication.clearSessionMapType();
         }
     }
 
@@ -2459,6 +2491,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             current_map_type = defaults.mapType;
             showWatermark = MyApplication.getShowWatermark();
         }
+
+        // A temporary map choice is owned by the current app session, not by
+        // the selected template. Always resolve it after a stamp refresh.
+        current_map_type = getActiveMapTypeForSession();
 
 
         //msp.setTemplateEdited(this, currentstamp_type, false);
@@ -2827,7 +2863,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             currentTime = timeFormatter.format(now);
         }
 
-        MyLocation location = new MyLocation(null, "", currentDate, currentTime, currentAddress, String.valueOf(currentLatitude), String.valueOf(currentLongitude), false);
+        MyLocation location = new MyLocation(null, currentTitle, currentDate, currentTime,
+                currentAddress, String.valueOf(currentLatitude), String.valueOf(currentLongitude),
+                false, currentDefaultTitle);
         Intent intent = new Intent(MainActivity.this, Settings_Activity.class);
         intent.putExtra(MyApplication.EXTRA_LOCATION, location);
         intent.putExtra(Settings_Activity.EXTRA_CURRENT_FONT_STYLE, fontStyle);
@@ -3007,7 +3045,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             currentTime = timeFormatter.format(now);
         }
 
-        MyLocation location = new MyLocation(null, "", currentDate, currentTime, currentAddress, String.valueOf(currentLatitude), String.valueOf(currentLongitude), false);
+        MyLocation location = new MyLocation(null, currentTitle, currentDate, currentTime,
+                currentAddress, String.valueOf(currentLatitude), String.valueOf(currentLongitude),
+                false, currentDefaultTitle);
         Intent intent = new Intent(MainActivity.this, MyLocation_Activity.class);
         intent.putExtra(MyApplication.EXTRA_LOCATION, location);
         resultLauncher.launch(intent);

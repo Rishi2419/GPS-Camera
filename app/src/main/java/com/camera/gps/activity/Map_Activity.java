@@ -385,6 +385,9 @@ public final class Map_Activity extends InsetAwareActivity implements OnMapReady
             @Override
             public void onMapTypeSelected(int mapType) {
                 current_map_type = mapType;
+                // The map picker is a temporary setting. Keep it in memory
+                // so MainActivity can apply it as soon as this screen closes.
+                MyApplication.setSessionMapType(mapType);
                 if (mMap != null) {
                     mMap.setMapType(current_map_type);
                 }

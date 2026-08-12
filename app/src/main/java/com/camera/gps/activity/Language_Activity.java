@@ -24,6 +24,7 @@ import com.camera.gps.MyApplication;
 import java.util.Locale;
 
 public class Language_Activity extends InsetAwareActivity implements LanguageListener {
+    public static final String EXTRA_IS_SETTING = "is_setting";
 
     //Flow
 //    App Starts ➝ Language_Activity opens ➝ ViewModel loads language list ➝
@@ -97,7 +98,7 @@ public class Language_Activity extends InsetAwareActivity implements LanguageLis
 
     private void initializeUI() {
         // Set isSetting flag from intent
-        boolean isSetting = getIntent().getBooleanExtra("is_setting", false);
+        boolean isSetting = getIntent().getBooleanExtra(EXTRA_IS_SETTING, false);
         viewModel.setIsSetting(isSetting);
 
         // Setup RecyclerView

@@ -24,6 +24,8 @@ import com.camera.gps.fragment.AddCustomLocationFragment;
 import com.camera.gps.fragment.SavedLocationFragment;
 
 public final class MyLocation_Activity extends InsetAwareActivity {
+    public static final String EXTRA_ACTIVE_SAVED_LOCATION_ID =
+            "com.camera.gps.extra.ACTIVE_SAVED_LOCATION_ID";
 
     private ActivityMyLocationBinding binding;
     private String source;

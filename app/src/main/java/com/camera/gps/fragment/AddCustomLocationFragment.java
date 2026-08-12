@@ -12,8 +12,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultCallback;
@@ -73,6 +75,7 @@ import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.databinding.FragmentAddCustomLocationBinding;
 import com.camera.gps.premium.PremiumManager;
 import com.camera.gps.util.Constant;
+import com.camera.gps.util.LocationAddressFormatter;
 import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.database.entity.MyLocation;
 
@@ -86,6 +89,7 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
     private LocationRequest mLocationRequest;
     private GoogleMap mMap;
     private GlobalViewModel viewModel;
+    private String defaultTitle = "";
 
     private final ActivityResultLauncher<IntentSenderRequest> enableLocationLauncher =
             registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
@@ -162,7 +166,8 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
                 } else {
                     // Save only if unique
                     saveLocation(new MyLocation(
-                            null, title, date, time, address, latitude, longitude, false));
+                            null, title, date, time, address, latitude, longitude, false,
+                            defaultTitle));
                 }
             });
         }
@@ -233,6 +238,7 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
         binding.etAddress.setText("");
         binding.etLatitide.setText("");
         binding.etLongitude.setText("");
+        defaultTitle = "";
         setCurrentTimeAndDate();
         if (mMap != null) {
             mMap.clear();
@@ -248,6 +254,7 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
             binding.etLatitide.setText(location.getLatitude());
             binding.etLongitude.setText(location.getLongitude());
             binding.etAddress.setText(location.getAddress());
+            defaultTitle = location.getDefaultTitle() == null ? "" : location.getDefaultTitle();
             if (location.getLatitude() != null && location.getLongitude() != null) {
                 String latitude = location.getLatitude();
                 double parseDouble = Double.parseDouble(latitude);
@@ -305,6 +312,7 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
                     activity.runOnUiThread(() -> {
                         if (binding != null) {
                             binding.etAddress.setText("Unknown");
+                            defaultTitle = "";
                         }
                     });
                 }
@@ -314,10 +322,13 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
 
     public void setAddress(List<Address> list) {
         if (list != null && list.size() > 0) {
-            binding.etAddress.setText(list.get(0).getAddressLine(0) + ",");
+            Address address = list.get(0);
+            binding.etAddress.setText(address.getAddressLine(0) + ",");
+            defaultTitle = LocationAddressFormatter.buildDefaultTitle(address);
             return;
         }
         binding.etAddress.setText("Unknown");
+        defaultTitle = "";
     }
 
     private void initMap() {
@@ -328,6 +339,8 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
     @Override
     public void onMapReady(GoogleMap googleMap) {
         this.mMap = googleMap;
+
+        configureMapTouchHandling();
 
         googleMap.setMapType(MyApplication.getMapType());
 
@@ -342,6 +355,44 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
         }
 
         initData();
+    }
+
+    /**
+     * Keep vertical gestures that start on the map with the map instead of
+     * allowing the containing ScrollView to intercept them.
+     */
+    private void configureMapTouchHandling() {
+        Fragment mapFragment = getChildFragmentManager().findFragmentById(R.id.map);
+        if (mapFragment == null || mapFragment.getView() == null) {
+            return;
+        }
+
+        setMapTouchListener(mapFragment.getView());
+    }
+
+    private void setMapTouchListener(View view) {
+        view.setOnTouchListener((v, event) -> {
+            ViewParent parent = v.getParent();
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                if (parent != null) {
+                    parent.requestDisallowInterceptTouchEvent(true);
+                }
+            } else if (event.getActionMasked() == MotionEvent.ACTION_UP
+                    || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                if (parent != null) {
+                    parent.requestDisallowInterceptTouchEvent(false);
+                }
+            }
+            // Let the Google Maps view handle the gesture itself.
+            return false;
+        });
+
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                setMapTouchListener(group.getChildAt(i));
+            }
+        }
     }
 
     private void showDatePicker() {

@@ -83,7 +83,12 @@ public class SavedLocationFragment extends Fragment implements SavedLocationAdap
         binding.recycler.setHasFixedSize(true);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         binding.recycler.setLayoutManager(linearLayoutManager);
-        adapter = new SavedLocationAdapter(new ArrayList<>(), this);
+        int activeLocationId = requireActivity().getIntent().getIntExtra(
+                MyLocation_Activity.EXTRA_ACTIVE_SAVED_LOCATION_ID, -1);
+        adapter = new SavedLocationAdapter(
+                new ArrayList<>(),
+                this,
+                activeLocationId >= 0 ? activeLocationId : null);
         binding.recycler.setAdapter(adapter);
         binding.recycler.setOnTouchListener((v, event) -> {
             if (isSelectionMode && event.getAction() == MotionEvent.ACTION_DOWN) {

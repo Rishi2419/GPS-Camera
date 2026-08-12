@@ -38,4 +38,16 @@ public class PremiumManagerTest {
         assertFalse(PremiumManager.isDateTimePremium("EEEE, MMMM dd, yyyy HH:mm a"));
         assertTrue(PremiumManager.isDateTimePremium("yyyy-MM-dd HH:mm"));
     }
+
+    @Test
+    public void screenshotAndCaptureProtectionDetectEveryPremiumPreview() {
+        String freeFont = "SF Pro Display.otf";
+        String freeDate = "dd-MM-yyyy HH:mm:ss a";
+
+        assertFalse(PremiumManager.hasPremiumCaptureConfiguration(1, freeFont, freeDate, false));
+        assertTrue(PremiumManager.hasPremiumCaptureConfiguration(3, freeFont, freeDate, false));
+        assertTrue(PremiumManager.hasPremiumCaptureConfiguration(1, "Adobe Caslon Pro.otf", freeDate, false));
+        assertTrue(PremiumManager.hasPremiumCaptureConfiguration(1, freeFont, "yyyy-MM-dd HH:mm", false));
+        assertTrue(PremiumManager.hasPremiumCaptureConfiguration(1, freeFont, freeDate, true));
+    }
 }

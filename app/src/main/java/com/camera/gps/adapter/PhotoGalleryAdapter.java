@@ -291,8 +291,8 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             }
 
             current_address = address;
-            currentLatitude = Double.parseDouble(photo.getLatitude());
-            currentLongitude = Double.parseDouble(photo.getLongitude());
+            currentLatitude = parseCoordinate(photo.getLatitude());
+            currentLongitude = parseCoordinate(photo.getLongitude());
             date = photo.getDate();
             time = photo.getTime();
             title = photo.getTitle();
@@ -318,6 +318,17 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
             current_text_color = photo.getCurrent_text_color();
             current_datetime_color = photo.getCurrent_datetime_color();
             currentRatioType = photo.getRatio();
+        }
+
+        private double parseCoordinate(String value) {
+            if (value == null || value.trim().isEmpty()) {
+                return 0.0;
+            }
+            try {
+                return Double.parseDouble(value);
+            } catch (NumberFormatException ignored) {
+                return 0.0;
+            }
         }
 
         private void setRatio(int ratio) {

@@ -282,7 +282,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LinearLayout btnWatermark;
     private boolean showWatermark;
     private ConstraintLayout appStamp;
-    private ImageView premiumWatermarkBadgeMain;
 
     //VIDEO RESOLUTION
     private LinearLayout btnVideoresolution;
@@ -443,7 +442,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             MyLocation receivedLocation = (MyLocation) locationExtra;
                             isLiveLocationMode = false;
                             activeSavedLocationId = receivedLocation.getId();
-                            applyCustomLocationScreenshotProtection();
+                            applyPremiumPreviewScreenshotProtection();
                             Log.d("Rishi_MainActivity", "Received Location Details:");
                             Log.d("Rishi_MainActivity", "ID: " + receivedLocation.getId());
                             Log.d("Rishi_MainActivity", "Title: " + receivedLocation.getTitle());
@@ -489,7 +488,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     currentLongitude = 0.0;
                     savedDate = null;
                     savedTime = null;
-                    applyCustomLocationScreenshotProtection();
+                    applyPremiumPreviewScreenshotProtection();
                     isLocationFetched = false;
                     lastGeocodedLocation = null;
                     lastAddressLookupTime = 0L;
@@ -513,7 +512,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             savedDate = null;
                             savedTime = null;
                             isLiveLocationMode = true;
-                            applyCustomLocationScreenshotProtection();
+                            applyPremiumPreviewScreenshotProtection();
                             isLocationFetched = false;
                             setupLocation();
                             //initAfterPermissionsGranted();
@@ -620,6 +619,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (dateTimeUpdated) {
             updateStampDateTime();
         }
+        applyPremiumPreviewScreenshotProtection();
     }
 
 
@@ -1015,7 +1015,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnGrid = findViewById(R.id.btnGrid);
         gridLinesView = findViewById(R.id.gridLinesView);
         btnWatermark = findViewById(R.id.btnWatermark);
-        premiumWatermarkBadgeMain = findViewById(R.id.premiumWatermarkBadgeMain);
         btnVideoresolution = findViewById(R.id.btnResolution);
         btnFps = findViewById(R.id.btnFps);
         btnImgQuality = findViewById(R.id.btnImageQuality);
@@ -1503,7 +1502,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (currentLatitude != 0.0 && currentLongitude != 0.0) {
                     photo.setLatitude(String.valueOf(currentLatitude));
                     photo.setLongitude(String.valueOf(currentLongitude));
-                    photo.setAddress(currentAddress);
+                    photo.setAddress(getSafeCaptureAddress());
                 } else {
                     // Fallback values if location is not available
                     photo.setLatitude("0.0");
@@ -2346,17 +2345,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             // Setup map fragment with proper timing
             if (mapViewContainer != null) {
+                final LinearLayout targetMapContainer = mapViewContainer;
+
                 // Ensure the container has a stable ID
-                if (mapViewContainer.getId() == View.NO_ID) {
-                    mapViewContainer.setId(View.generateViewId());
+                if (targetMapContainer.getId() == View.NO_ID) {
+                    targetMapContainer.setId(View.generateViewId());
                 }
 
                 // Use ViewTreeObserver to ensure layout is complete
-                mapViewContainer.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                targetMapContainer.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
-                        mapViewContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        setupMapFragment();
+                        ViewTreeObserver observer = targetMapContainer.getViewTreeObserver();
+                        if (observer.isAlive()) {
+                            observer.removeOnGlobalLayoutListener(this);
+                        }
+
+                        // Returning from TemplateActivity can render a second template before this
+                        // callback runs. Never operate on an old, detached map container.
+                        if (targetMapContainer != mapViewContainer
+                                || !targetMapContainer.isAttachedToWindow()) {
+                            return;
+                        }
+                        setupMapFragment(targetMapContainer);
                     }
                 });
             }
@@ -2421,21 +2432,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void setupMapFragment() {
+    private void setupMapFragment(LinearLayout targetMapContainer) {
         // Add safety checks
-        if (mapViewContainer == null) {
-            Toast.makeText(this, "Map container is not ready", Toast.LENGTH_SHORT).show();
+        if (targetMapContainer == null || targetMapContainer != mapViewContainer) {
             return;
         }
 
         // Ensure the view has a stable ID
-        if (mapViewContainer.getId() == View.NO_ID) {
-            mapViewContainer.setId(View.generateViewId());
+        if (targetMapContainer.getId() == View.NO_ID) {
+            targetMapContainer.setId(View.generateViewId());
         }
 
         // Wait for the view to be laid out properly
-        mapViewContainer.post(() -> {
-            if (isFinishing() || isDestroyed()) {
+        targetMapContainer.post(() -> {
+            if (isFinishing() || isDestroyed()
+                    || targetMapContainer != mapViewContainer
+                    || !targetMapContainer.isAttachedToWindow()) {
                 return; // Don't proceed if activity is finishing
             }
 
@@ -2449,7 +2461,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // Create new fragment and add it
                 supportMapFragment = SupportMapFragment.newInstance();
                 FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                transaction.replace(mapViewContainer.getId(), supportMapFragment);
+                transaction.replace(targetMapContainer.getId(), supportMapFragment);
                 transaction.commitAllowingStateLoss();
 
                 // Setup map callback
@@ -2528,6 +2540,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         updateMapLocation();
         updateStampTitle();
         updateWaterMarkVisibility();
+        applyPremiumPreviewScreenshotProtection();
         if (currentstamp_type == 2 || currentstamp_type == 3 || currentstamp_type == 6 || currentstamp_type == 7) {
             updateStampDMS();
         }
@@ -2999,7 +3012,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Check if location is loaded
 
 
-            if (currentAddress.equals("Loading location...") || currentAddress.equals("Loading...")) {
+            if ("Loading location...".equals(currentAddress) || "Loading...".equals(currentAddress)) {
                 Toast.makeText(this, getResources().getString(R.string.please_wait_data_is_loading), Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -3119,11 +3132,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         btnWatermark.setOnClickListener(view -> {
-            if (PremiumManager.isPremium(this)) {
-                showWatermarkDialog();
-            } else {
-                showPremiumSheet();
-            }
+            showWatermarkDialog();
             manageExposurelayout();
         });
 
@@ -3199,6 +3208,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 format_Time = selectedFormat.getFormat_Time();
                 format_Combined = selectedFormat.getFormat_Combined();
                 updateStampDateTime();
+                applyPremiumPreviewScreenshotProtection();
             }
 
             @Override
@@ -3289,12 +3299,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         watermarkdialog.setCancelable(true);
 
         Switch switchCamera = watermarkdialog.findViewById(R.id.switch_watermark);
+        ImageView premiumBadge = watermarkdialog.findViewById(R.id.premiumWatermarkBadgeMain);
+        boolean premium = PremiumManager.isPremium(this);
+        premiumBadge.setVisibility(premium ? GONE : VISIBLE);
 
         // Load saved value instead of constant
-        showWatermark = MyApplication.getShowWatermark();
+        showWatermark = premium ? MyApplication.getShowWatermark() : true;
         switchCamera.setChecked(showWatermark);
 
         switchCamera.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!PremiumManager.isPremium(this) && !isChecked) {
+                buttonView.setChecked(true);
+                watermarkdialog.dismiss();
+                showPremiumSheet();
+                return;
+            }
             hasSessionStampOverride = true;
             showWatermark = isChecked;
             MyApplication.setShowWatermark(isChecked);
@@ -3370,11 +3389,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void refreshPremiumUi() {
-        boolean premium = PremiumManager.isPremium(this);
-        if (premiumWatermarkBadgeMain != null) {
-            premiumWatermarkBadgeMain.setVisibility(premium ? GONE : VISIBLE);
-        }
-        applyCustomLocationScreenshotProtection();
+        applyPremiumPreviewScreenshotProtection();
     }
 
     private void refreshMainAdForPremiumState() {
@@ -3392,13 +3407,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         PremiumManager.resetToDefaultTemplate(this);
         clearSessionStampOverrides();
         isLiveLocationMode = true;
+        activeSavedLocationId = null;
+        addressLookupGeneration++;
         currentTitle = null;
+        currentDefaultTitle = "";
         savedDate = null;
         savedTime = null;
-        currentAddress = null;
+        currentAddress = "Loading location...";
         currentLatitude = 0.0;
         currentLongitude = 0.0;
         isLocationFetched = false;
+        lastGeocodedLocation = null;
+        lastAddressLookupTime = 0L;
 
         getStampType();
         getStampFont();
@@ -3407,15 +3427,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         getTextColor();
         getDateTimeColor();
         showWatermark = true;
-        applyCustomLocationScreenshotProtection();
+        applyPremiumPreviewScreenshotProtection();
         setupLocation();
         updateMaps();
         renderStamp();
         refreshPremiumUi();
     }
 
-    private void applyCustomLocationScreenshotProtection() {
-        boolean shouldProtect = !PremiumManager.isPremium(this) && !isLiveLocationMode;
+    private String getSafeCaptureAddress() {
+        if (currentAddress == null || currentAddress.trim().isEmpty()
+                || "Loading location...".equals(currentAddress)
+                || "Loading...".equals(currentAddress)) {
+            return "Location not available";
+        }
+        return currentAddress;
+    }
+
+    private void applyPremiumPreviewScreenshotProtection() {
+        boolean shouldProtect = !PremiumManager.isPremium(this)
+                && PremiumManager.hasPremiumCaptureConfiguration(
+                currentstamp_type,
+                fontStyle,
+                format_Combined,
+                !isLiveLocationMode);
         if (shouldProtect) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         } else {

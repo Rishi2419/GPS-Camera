@@ -399,6 +399,15 @@
                         android:layout_gravity="center"
                         android:textColor="@color/black"
                         android:textSize="@dimen/_13ssp" />
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/premiumWatermarkBadge"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="6dp"
+                        android:contentDescription="@string/premium_badge"
+                        app:srcCompat="@drawable/ic_premium_tag" />
                 </LinearLayout>
 
                 <Switch
@@ -409,13 +418,6 @@
                     android:thumbTint="@color/switch_thumb_color"
                     android:trackTint="@color/switch_track_color" />
 
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/premiumWatermarkBadge"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_marginEnd="6dp"
-                    android:contentDescription="@string/premium_badge"
-                    app:srcCompat="@drawable/ic_premium_tag" />
             </LinearLayout>
 
             <View

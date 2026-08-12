@@ -169,6 +169,11 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         Serializable serializableExtra = getIntent().getSerializableExtra("model");
 
 
+        if (!(serializableExtra instanceof Photo)) {
+            Toast.makeText(this, R.string.error_in_creating_file, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
         final Photo photo = (Photo) serializableExtra;
         displayedPhoto = photo;
         boolean fromCreation = getIntent().getBooleanExtra("fromCreation", false);
@@ -508,8 +513,8 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         }
 
         current_address = address;
-        currentLatitude = Double.parseDouble(photo.getLatitude());
-        currentLongitude = Double.parseDouble(photo.getLongitude());
+        currentLatitude = parseCoordinate(photo.getLatitude());
+        currentLongitude = parseCoordinate(photo.getLongitude());
         date = photo.getDate();
         time = photo.getTime();
         title = photo.getTitle();
@@ -542,6 +547,17 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         // The shared Gallery file already contains its rendered stamp.
         relBottomStamp.removeAllViews();
         relBottomStamp.setVisibility(GONE);
+    }
+
+    private double parseCoordinate(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return 0.0;
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException ignored) {
+            return 0.0;
+        }
     }
 
     private void updatePreviewDateTime(Photo photo) {

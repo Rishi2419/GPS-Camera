@@ -159,47 +159,49 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
 
 
 
-        if (isValidData(title, address, latitude, longitude)) {
+        if (isValidData(address, latitude, longitude)) {
+            MyLocation location = new MyLocation(
+                    null, title, date, time, address, latitude, longitude, false,
+                    defaultTitle);
+
+            // An optional blank title must not collide with other untitled locations.
+            if (title.isEmpty()) {
+                binding.etHome.setError(null);
+                saveLocation(location);
+                return;
+            }
+
             viewModel.getLocationByTitle(title).observe(getViewLifecycleOwner(), existingLocation -> {
                 if (existingLocation != null) {
                     binding.etHome.setError("Title already exists");
                 } else {
-                    // Save only if unique
-                    saveLocation(new MyLocation(
-                            null, title, date, time, address, latitude, longitude, false,
-                            defaultTitle));
+                    saveLocation(location);
                 }
             });
         }
     }
 
-    private boolean isValidData(String str, String str2, String str3, String str4) {
-        boolean z;
-        if (str.length() == 0) {
-            binding.etHome.setError(getResources().getString(R.string.please_enter_title));
-            z = false;
-        } else {
-            binding.etHome.setError(null);
-            z = true;
-        }
-        if (str2.length() == 0) {
+    private boolean isValidData(String address, String latitude, String longitude) {
+        boolean valid = true;
+        binding.etHome.setError(null);
+        if (address.length() == 0) {
             binding.etAddress.setError(getResources().getString(R.string.please_enter_address));
-            z = false;
+            valid = false;
         } else {
             binding.etAddress.setError(null);
         }
-        if (str3.length() == 0) {
+        if (latitude.length() == 0) {
             binding.etLatitide.setError("Latitude is required!");
-            z = false;
+            valid = false;
         } else {
             binding.etLatitide.setError(null);
         }
-        if (str4.length() == 0) {
+        if (longitude.length() == 0) {
             binding.etLongitude.setError("Longitude is required!");
             return false;
         }
         binding.etLongitude.setError(null);
-        return z;
+        return valid;
     }
 
 

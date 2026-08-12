@@ -131,7 +131,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-config'
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-firestore:25.0.0'
-    implementation 'com.google.firebase:firebase-crashlytics'
+//    implementation 'com.google.firebase:firebase-crashlytics'
 
     // AdMob
     implementation 'com.google.android.gms:play-services-ads:22.6.0'

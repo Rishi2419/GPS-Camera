@@ -14,8 +14,8 @@ android {
         applicationId "com.camera.gps"
         minSdk 28
         targetSdk 36
-        versionCode 3
-        versionName "1.0.0"
+        versionCode 4
+        versionName "1.0.1"
         multiDexEnabled true
 //        manifestPlaceholders = [
 //                onesignal_app_id: '3c3fd41c-15e7-4d68-8201-e8a7174d9c6a',

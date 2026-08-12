@@ -13,12 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.camera.gps.R;
+import com.camera.gps.premium.PremiumManager;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.Utils;
 
 public class FontStyle_Adapter extends RecyclerView.Adapter<FontStyle_Adapter.SingleListItemHolder> {
-
-    private static final boolean HIDE_PREMIUM_BADGES_FOR_RELEASE = true;
 
     private final Context context;
     private final String[] fontList;
@@ -50,8 +49,9 @@ public class FontStyle_Adapter extends RecyclerView.Adapter<FontStyle_Adapter.Si
         // Set radio button state
         holder.radioSelect.setChecked(selectedPos == position);
 
-        boolean shouldShowPremiumBadge = !(Utils.getIsPremium(context) || position == 0 || position ==1 || position == 4 || position == 5 || position == 6 || position ==8);
-        holder.premium_img.setVisibility(shouldShowPremiumBadge && !HIDE_PREMIUM_BADGES_FOR_RELEASE ? View.VISIBLE : View.GONE);
+        boolean shouldShowPremiumBadge = !PremiumManager.isPremium(context)
+                && PremiumManager.isFontPremium(fontList[position]);
+        holder.premium_img.setVisibility(shouldShowPremiumBadge ? View.VISIBLE : View.GONE);
         holder.radioSelect.setVisibility(View.VISIBLE);
 
         holder.itemView.setOnClickListener(v -> {
@@ -59,16 +59,9 @@ public class FontStyle_Adapter extends RecyclerView.Adapter<FontStyle_Adapter.Si
             if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            if (Utils.getIsPremium(context) || adapterPosition == 0 || adapterPosition == 1 || adapterPosition == 4 || adapterPosition == 5 || adapterPosition == 6 || adapterPosition == 8) {
-                selectedPos = adapterPosition;
-                notifyDataSetChanged();
-                listener.onFontClick(adapterPosition);
-            } else {
-                selectedPos = adapterPosition;
-                notifyDataSetChanged();
-                listener.onFontClick(adapterPosition);
-                //Toast.makeText(context, "Please subscribe to access this feature", Toast.LENGTH_SHORT).show();
-            }
+            selectedPos = adapterPosition;
+            notifyDataSetChanged();
+            listener.onFontClick(adapterPosition);
         });
     }
 

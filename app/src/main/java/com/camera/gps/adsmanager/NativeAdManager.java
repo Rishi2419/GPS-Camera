@@ -6,6 +6,7 @@ import android.widget.FrameLayout;
 import com.camera.gps.adsmanager.admob.AdMobNativeAdHelper;
 import com.camera.gps.model.Ads.AdsData;
 import com.camera.gps.util.Utils.LogUtils;
+import com.camera.gps.util.Utils;
 
 /**
  * Native Ad Manager that handles loading and displaying native ads
@@ -50,6 +51,11 @@ public class NativeAdManager {
      * @param onFail Callback when ad fails to load
      */
     public void loadAndShowNativeAd(Activity activity, String adsName, FrameLayout container, boolean isSizeBig, Runnable onLoaded, Runnable onFail) {
+        if (Utils.getIsPremium(activity)) {
+            container.removeAllViews();
+            container.setVisibility(View.GONE);
+            return;
+        }
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
             AdsData adsData = remoteConfig.getAdsDataByName(adsName);
@@ -75,17 +81,25 @@ public class NativeAdManager {
             String primaryPublisher = adsData.getPublishers().toLowerCase();
             String fallbackPublisher = adsData.getAdFailed().toLowerCase();
             String adSize = adsData.getAdSize();
+            Runnable guardedOnLoaded = () -> {
+                if (Utils.getIsPremium(activity)) {
+                    container.removeAllViews();
+                    container.setVisibility(View.GONE);
+                } else if (onLoaded != null) {
+                    onLoaded.run();
+                }
+            };
             
             LogUtils.logD(TAG, "Loading native ad for " + adsName + " with primary: " + primaryPublisher + ", fallback: " + fallbackPublisher + ", adSize: " + adSize);
             
             // Try primary publisher first
-            loadNativeAdWithPublisher(activity, primaryPublisher, adSize, isSizeBig, container, onLoaded, primaryError -> {
+            loadNativeAdWithPublisher(activity, primaryPublisher, adSize, isSizeBig, container, guardedOnLoaded, primaryError -> {
                 LogUtils.logI(TAG, "Primary failed: " + primaryError);
                 
                 // If primary fails and fallback is configured, try fallback
                 if (!fallbackPublisher.isEmpty() && !fallbackPublisher.equals(primaryPublisher)) {
                     LogUtils.logW(TAG, "Trying fallback: " + fallbackPublisher);
-                    loadNativeAdWithPublisher(activity, fallbackPublisher, adSize, isSizeBig, container, onLoaded, fallbackError -> {
+                    loadNativeAdWithPublisher(activity, fallbackPublisher, adSize, isSizeBig, container, guardedOnLoaded, fallbackError -> {
                         LogUtils.logD(TAG, "Both primary and fallback failed. Hiding container.");
                         LogUtils.logI(TAG, "Primary error: " + primaryError);
                         LogUtils.logW(TAG, "Fallback error: " + fallbackError);
@@ -139,6 +153,7 @@ public class NativeAdManager {
      * @return true if ads are enabled, false otherwise
      */
     public boolean isAdsEnabled(Activity activity, String adsName) {
+        if (Utils.getIsPremium(activity)) return false;
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
             if (!remoteConfig.isShowAds()) {

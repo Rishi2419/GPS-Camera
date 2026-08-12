@@ -128,6 +128,8 @@ import com.camera.gps.listener.OnSoundSelectedListener;
 import com.camera.gps.listener.OnTimerSelectedListener;
 import com.camera.gps.model.DateFormatModel;
 import com.camera.gps.model.StampTemplateDefaults;
+import com.camera.gps.premium.PremiumManager;
+import com.camera.gps.premium.PremiumTestBottomSheet;
 import com.camera.gps.repositories.DateFormatRepository;
 import com.camera.gps.util.DirManager;
 import com.camera.gps.util.HelperClass;
@@ -278,6 +280,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LinearLayout btnWatermark;
     private boolean showWatermark;
     private ConstraintLayout appStamp;
+    private ImageView premiumWatermarkBadgeMain;
 
     //VIDEO RESOLUTION
     private LinearLayout btnVideoresolution;
@@ -436,6 +439,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (locationExtra instanceof MyLocation) {
                             MyLocation receivedLocation = (MyLocation) locationExtra;
                             isLiveLocationMode = false;
+                            applyCustomLocationScreenshotProtection();
                             Log.d("Rishi_MainActivity", "Received Location Details:");
                             Log.d("Rishi_MainActivity", "ID: " + receivedLocation.getId());
                             Log.d("Rishi_MainActivity", "Title: " + receivedLocation.getTitle());
@@ -475,6 +479,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     currentLongitude = 0.0;
                     savedDate = null;
                     savedTime = null;
+                    isLiveLocationMode = true;
+                    applyCustomLocationScreenshotProtection();
                     isLocationFetched = false;
                     setupLocation();
                     set_to_current_location = false;
@@ -493,6 +499,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             currentLongitude = 0.0;
                             savedDate = null;
                             savedTime = null;
+                            isLiveLocationMode = true;
+                            applyCustomLocationScreenshotProtection();
                             isLocationFetched = false;
                             setupLocation();
                             //initAfterPermissionsGranted();
@@ -599,6 +607,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         enableImmersiveMode();
         setContentView(R.layout.activity_main);
         initializeViews();
+        refreshPremiumUi();
         initializePhotoObject();
         viewModel = new ViewModelProvider(this, new GlobalViewModelFactory(getApplication())).get(GlobalViewModel.class);
         loadBottomBannerAd();
@@ -982,6 +991,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnGrid = findViewById(R.id.btnGrid);
         gridLinesView = findViewById(R.id.gridLinesView);
         btnWatermark = findViewById(R.id.btnWatermark);
+        premiumWatermarkBadgeMain = findViewById(R.id.premiumWatermarkBadgeMain);
         btnVideoresolution = findViewById(R.id.btnResolution);
         btnFps = findViewById(R.id.btnFps);
         btnImgQuality = findViewById(R.id.btnImageQuality);
@@ -1153,6 +1163,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Update the takePhoto method
     @SuppressLint("WrongConstant")
     public void takePhoto() {
+        if (blockCaptureForPremiumPreview()) {
+            return;
+        }
         File mediaFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
         if (mediaFile == null) {
             return;
@@ -1220,6 +1233,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @SuppressLint({"RestrictedApi", "MissingPermission"})
     private void recordVideo() {
+        if (blockCaptureForPremiumPreview()) {
+            return;
+        }
         if (isVideoRecordingPreparing || isRecording) {
             return; // Prevent multiple calls
         }
@@ -3051,7 +3067,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
         btnWatermark.setOnClickListener(view -> {
-            showWatermarkDialog();
+            if (PremiumManager.isPremium(this)) {
+                showWatermarkDialog();
+            } else {
+                showPremiumSheet();
+            }
             manageExposurelayout();
         });
 
@@ -3225,6 +3245,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         switchCamera.setOnCheckedChangeListener((buttonView, isChecked) -> {
             hasSessionStampOverride = true;
             showWatermark = isChecked;
+            MyApplication.setShowWatermark(isChecked);
             updateStampContent();
         });
 
@@ -3258,6 +3279,96 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         watermarkdialog.show();
+    }
+
+    private boolean blockCaptureForPremiumPreview() {
+        if (PremiumManager.isPremium(this)) {
+            return false;
+        }
+
+        if (PremiumManager.hasPremiumCaptureConfiguration(
+                currentstamp_type,
+                fontStyle,
+                format_Combined,
+                !isLiveLocationMode)) {
+            showPremiumSheet();
+            return true;
+        }
+        return false;
+    }
+
+    private void showPremiumSheet() {
+        PremiumTestBottomSheet.show(this, new PremiumTestBottomSheet.Listener() {
+            @Override
+            public void onPremiumChanged(boolean premium) {
+                if (!premium) {
+                    showWatermark = true;
+                    MyApplication.setShowWatermark(true);
+                }
+                refreshPremiumUi();
+                refreshMainAdForPremiumState();
+                updateWaterMarkVisibility();
+            }
+
+            @Override
+            public void onContinueFree() {
+                restoreDefaultFreeRuntime();
+            }
+        });
+    }
+
+    private void refreshPremiumUi() {
+        boolean premium = PremiumManager.isPremium(this);
+        if (premiumWatermarkBadgeMain != null) {
+            premiumWatermarkBadgeMain.setVisibility(premium ? GONE : VISIBLE);
+        }
+        applyCustomLocationScreenshotProtection();
+    }
+
+    private void refreshMainAdForPremiumState() {
+        FrameLayout banner = findViewById(R.id.flMainBanner);
+        if (PremiumManager.isPremium(this)) {
+            banner.removeAllViews();
+            banner.setVisibility(GONE);
+            updateBottomOptionsBannerOffset(banner);
+        } else if (banner.getChildCount() == 0) {
+            loadBottomBannerAd();
+        }
+    }
+
+    private void restoreDefaultFreeRuntime() {
+        PremiumManager.resetToDefaultTemplate(this);
+        clearSessionStampOverrides();
+        isLiveLocationMode = true;
+        currentTitle = null;
+        savedDate = null;
+        savedTime = null;
+        currentAddress = null;
+        currentLatitude = 0.0;
+        currentLongitude = 0.0;
+        isLocationFetched = false;
+
+        getStampType();
+        getStampFont();
+        getStampDateTime();
+        getStampBgColor();
+        getTextColor();
+        getDateTimeColor();
+        showWatermark = true;
+        applyCustomLocationScreenshotProtection();
+        setupLocation();
+        updateMaps();
+        renderStamp();
+        refreshPremiumUi();
+    }
+
+    private void applyCustomLocationScreenshotProtection() {
+        boolean shouldProtect = !PremiumManager.isPremium(this) && !isLiveLocationMode;
+        if (shouldProtect) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        }
     }
 
     private void showVideoResolutionDialog() {
@@ -3853,6 +3964,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onResume() {
 
         super.onResume();
+        refreshPremiumUi();
+        refreshMainAdForPremiumState();
         reconcileInternetDialogState();
         handler.postDelayed(this::reconcileInternetDialogState, 1200L);
         if (fusedLocationClient != null && locationCallback != null && locationRequest != null

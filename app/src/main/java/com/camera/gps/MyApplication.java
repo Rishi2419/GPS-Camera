@@ -8,6 +8,7 @@ import android.net.ConnectivityManager;
 
 import com.appizona.yehiahd.fastsave.FastSave;
 import com.camera.gps.adsmanager.AppOpenManager;
+import com.camera.gps.premium.PremiumManager;
 
 import kotlin.jvm.internal.DefaultConstructorMarker;
 
@@ -58,6 +59,7 @@ public final class MyApplication extends Application {
         FastSave.init(getApplicationContext());
         preferences = getSharedPreferences("GPS_Map_Camera" + context().getPackageName(), MODE_PRIVATE);
         mEditor = preferences.edit();
+        PremiumManager.resetPremiumPreviewOnProcessStart(this);
 
     }
 

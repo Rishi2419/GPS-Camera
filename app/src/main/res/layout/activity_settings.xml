@@ -408,6 +408,14 @@
                     android:checked="true"
                     android:thumbTint="@color/switch_thumb_color"
                     android:trackTint="@color/switch_track_color" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/premiumWatermarkBadge"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginEnd="6dp"
+                    android:contentDescription="@string/premium_badge"
+                    app:srcCompat="@drawable/ic_premium_tag" />
             </LinearLayout>
 
             <View

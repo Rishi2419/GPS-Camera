@@ -29,6 +29,9 @@ import com.camera.gps.dialogs.RateDialog;
 import com.camera.gps.listener.OnDateTimeSelectedListener;
 import com.camera.gps.listener.OnFontSelectedListener;
 import com.camera.gps.model.DateFormatModel;
+import com.camera.gps.model.StampTemplateDefaults;
+import com.camera.gps.premium.PremiumManager;
+import com.camera.gps.premium.PremiumTestBottomSheet;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.StampSettingsBottomSheets;
 import com.camera.gps.util.Utils;
@@ -102,12 +105,10 @@ public class Settings_Activity extends InsetAwareActivity {
         loadCurrentSessionSettings();
 
 
-        binding.shimmerPremium.stopShimmer();
-        binding.shimmerPremium.setVisibility(android.view.View.GONE);
-
         setupAppVersion();
         setupListeners();
         setupSwitches();
+        updatePremiumUi();
         loadNativeAds();
         loadBottomBannerAd();
     }
@@ -166,6 +167,9 @@ public class Settings_Activity extends InsetAwareActivity {
     }
 
     private void setupListeners() {
+        binding.premiumBanner.setOnClickListener(v -> showPremiumSheet());
+        binding.btnUpgrade.setOnClickListener(v -> showPremiumSheet());
+
         binding.layoutMap.setOnClickListener(v -> {
 
             if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
@@ -284,11 +288,26 @@ public class Settings_Activity extends InsetAwareActivity {
 
     private void setupSwitches() {
         // Watermark
-        showWatermark = MyApplication.getShowWatermark();
+        showWatermark = PremiumManager.isPremium(this)
+                ? MyApplication.getShowWatermark()
+                : true;
+        if (!PremiumManager.isPremium(this)) {
+            MyApplication.setShowWatermark(true);
+        }
         binding.switchWatermark.setChecked(showWatermark);
         binding.switchWatermark.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!PremiumManager.isPremium(this) && !isChecked) {
+                buttonView.setChecked(true);
+                showPremiumSheet();
+                return;
+            }
             showWatermark = isChecked;
             MyApplication.setShowWatermark(isChecked);
+        });
+        binding.layoutWatermark.setOnClickListener(v -> {
+            if (!PremiumManager.isPremium(this)) {
+                showPremiumSheet();
+            }
         });
 
         // Image Quality
@@ -300,6 +319,81 @@ public class Settings_Activity extends InsetAwareActivity {
         boolean currentSoundStatus = SharedPrefsSettings.getSoundStatus(this);
         binding.switchVideoVolume.setChecked(currentSoundStatus);
         binding.switchVideoVolume.setOnCheckedChangeListener((buttonView, isChecked) -> SharedPrefsSettings.setSoundStatus(isChecked, this));
+    }
+
+    private void showPremiumSheet() {
+        PremiumTestBottomSheet.show(this, new PremiumTestBottomSheet.Listener() {
+            @Override
+            public void onPremiumChanged(boolean premium) {
+                if (!premium) {
+                    showWatermark = true;
+                    MyApplication.setShowWatermark(true);
+                }
+                updatePremiumUi();
+                refreshAdsForPremiumState();
+            }
+
+            @Override
+            public void onContinueFree() {
+                applyDefaultFreeSettings();
+                updatePremiumUi();
+            }
+        });
+    }
+
+    private void updatePremiumUi() {
+        boolean premium = PremiumManager.isPremium(this);
+        binding.shimmerPremium.setVisibility(android.view.View.VISIBLE);
+        if (premium) {
+            binding.shimmerPremium.stopShimmer();
+            binding.tvPremiumTitle.setText(R.string.premium_active);
+        } else {
+            binding.shimmerPremium.startShimmer();
+            binding.tvPremiumTitle.setText(R.string.go_premium);
+        }
+        binding.premiumWatermarkBadge.setVisibility(
+                premium ? android.view.View.GONE : android.view.View.VISIBLE);
+
+        binding.switchWatermark.setOnCheckedChangeListener(null);
+        showWatermark = premium ? MyApplication.getShowWatermark() : true;
+        if (!premium) {
+            MyApplication.setShowWatermark(true);
+        }
+        binding.switchWatermark.setChecked(showWatermark);
+        binding.switchWatermark.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!PremiumManager.isPremium(this) && !isChecked) {
+                buttonView.setChecked(true);
+                showPremiumSheet();
+                return;
+            }
+            showWatermark = isChecked;
+            MyApplication.setShowWatermark(isChecked);
+        });
+    }
+
+    private void refreshAdsForPremiumState() {
+        if (PremiumManager.isPremium(this)) {
+            binding.flNativeSettingsOne.setVisibility(android.view.View.GONE);
+            binding.flNativeSettingsTwo.setVisibility(android.view.View.GONE);
+            binding.flSettingsBanner.setVisibility(android.view.View.GONE);
+        } else {
+            loadNativeAds();
+            loadBottomBannerAd();
+        }
+    }
+
+    private void applyDefaultFreeSettings() {
+        StampTemplateDefaults.Settings defaults = StampTemplateDefaults.forTemplate(this, 1);
+        currentFontStyle = defaults.fontStyle;
+        currentDateFormat = defaults.dateFormat;
+        currentTimeFormat = defaults.timeFormat;
+        currentCombinedFormat = defaults.combinedFormat;
+        currentMapType = defaults.mapType;
+        fontChanged = true;
+        dateTimeChanged = true;
+        mapTypeChanged = true;
+        showWatermark = true;
+        MyApplication.setShowWatermark(true);
     }
 
     private void showFontStyleDialog() {

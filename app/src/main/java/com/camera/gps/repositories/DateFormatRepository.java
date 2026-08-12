@@ -181,23 +181,24 @@ public class DateFormatRepository {
     }
 
     private String[] splitDateTimeFormat(String combinedFormat) {
-        String dateFormat = "";
-        String timeFormat = "";
-
-        // Split based on common patterns
-        if (combinedFormat.contains(" ")) {
-            String[] parts = combinedFormat.split(" ", 2);
-            dateFormat = parts[0];
-            if (parts.length > 1) {
-                timeFormat = parts[1];
-            }
+        int twentyFourHourStart = combinedFormat.indexOf(" HH");
+        int twelveHourStart = combinedFormat.indexOf(" hh");
+        int timeStart;
+        if (twentyFourHourStart < 0) {
+            timeStart = twelveHourStart;
+        } else if (twelveHourStart < 0) {
+            timeStart = twentyFourHourStart;
         } else {
-            // If no space, it's likely date only
-            dateFormat = combinedFormat;
-            timeFormat = "";
+            timeStart = Math.min(twentyFourHourStart, twelveHourStart);
         }
 
-        return new String[]{dateFormat, timeFormat};
+        if (timeStart < 0) {
+            return new String[]{combinedFormat, ""};
+        }
+        return new String[]{
+                combinedFormat.substring(0, timeStart),
+                combinedFormat.substring(timeStart + 1)
+        };
     }
 
     public void saveSelectedFormat(String format_Combined, String format_Date, String format_Time) {

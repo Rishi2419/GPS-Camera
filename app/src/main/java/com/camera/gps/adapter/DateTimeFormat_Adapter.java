@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.model.DateFormatModel;
+import com.camera.gps.premium.PremiumManager;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.SP;
 
@@ -56,6 +58,10 @@ public class DateTimeFormat_Adapter extends RecyclerView.Adapter<DateTimeFormat_
                 this.msp.getString(this.mContext, MyApplication.TIMEZONE_FORMAT,
                         this.time_list.size() > 5 ? this.time_list.get(5).getTime_format() : "GMT"),
                 this.mContext));
+
+        boolean shouldShowPremiumBadge = !PremiumManager.isPremium(mContext)
+                && PremiumManager.isDateTimePremium(dateFormatModel.getFormat_Combined());
+        myViewHolder.premium_img.setVisibility(shouldShowPremiumBadge ? View.VISIBLE : View.GONE);
 
         // Set click listener
         myViewHolder.btn_click.setOnClickListener(view -> {
@@ -105,12 +111,14 @@ public class DateTimeFormat_Adapter extends RecyclerView.Adapter<DateTimeFormat_
         RelativeLayout btn_click;
         RadioButton radio_select;
         TextView txt_note;
+        ImageView premium_img;
 
         public MyViewHolder(View view2) {
             super(view2);
             this.txt_note = view2.findViewById(R.id.txt_notes);
             this.radio_select = view2.findViewById(R.id.radio_select);
             this.btn_click = view2.findViewById(R.id.btn_click);
+            this.premium_img = view2.findViewById(R.id.premium_img);
         }
     }
 }

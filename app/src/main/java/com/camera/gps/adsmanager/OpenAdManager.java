@@ -292,6 +292,7 @@ import com.camera.gps.adsmanager.admob.AdMobOpenAdHelper;
 import com.camera.gps.model.Ads.AdsData;
 import com.camera.gps.model.Ads.RemoteConfigResponse;
 import com.camera.gps.util.Utils.LogUtils;
+import com.camera.gps.util.Utils;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -340,6 +341,10 @@ public class OpenAdManager {
     }
 
     public void loadAndShowOpenAd(Activity activity, String adsName, Runnable onAdClosed, AdCallback onAdFailed, boolean proceedWithoutAdOnFailure) {
+        if (Utils.getIsPremium(activity)) {
+            if (onAdClosed != null) onAdClosed.run();
+            return;
+        }
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
 
@@ -445,6 +450,10 @@ public class OpenAdManager {
     }
 
     public void showAdWithPublisher(Activity activity, String publisher, Runnable onAdClosed, AdCallback onAdFailed, AdCallback onPublisherFailed) {
+        if (Utils.getIsPremium(activity)) {
+            if (onAdClosed != null) onAdClosed.run();
+            return;
+        }
         try {
             switch (publisher) {
                 case "admob":
@@ -501,6 +510,7 @@ public class OpenAdManager {
     }
 
     public void preloadOpenAd(Activity activity, String adsName) {
+        if (Utils.getIsPremium(activity)) return;
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
 
@@ -569,6 +579,10 @@ public class OpenAdManager {
 
     /** Preload an app-open placement without showing it. */
     public void preloadOpenAd(Activity activity, String adsName, Runnable onLoaded, AdCallback onFailed) {
+        if (Utils.getIsPremium(activity)) {
+            if (onFailed != null) onFailed.onFailure("Premium user");
+            return;
+        }
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
             AdsData adsData = remoteConfig.getAdsDataByName(adsName);

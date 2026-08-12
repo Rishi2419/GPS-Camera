@@ -133,6 +133,16 @@
     <string name="map_desc">See exact photo location on the map</string>
     <string name="camera_setting">Camera Setting</string>
     <string name="watermark">Watermark</string>
+    <string name="premium_badge">Premium</string>
+    <string name="premium_test_title">Premium access</string>
+    <string name="premium_test_enabled">Current plan: Premium</string>
+    <string name="premium_test_disabled">Current plan: Free</string>
+    <string name="premium_test_toggle">Turn premium on or off</string>
+    <string name="continue_with_free">Continue with free version</string>
+    <string name="premium_active">Premium Active</string>
+    <string name="close">Close</string>
+    <string name="premium_includes">Premium includes</string>
+    <string name="premium_benefits_list">✓ No ads\n✓ Premium fonts and date styles\n✓ Premium stamp templates\n✓ Custom locations\n✓ Remove watermark</string>
     <string name="other_setting">Other Setting</string>
     <string name="language_only">Language</string>
     <string name="lang_desc">Set your local language for better experience</string>

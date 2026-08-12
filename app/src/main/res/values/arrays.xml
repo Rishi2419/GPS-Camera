@@ -22,6 +22,13 @@
         <item>MM/dd/yyyy</item>
         <item>MM/dd/yyyy HH:mm</item>
         <item>MM/dd/yyyy HH:mm:ss</item>
+        <item>MM/dd/yyyy hh:mm a</item>
+        <item>MMM dd, yyyy hh:mm:ss a</item>
+        <item>EEEE, MMMM dd, yyyy HH:mm a</item>
+        <item>yyyy-MM-dd HH:mm</item>
+        <item>dd.MM.yyyy HH:mm:ss</item>
+        <item>yyyy/MM/dd hh:mm a</item>
+        <item>dd-MMM-yyyy HH:mm:ss a</item>
     </array>
     <array name="font_name_array">
         <item>SF Pro Display.otf</item>

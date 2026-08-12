@@ -578,6 +578,7 @@ import com.camera.gps.adsmanager.unity.UnityInterstitialHelper;
 import com.camera.gps.model.Ads.AdsData;
 import com.camera.gps.model.Ads.RemoteConfigResponse;
 import com.camera.gps.util.Utils.LogUtils;
+import com.camera.gps.util.Utils;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -617,6 +618,7 @@ public class InterstitialAdManager {
      * This makes the first show instant if those networks are selected later.
      */
     public void preloadPublishersFromConfig(Activity activity) {
+        if (Utils.getIsPremium(activity)) return;
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
             RemoteConfigResponse config = remoteConfig.getRemoteConfigData();
@@ -645,6 +647,7 @@ public class InterstitialAdManager {
      * Preload a specific publisher's interstitial irrespective of placement.
      */
     public void preloadPublisher(Activity activity, String publisher) {
+        if (Utils.getIsPremium(activity)) return;
         try {
             String normalized = publisher.toLowerCase();
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
@@ -695,6 +698,10 @@ public class InterstitialAdManager {
      * single ready/failure result.
      */
     public void preloadPlacement(Activity activity, String adsName, Runnable onLoaded, AdCallback onFailed) {
+        if (Utils.getIsPremium(activity)) {
+            if (onFailed != null) onFailed.onFailure("Premium user");
+            return;
+        }
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
             AdsData adsData = remoteConfig.getAdsDataByName(adsName);
@@ -827,6 +834,10 @@ public class InterstitialAdManager {
     }
 
     public void loadAndShowInterstitialAd(Activity activity, String adsName, Runnable onAdClosed, AdCallback onAdFailed) {
+        if (Utils.getIsPremium(activity)) {
+            if (onAdClosed != null) onAdClosed.run();
+            return;
+        }
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
 
@@ -1056,6 +1067,10 @@ public class InterstitialAdManager {
     }
 
     private void showAdWithPublisher(Activity activity, String publisher, String placement, Runnable onAdClosed, AdCallback onAdFailed, AdCallback onPublisherFailed) {
+        if (Utils.getIsPremium(activity)) {
+            if (onAdClosed != null) onAdClosed.run();
+            return;
+        }
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
 

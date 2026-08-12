@@ -21,6 +21,7 @@ import com.appizona.yehiahd.fastsave.FastSave;
 import com.camera.gps.MyApplication;
 import com.camera.gps.R;
 import com.camera.gps.activity.Template_Activity;
+import com.camera.gps.premium.PremiumManager;
 import com.camera.gps.util.Utils;
 
 import java.util.ArrayList;
@@ -30,7 +31,6 @@ public class Template_Adapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private static final int VIEW_TYPE_NATIVE_AD = 2;
     private static final int FIRST_NATIVE_AD_POSITION = 2;
     private static final int SECOND_NATIVE_AD_POSITION = 6;
-    private static final boolean HIDE_PREMIUM_BADGES_FOR_RELEASE = true;
 
     ArrayList<Integer> arrayList;
     final TemplateClicksListener themeClicksListener;
@@ -75,9 +75,9 @@ public class Template_Adapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         int templatePosition = getTemplatePosition(position);
         holder.imageView.setImageResource(arrayList.get(templatePosition));
 
-        boolean shouldShowPremiumBadge = !(templatePosition == 0 || templatePosition == 3 || templatePosition == 7 || templatePosition == 4)
-                && !Utils.getIsPremium(context);
-        holder.premium_img.setVisibility(shouldShowPremiumBadge && !HIDE_PREMIUM_BADGES_FOR_RELEASE ? View.VISIBLE : View.GONE);
+        boolean shouldShowPremiumBadge = PremiumManager.isTemplatePremium(templatePosition + 1)
+                && !PremiumManager.isPremium(context);
+        holder.premium_img.setVisibility(shouldShowPremiumBadge ? View.VISIBLE : View.GONE);
 
         // Get currently saved stamp ID
         int savedStampId = FastSave.getInstance().getInt(MyApplication.STAMP_LAYOUT_ID, 1);
@@ -126,14 +126,9 @@ public class Template_Adapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         });
 
         holder.itemView.setOnClickListener(v -> {
-            if (templatePosition == 0 || templatePosition == 3 || templatePosition == 7 || templatePosition == 4) {
-                handleItemClick(templatePosition);
-            } else if (Utils.getIsPremium(context)) {
-                handleItemClick(templatePosition);
-            } else {
-                handleItemClick(templatePosition);
-                //Toast.makeText(context, "Please subscribe to access this feature", Toast.LENGTH_SHORT).show();
-            }
+            // Free users may select premium templates for an exact camera preview. Capture is
+            // centrally gated in MainActivity.
+            handleItemClick(templatePosition);
         });
     }
 

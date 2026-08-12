@@ -71,6 +71,7 @@ import com.camera.gps.R;
 import com.camera.gps.data.GlobalViewModel;
 import com.camera.gps.data.GlobalViewModelFactory;
 import com.camera.gps.databinding.FragmentAddCustomLocationBinding;
+import com.camera.gps.premium.PremiumManager;
 import com.camera.gps.util.Constant;
 import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.database.entity.MyLocation;
@@ -119,6 +120,8 @@ public class AddCustomLocationFragment extends Fragment implements OnMapReadyCal
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentAddCustomLocationBinding.inflate(inflater, container, false);
+        binding.premiumBadge.setVisibility(PremiumManager.isPremium(requireContext())
+                ? View.GONE : View.VISIBLE);
         return binding.getRoot();
     }
 

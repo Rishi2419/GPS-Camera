@@ -47,7 +47,7 @@
             android:layout_marginEnd="10dp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/radio_select"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_premium_tag" />
 

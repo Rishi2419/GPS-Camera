@@ -53,7 +53,7 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
         Utils.LogUtils.logI(TAG, "Activity resumed: " + activity.getLocalClassName());
         currentActivity = activity;
 
-        if (!(activity instanceof Splash_Activity)) {
+        if (!(activity instanceof Splash_Activity) && !Utils.getIsPremium(activity)) {
             // preload for next resume
             OpenAdManager.getInstance().preloadOpenAd(activity, "app_resume_ad");
         }
@@ -105,6 +105,7 @@ public class AppOpenManager implements LifecycleObserver, Application.ActivityLi
 //    }
     public void showAdIfAvailable() {
         if (currentActivity == null) return;
+        if (Utils.getIsPremium(currentActivity)) return;
         if (isShowingAd) return;
         if (currentActivity instanceof Splash_Activity) return;
 

@@ -38,6 +38,15 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_movable_location_marker" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/premiumBadge"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="8dp"
+                    android:contentDescription="@string/premium_badge"
+                    app:srcCompat="@drawable/ic_premium_tag" />
             </com.google.android.material.card.MaterialCardView>
 
             <LinearLayout

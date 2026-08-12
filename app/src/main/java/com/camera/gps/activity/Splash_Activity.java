@@ -69,6 +69,7 @@ import com.camera.gps.adsmanager.InterstitialAdManager;
 import com.camera.gps.adsmanager.OpenAdManager;
 import com.camera.gps.adsmanager.RemoteConfigManager;
 import com.camera.gps.model.Ads.AdsData;
+import com.camera.gps.premium.PremiumManager;
 import com.camera.gps.util.Utils;
 import com.camera.gps.util.Utils.LogUtils;
 import com.camera.gps.util.SP;
@@ -94,6 +95,7 @@ public class Splash_Activity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        PremiumManager.resetPremiumPreviewOnProcessStart(this);
         splashStartedAtMs = System.currentTimeMillis();
         splashHandler = new Handler(getMainLooper());
 

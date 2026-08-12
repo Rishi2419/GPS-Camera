@@ -20,6 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/premium_img"
             android:fontFamily="@font/sfprotextregular"
             android:textColor="@color/black"
             android:textSize="@dimen/_14ssp" />
@@ -35,6 +36,16 @@
             android:button="@null"
             android:clickable="false"
             android:focusable="false" />
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/premium_img"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/radio_select"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_premium_tag" />
 
         <View
             android:layout_width="match_parent"

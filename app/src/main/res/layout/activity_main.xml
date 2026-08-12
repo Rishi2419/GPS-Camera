@@ -209,6 +209,7 @@
                         android:textColor="@android:color/white"
                         android:textSize="@dimen/_8ssp"
                         android:gravity="center"/>
+
                 </LinearLayout>
 
                 <!-- Exposure -->
@@ -340,6 +341,13 @@
                         android:textColor="@android:color/white"
                         android:textSize="@dimen/_8ssp"
                         android:gravity="center"/>
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/premiumWatermarkBadgeMain"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:contentDescription="@string/premium_badge"
+                        app:srcCompat="@drawable/ic_premium_tag" />
                 </LinearLayout>
 
                 <!-- Resolution -->

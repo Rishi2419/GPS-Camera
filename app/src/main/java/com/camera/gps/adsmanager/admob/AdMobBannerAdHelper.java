@@ -15,6 +15,11 @@ public class AdMobBannerAdHelper {
     private static final String TAG = "AdMobBannerAdHelper";
 
     public static void loadBannerAd(Activity activity, FrameLayout container, String adsName) {
+        if (Utils.getIsPremium(activity)) {
+            container.removeAllViews();
+            container.setVisibility(View.GONE);
+            return;
+        }
         try {
             RemoteConfigManager remoteConfig = RemoteConfigManager.getInstance(activity);
             AdsData adsData = remoteConfig.getAdsDataByName(adsName);

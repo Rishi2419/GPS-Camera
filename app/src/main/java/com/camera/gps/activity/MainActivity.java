@@ -134,8 +134,10 @@ import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.LocationAddressFormatter;
 import com.camera.gps.util.LocationSettingsPrompt;
 import com.camera.gps.util.SharedMediaStore;
+import com.camera.gps.util.SafeMapSnapshot;
 import com.camera.gps.util.SP;
 import com.camera.gps.util.StampBackgroundUtils;
+import com.camera.gps.util.StampMetadataUtils;
 import com.camera.gps.util.StampSettingsBottomSheets;
 import com.camera.gps.util.StampedPhotoComposer;
 import com.camera.gps.util.StampedVideoComposer;
@@ -581,6 +583,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         hasSessionDateTimeOverride = false;
         sessionMapType = null;
         MyApplication.clearSessionMapType();
+        MyApplication.clearSessionStampFormatting();
+    }
+
+    private void applyApplicationSessionFormatting() {
+        String sessionFont = MyApplication.getSessionFontStyle();
+        if (sessionFont != null && !sessionFont.trim().isEmpty()) {
+            fontStyle = sessionFont;
+            hasSessionStampOverride = true;
+        }
+
+        String sessionDate = MyApplication.getSessionDateFormat();
+        String sessionTime = MyApplication.getSessionTimeFormat();
+        String sessionCombined = MyApplication.getSessionCombinedFormat();
+        if (sessionDate != null && sessionTime != null && sessionCombined != null) {
+            format_Date = sessionDate;
+            format_Time = sessionTime;
+            format_Combined = sessionCombined;
+            hasSessionStampOverride = true;
+            hasSessionDateTimeOverride = true;
+        }
     }
 
     private void applySettingsSessionOverrides(Intent data) {
@@ -589,6 +611,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (data.hasExtra(Settings_Activity.EXTRA_SESSION_FONT_STYLE)) {
             fontStyle = data.getStringExtra(Settings_Activity.EXTRA_SESSION_FONT_STYLE);
+            MyApplication.setSessionFontStyle(fontStyle);
             hasSessionStampOverride = true;
             fontUpdated = true;
         }
@@ -596,6 +619,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             format_Date = data.getStringExtra(Settings_Activity.EXTRA_SESSION_DATE_FORMAT);
             format_Time = data.getStringExtra(Settings_Activity.EXTRA_SESSION_TIME_FORMAT);
             format_Combined = data.getStringExtra(Settings_Activity.EXTRA_SESSION_COMBINED_FORMAT);
+            MyApplication.setSessionDateTimeFormats(format_Date, format_Time, format_Combined);
             hasSessionStampOverride = true;
             hasSessionDateTimeOverride = true;
             dateTimeUpdated = true;
@@ -1209,14 +1233,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             if (success) {
                                 publishCapturedMedia(mediaFile, false);
                             } else {
-                                if (mediaFile.exists()) {
-                                    mediaFile.delete();
-                                }
-                                btnTakeAction.setEnabled(true);
-                                setPreviewLoading(false);
-                                Toast.makeText(MainActivity.this,
-                                        "Unable to apply stamp to photo",
-                                        Toast.LENGTH_SHORT).show();
+                                // If the activity/map surface disappeared during capture,
+                                // preserve and publish the original photo without a stamp.
+                                publishCapturedMedia(mediaFile, false);
                             }
                         });
 
@@ -1353,28 +1372,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void publishCapturedMedia(File capturedFile, boolean video) {
+        final Photo capturedPhoto = photo;
         SharedMediaStore.publishAsync(this, capturedFile, video,
                 new SharedMediaStore.PublishCallback() {
                     @Override
                     public void onSuccess(SharedMediaStore.PublishedMedia media) {
-                        if (photo == null) {
+                        if (capturedPhoto == null) {
                             SharedMediaStore.delete(MainActivity.this,
                                     media.getUri().toString(), media.getPath());
-                            btnTakeAction.setEnabled(true);
-                            setPreviewLoading(false);
+                            if (canUpdateCaptureUi()) {
+                                btnTakeAction.setEnabled(true);
+                                setPreviewLoading(false);
+                            }
                             return;
                         }
 
-                        photo.setImagePath(media.getPath());
-                        photo.setMediaUri(media.getUri().toString());
-                        photo.setMediaType(video ? "video" : "image");
+                        capturedPhoto.setImagePath(media.getPath());
+                        capturedPhoto.setMediaUri(media.getUri().toString());
+                        capturedPhoto.setMediaType(video ? "video" : "image");
                         mediaFilePath = media.getPath();
                         isCapture = true;
 
-                        Glide.with(MainActivity.this)
-                                .load(media.getUri())
-                                .into(ivMyCapture);
-                        saveMapSnapshotAndInsertPhoto(photo.getDateTimeTaken());
+                        if (canUpdateCaptureUi()) {
+                            Glide.with(MainActivity.this)
+                                    .load(media.getUri())
+                                    .into(ivMyCapture);
+                        }
+                        saveMapSnapshotAndInsertPhoto(
+                                capturedPhoto, capturedPhoto.getDateTimeTaken());
                     }
 
                     @Override
@@ -1382,11 +1407,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (capturedFile.exists()) {
                             capturedFile.delete();
                         }
-                        btnTakeAction.setEnabled(true);
-                        setPreviewLoading(false);
-                        Toast.makeText(MainActivity.this,
-                                "Unable to save to Gallery: " + error,
-                                Toast.LENGTH_SHORT).show();
+                        if (canUpdateCaptureUi()) {
+                            btnTakeAction.setEnabled(true);
+                            setPreviewLoading(false);
+                            Toast.makeText(MainActivity.this,
+                                    "Unable to save to Gallery: " + error,
+                                    Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
     }
@@ -1550,18 +1577,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return mediaFile;
     }
 
-    private void saveMapSnapshotAndInsertPhoto(String timeStamp) {
-        if (googleMap == null || currentLatitude == 0.0 || currentLongitude == 0.0) {
-            insertPhoto();
+    private void saveMapSnapshotAndInsertPhoto(Photo capturedPhoto, String timeStamp) {
+        if (capturedPhoto == null) {
             return;
         }
 
-        googleMap.snapshot(bitmap -> {
+        double capturedLatitude = StampMetadataUtils.latitudeOrNaN(capturedPhoto.getLatitude());
+        double capturedLongitude = StampMetadataUtils.longitudeOrNaN(capturedPhoto.getLongitude());
+        if (!canUpdateCaptureUi()
+                || googleMap == null
+                || !StampMetadataUtils.hasCoordinates(capturedLatitude, capturedLongitude)
+                || capturedLatitude == 0.0
+                || capturedLongitude == 0.0) {
+            insertPhoto(capturedPhoto);
+            return;
+        }
+
+        SafeMapSnapshot.capture(this, googleMap, mapViewContainer, bitmap -> {
             if (bitmap != null) {
                 String savedMapPath = saveMapBitmap(bitmap, timeStamp);
-                photo.setMapImagePath(savedMapPath);
+                capturedPhoto.setMapImagePath(savedMapPath);
             }
-            insertPhoto();
+            insertPhoto(capturedPhoto);
         });
     }
 
@@ -1581,65 +1618,81 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    public void insertPhoto() {
-        if (photo != null && photo.getImagePath() != null) {
-            // Show thumbnail immediately
-            RequestManager with = Glide.with(this);
-            RequestBuilder<Drawable> load = with.load(photo.getImagePath());
-            load.into(ivMyCapture);
+    private void insertPhoto(Photo capturedPhoto) {
+        if (capturedPhoto != null && capturedPhoto.getImagePath() != null) {
+            // Persistence must complete even if this activity was destroyed while
+            // the asynchronous map snapshot or MediaStore publish was running.
+            if (canUpdateCaptureUi()) {
+                RequestManager with = Glide.with(this);
+                RequestBuilder<Drawable> load = with.load(capturedPhoto.getImagePath());
+                load.into(ivMyCapture);
+            }
 
             // Insert into database
-            this.viewModel.insertPhoto(photo).observe(this, new Observer() {
+            this.viewModel.insertPhoto(capturedPhoto).observe(this, new Observer() {
                 @Override
                 public void onChanged(Object obj) {
-                    btnTakeAction.setEnabled(true);
-                    setPreviewLoading(false);
                     if (obj != null) {
 
                         long insertedId = (long) obj;
                         Log.d("PhotoCapture", "Photo inserted with ID: " + insertedId);
 
-                        photo.setId((int) insertedId);
+                        capturedPhoto.setId((int) insertedId);
+
+                        if (!canUpdateCaptureUi() || photo != capturedPhoto) {
+                            return;
+                        }
+
+                        btnTakeAction.setEnabled(true);
+                        setPreviewLoading(false);
 
                         // Copy for photoOld
                         photoOld = new Photo();
                         photoOld.setId((int) insertedId);
-                        photoOld.setImagePath(photo.getImagePath());
-                        photoOld.setMediaUri(photo.getMediaUri());
-                        photoOld.setMediaType(photo.getMediaType());
-                        photoOld.setLatitude(photo.getLatitude());
-                        photoOld.setLongitude(photo.getLongitude());
-                        photoOld.setAddress(photo.getAddress());
-                        photoOld.setDate(photo.getDate());
-                        photoOld.setTime(photo.getTime());
-                        photoOld.setType(photo.getType());
-                        photoOld.setTitle(photo.getTitle());
-                        photoOld.setFontStyle(photo.getFontStyle());
-                        photoOld.setDateTimeTaken(photo.getDateTimeTaken());
-                        photoOld.setMap_type(photo.getMap_type());
-                        photoOld.setMapImagePath(photo.getMapImagePath());
-                        photoOld.setShow_watermark(photo.getShow_watermark());
-                        photoOld.setLong_dms(photo.getLong_dms());
-                        photoOld.setLat_dms(photo.getLat_dms());
-                        photoOld.setCurrent_datetime_color(photo.getCurrent_datetime_color());
-                        photoOld.setCurrent_bg_color(photo.getCurrent_bg_color());
-                        photoOld.setCurrent_text_color(photo.getCurrent_text_color());
-                        photoOld.setRatio(photo.getRatio());
+                        photoOld.setImagePath(capturedPhoto.getImagePath());
+                        photoOld.setMediaUri(capturedPhoto.getMediaUri());
+                        photoOld.setMediaType(capturedPhoto.getMediaType());
+                        photoOld.setLatitude(capturedPhoto.getLatitude());
+                        photoOld.setLongitude(capturedPhoto.getLongitude());
+                        photoOld.setAddress(capturedPhoto.getAddress());
+                        photoOld.setDate(capturedPhoto.getDate());
+                        photoOld.setTime(capturedPhoto.getTime());
+                        photoOld.setType(capturedPhoto.getType());
+                        photoOld.setTitle(capturedPhoto.getTitle());
+                        photoOld.setFontStyle(capturedPhoto.getFontStyle());
+                        photoOld.setDateTimeTaken(capturedPhoto.getDateTimeTaken());
+                        photoOld.setMap_type(capturedPhoto.getMap_type());
+                        photoOld.setMapImagePath(capturedPhoto.getMapImagePath());
+                        photoOld.setShow_watermark(capturedPhoto.getShow_watermark());
+                        photoOld.setLong_dms(capturedPhoto.getLong_dms());
+                        photoOld.setLat_dms(capturedPhoto.getLat_dms());
+                        photoOld.setCurrent_datetime_color(capturedPhoto.getCurrent_datetime_color());
+                        photoOld.setCurrent_bg_color(capturedPhoto.getCurrent_bg_color());
+                        photoOld.setCurrent_text_color(capturedPhoto.getCurrent_text_color());
+                        photoOld.setRatio(capturedPhoto.getRatio());
                         // Create a new photo object for next capture
                         initializePhotoObject();
                     } else {
                         Log.e("PhotoCapture", "Failed to insert photo");
-                        SharedMediaStore.delete(MainActivity.this, photo);
-                        isCapture = false;
-                        ivMyCapture.setImageResource(R.drawable.my_capture_icon);
-                        initializePhotoObject();
+                        SharedMediaStore.delete(MainActivity.this, capturedPhoto);
+                        if (canUpdateCaptureUi() && photo == capturedPhoto) {
+                            btnTakeAction.setEnabled(true);
+                            setPreviewLoading(false);
+                            isCapture = false;
+                            ivMyCapture.setImageResource(R.drawable.my_capture_icon);
+                            initializePhotoObject();
+                        }
                     }
                 }
             });
-        } else {
+        } else if (canUpdateCaptureUi()) {
             setPreviewLoading(false);
             btnTakeAction.setEnabled(true);
         }
+    }
+
+    private boolean canUpdateCaptureUi() {
+        return !isFinishing() && !isDestroyed();
     }
 
     private void setPreviewLoading(boolean loading) {
@@ -2157,10 +2210,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         int previousStampType = currentstamp_type;
         currentstamp_type = FastSave.getInstance().getInt(MyApplication.STAMP_LAYOUT_ID, 1);
         if (previousStampType != 0 && previousStampType != currentstamp_type) {
-            hasSessionStampOverride = false;
-            hasSessionDateTimeOverride = false;
-            sessionMapType = null;
-            MyApplication.clearSessionMapType();
+            clearSessionStampOverrides();
         }
     }
 
@@ -3154,6 +3204,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onFontSelected(String fontName, int position) {
                 hasSessionStampOverride = true;
                 fontStyle = fontName;
+                MyApplication.setSessionFontStyle(fontName);
                 updateStampContent();
             }
 
@@ -3179,6 +3230,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 format_Date = selectedFormat.getFormat_Date();
                 format_Time = selectedFormat.getFormat_Time();
                 format_Combined = selectedFormat.getFormat_Combined();
+                MyApplication.setSessionDateTimeFormats(
+                        format_Date, format_Time, format_Combined);
                 updateStampDateTime();
             }
 
@@ -3936,6 +3989,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             handler.post(dateTimeUpdater);
         }
         getStampType();
+        applyApplicationSessionFormatting();
         updateMaps();
         renderStamp();
     }

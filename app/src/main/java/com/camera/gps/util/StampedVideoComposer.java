@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.media3.common.Effect;
@@ -30,6 +31,8 @@ import java.util.Collections;
 @UnstableApi
 public final class StampedVideoComposer {
 
+    private static final String TAG = "StampedVideoComposer";
+
     public interface Callback {
         void onComplete();
     }
@@ -48,11 +51,17 @@ public final class StampedVideoComposer {
             return;
         }
 
-        if (googleMap != null && mapView != null && mapView.getWidth() > 0 && mapView.getHeight() > 0) {
-            googleMap.snapshot(mapSnapshot -> exportWithStamp(context, photo, StampedPhotoComposer.createStampBitmap(stampView, mapSnapshot, mapView), callback));
-        } else {
-            exportWithStamp(context, photo, StampedPhotoComposer.createStampBitmap(stampView, null, mapView), callback);
-        }
+        SafeMapSnapshot.capture(context, googleMap, mapView, mapSnapshot -> {
+            if (stampView.getWidth() <= 0 || stampView.getHeight() <= 0) {
+                callback.onComplete();
+                return;
+            }
+            exportWithStamp(
+                    context,
+                    photo,
+                    StampedPhotoComposer.createStampBitmap(stampView, mapSnapshot, mapView),
+                    callback);
+        });
     }
 
     private static void exportWithStamp(Context context, Photo photo, Bitmap stampBitmap, Callback callback) {
@@ -96,7 +105,18 @@ public final class StampedVideoComposer {
                 })
                 .build();
 
-        transformer.start(editedMediaItem, outputFile.getAbsolutePath());
+        try {
+            transformer.start(editedMediaItem, outputFile.getAbsolutePath());
+        } catch (NoClassDefFoundError error) {
+            // Media3 1.8.x can resolve API 31 media-metrics classes on older
+            // Android releases after R8 optimization. Preserve the recording
+            // and continue by publishing the original, unstamped video.
+            Log.e(TAG, "Unable to start stamped video export", error);
+            if (outputFile.exists()) {
+                outputFile.delete();
+            }
+            new Handler(Looper.getMainLooper()).post(callback::onComplete);
+        }
     }
 
     private static void replaceOriginal(File sourceFile, File outputFile) {

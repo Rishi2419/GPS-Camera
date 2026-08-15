@@ -45,14 +45,14 @@ public final class StampedPhotoComposer {
             return;
         }
 
-        if (googleMap != null && mapView != null && mapView.getWidth() > 0 && mapView.getHeight() > 0) {
-            googleMap.snapshot(mapSnapshot -> {
-                callback.onComplete(composeIntoImage(
-                        imageFile, stampView, mapSnapshot, mapView));
-            });
-        } else {
-            callback.onComplete(composeIntoImage(imageFile, stampView, null, mapView));
-        }
+        SafeMapSnapshot.capture(context, googleMap, mapView, mapSnapshot -> {
+            if (stampView.getWidth() <= 0 || stampView.getHeight() <= 0) {
+                callback.onComplete(false);
+                return;
+            }
+            callback.onComplete(composeIntoImage(
+                    imageFile, stampView, mapSnapshot, mapView));
+        });
     }
 
     public static Bitmap createStampBitmap(View stampView, Bitmap mapSnapshot, View mapView) {

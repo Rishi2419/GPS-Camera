@@ -34,10 +34,17 @@ public final class StampedPhotoShareHelper {
             View mapViewContainer,
             float mapCornerRadiusPx
     ) {
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(googleMap -> googleMap.snapshot(mapSnapshot ->
-                    createAndShareImage(context, previewFrame, mapViewContainer, mapSnapshot, mapCornerRadiusPx)
-            ));
+        if (mapFragment != null && SafeMapSnapshot.canCapture(context, mapViewContainer)) {
+            mapFragment.getMapAsync(googleMap -> SafeMapSnapshot.capture(
+                    context,
+                    googleMap,
+                    mapViewContainer,
+                    mapSnapshot -> createAndShareImage(
+                            context,
+                            previewFrame,
+                            mapViewContainer,
+                            mapSnapshot,
+                            mapCornerRadiusPx)));
         } else {
             createAndShareImage(context, previewFrame, mapViewContainer, null, mapCornerRadiusPx);
         }

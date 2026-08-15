@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Media3 Transformer 1.8.x references API 31 media-metrics types. Keep the
+# transformer boundary intact so R8 does not merge those references into code
+# loaded on Android 9-11 (https://github.com/androidx/media/issues/2535).
+-keep class androidx.media3.transformer.** { *; }
+-dontwarn android.media.metrics.**

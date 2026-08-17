@@ -89,6 +89,13 @@ public class Settings_Activity extends InsetAwareActivity {
                             activeSavedLocationId = selectedLocation != null
                                     ? selectedLocation.getId()
                                     : null;
+                            if (selectedLocation != null) {
+                                // Location selection is the final action in this flow.
+                                // Return directly to the camera instead of making the
+                                // user come back to Settings and press Back again.
+                                setSessionResult();
+                                finish();
+                            }
                         }
                     }
                 }
@@ -428,6 +435,9 @@ public class Settings_Activity extends InsetAwareActivity {
             public void onFontSelected(String fontName, int position) {
                 currentFontStyle = fontName;
                 fontChanged = true;
+                MyApplication.setSessionFontStyle(fontName);
+                setSessionResult();
+                finish();
             }
 
             @Override
@@ -448,6 +458,12 @@ public class Settings_Activity extends InsetAwareActivity {
                 currentTimeFormat = selectedFormat.getFormat_Time();
                 currentCombinedFormat = selectedFormat.getFormat_Combined();
                 dateTimeChanged = true;
+                MyApplication.setSessionDateTimeFormats(
+                        currentDateFormat,
+                        currentTimeFormat,
+                        currentCombinedFormat);
+                setSessionResult();
+                finish();
             }
 
             @Override
@@ -497,6 +513,28 @@ public class Settings_Activity extends InsetAwareActivity {
     @Override
     @android.annotation.SuppressLint("MissingSuperCall")
     public void onBackPressed() {
+        setSessionResult();
+
+        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
+            if (!InterstitialAdManager.isInterstitialShowing()) {
+                setInterstitialShowing(true);
+                InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "settings_close_interstitial",
+                        () -> {
+                            setInterstitialShowing(false);
+                            finish();
+                        }, errorMsg -> {
+                            setInterstitialShowing(false);
+                            Utils.LogUtils.logE("Settings", "Ad failed: " + errorMsg);
+                        });
+            } else {
+                Utils.LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
+            }
+        } else {
+            finish();
+        }
+    }
+
+    private void setSessionResult() {
         Intent resultIntent = new Intent();
         boolean hasResult = false;
         if (selectedLocation != null) {
@@ -519,25 +557,6 @@ public class Settings_Activity extends InsetAwareActivity {
         }
         if (hasResult) {
             setResult(Activity.RESULT_OK, resultIntent);
-        }
-
-
-        if (MyApplication.isNetworkAvailable(this) && !Utils.getIsPremium(this)) {
-            if (!InterstitialAdManager.isInterstitialShowing()) {
-                setInterstitialShowing(true);
-                InterstitialAdManager.getInstance().loadAndShowInterstitialAd(this, "settings_close_interstitial",
-                        () -> {
-                            setInterstitialShowing(false);
-                            finish();
-                        }, errorMsg -> {
-                            setInterstitialShowing(false);
-                            Utils.LogUtils.logE("Settings", "Ad failed: " + errorMsg);
-                        });
-            } else {
-                Utils.LogUtils.logD("MapActivity", "Interstitial already showing, ignoring click");
-            }
-        } else {
-            finish();
         }
     }
 }

@@ -83,6 +83,7 @@ import com.camera.gps.util.Constant;
 import com.camera.gps.util.HelperClass;
 import com.camera.gps.util.SharedMediaStore;
 import com.camera.gps.util.StampBackgroundUtils;
+import com.camera.gps.util.StampMetadataUtils;
 import com.camera.gps.util.StampedPhotoShareHelper;
 import com.camera.gps.util.VideoStampShareHelper;
 
@@ -507,39 +508,32 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     private void initCardInfoVisibility(Photo photo) {
         // Use stored photo data, not current live data
-        String address = photo.getAddress();
-        if (address == null || address.isEmpty()) {
-            address = "Unknown Location";
-        }
-
-        current_address = address;
-        currentLatitude = parseCoordinate(photo.getLatitude());
-        currentLongitude = parseCoordinate(photo.getLongitude());
-        date = photo.getDate();
-        time = photo.getTime();
-        title = photo.getTitle();
-        Integer storedStampType = photo.getType();
-        currentstamp_type = storedStampType != null ? storedStampType : 1;
+        current_address = StampMetadataUtils.optionalText(photo.getAddress());
+        currentLatitude = StampMetadataUtils.latitudeOrNaN(photo.getLatitude());
+        currentLongitude = StampMetadataUtils.longitudeOrNaN(photo.getLongitude());
+        date = StampMetadataUtils.optionalText(photo.getDate());
+        time = StampMetadataUtils.optionalText(photo.getTime());
+        title = StampMetadataUtils.optionalText(photo.getTitle());
+        currentstamp_type = StampMetadataUtils.templateIdOrDefault(photo.getType());
         StampTemplateDefaults.Settings templateDefaults =
                 StampTemplateDefaults.forTemplate(this, currentstamp_type);
 
-        String storedFontStyle = photo.getFontStyle();
-        fontStyle = storedFontStyle == null || storedFontStyle.trim().isEmpty()
-                ? templateDefaults.fontStyle
-                : storedFontStyle;
+        String storedFontStyle = StampMetadataUtils.optionalText(photo.getFontStyle());
+        fontStyle = storedFontStyle != null ? storedFontStyle : templateDefaults.fontStyle;
 
-        Integer storedMapType = photo.getMap_type();
-        current_map_type = storedMapType != null
-                ? storedMapType
-                : templateDefaults.mapType;
-        mapImagePath = photo.getMapImagePath();
+        current_map_type = StampMetadataUtils.mapTypeOrDefault(
+                photo.getMap_type(), templateDefaults.mapType);
+        mapImagePath = StampMetadataUtils.optionalText(photo.getMapImagePath());
         show_watermark = Boolean.TRUE.equals(photo.getShow_watermark());
-        lat_dms = photo.getLat_dms();
-        long_dms = photo.getLong_dms();
-        current_bg_color = photo.getCurrent_bg_color();
-        current_text_color = photo.getCurrent_text_color();
-        current_datetime_color = photo.getCurrent_datetime_color();
-        currentRatioType = photo.getRatio();
+        lat_dms = StampMetadataUtils.optionalText(photo.getLat_dms());
+        long_dms = StampMetadataUtils.optionalText(photo.getLong_dms());
+        current_bg_color = StampMetadataUtils.colorOrDefault(
+                photo.getCurrent_bg_color(), templateDefaults.bgColor);
+        current_text_color = StampMetadataUtils.colorOrDefault(
+                photo.getCurrent_text_color(), templateDefaults.textColor);
+        current_datetime_color = StampMetadataUtils.colorOrDefault(
+                photo.getCurrent_datetime_color(), templateDefaults.dateTimeColor);
+        currentRatioType = StampMetadataUtils.ratioOrDefault(photo.getRatio());
 
         updatePreviewDateTime(photo);
         Log.d("Rishi", "Details:" + current_address + currentLatitude + currentLongitude + date + time + fontStyle + title);
@@ -547,17 +541,6 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
         // The shared Gallery file already contains its rendered stamp.
         relBottomStamp.removeAllViews();
         relBottomStamp.setVisibility(GONE);
-    }
-
-    private double parseCoordinate(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return 0.0;
-        }
-        try {
-            return Double.parseDouble(value);
-        } catch (NumberFormatException ignored) {
-            return 0.0;
-        }
     }
 
     private void updatePreviewDateTime(Photo photo) {
@@ -847,6 +830,12 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
     private void updateStampDMS() {
         if (txt_lat_dms != null && txt_long_dms != null) {
+            if (lat_dms == null || long_dms == null) {
+                txt_lat_dms.setVisibility(GONE);
+                txt_long_dms.setVisibility(GONE);
+                if (lbl_dms != null) lbl_dms.setVisibility(GONE);
+                return;
+            }
             txt_lat_dms.setText(lat_dms);
             txt_lat_dms.setTextColor(current_text_color);
             txt_lat_dms.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
@@ -875,30 +864,44 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
     private void updateStampDateTime() {
         if (txtDate != null) {
-            txtDate.setText(date);
-            txtDate.setTextColor(current_datetime_color);
-            lbl_date.setTextColor(current_datetime_color);
-            txtDate.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
-            lbl_date.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            if (date == null) {
+                txtDate.setVisibility(GONE);
+                if (lbl_date != null) lbl_date.setVisibility(GONE);
+            } else {
+                txtDate.setText(date);
+                txtDate.setTextColor(current_datetime_color);
+                txtDate.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+                if (lbl_date != null) {
+                    lbl_date.setTextColor(current_datetime_color);
+                    lbl_date.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+                }
+            }
         }
 
 
         if (time == null || time.isEmpty()) {
-            lbl_gmt.setVisibility(View.GONE);
-            txtTime.setVisibility(GONE);
-        } else {
+            if (lbl_gmt != null) lbl_gmt.setVisibility(View.GONE);
+            if (txtTime != null) txtTime.setVisibility(GONE);
+        } else if (txtTime != null) {
             txtTime.setText(time);
             txtTime.setTextColor(current_datetime_color);
-            lbl_gmt.setTextColor(current_datetime_color);
             txtTime.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
-            lbl_gmt.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            if (lbl_gmt != null) {
+                lbl_gmt.setTextColor(current_datetime_color);
+                lbl_gmt.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+            }
         }
-
-
+        if (dateTimeContainer != null && date == null && time == null) {
+            dateTimeContainer.setVisibility(GONE);
+        }
     }
 
     private void updateStampLocation() {
         if (txtLocation != null) {
+            if (current_address == null) {
+                txtLocation.setVisibility(GONE);
+                return;
+            }
             txtLocation.setText(current_address);
             txtLocation.setTextColor(current_text_color);
             txtLocation.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
@@ -916,6 +919,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
     private void updateMapLocation() {
         if (staticMapImage != null) {
             if (mapImagePath != null && !mapImagePath.isEmpty() && new File(mapImagePath).exists()) {
+                if (mapViewContainer != null) mapViewContainer.setVisibility(VISIBLE);
                 Glide.with(this)
                         .load(mapImagePath)
                         .apply(mapCornerOptions())
@@ -924,13 +928,7 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
                         .into(staticMapImage);
                 return;
             }
-
-            Glide.with(this)
-                    .load(R.drawable.default_map)
-                    .apply(mapCornerOptions())
-                    .placeholder(R.drawable.default_map)
-                    .error(R.drawable.default_map)
-                    .into(staticMapImage);
+            if (mapViewContainer != null) mapViewContainer.setVisibility(GONE);
         }
     }
 
@@ -942,6 +940,17 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
     private void updateStampCoordinates() {
         if (txtLatitude != null && txtLongitude != null) {
+
+            if (!StampMetadataUtils.hasCoordinates(currentLatitude, currentLongitude)) {
+                if (latLongContainer != null) latLongContainer.setVisibility(GONE);
+                txtLatitude.setVisibility(GONE);
+                txtLongitude.setVisibility(GONE);
+                if (lbl_lat != null) lbl_lat.setVisibility(GONE);
+                if (lbl_long != null) lbl_long.setVisibility(GONE);
+                if (lbl_type != null) lbl_type.setVisibility(GONE);
+                if (lbl_degree != null) lbl_degree.setVisibility(GONE);
+                return;
+            }
 
             // Determine N/S for latitude
             String latDirection = (currentLatitude >= 0) ? "N" : "S";

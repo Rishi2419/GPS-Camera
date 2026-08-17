@@ -48,6 +48,10 @@ public final class MyApplication extends Application {
     // Deliberately not persisted: this value is valid only while the app
     // process is alive and must reset after an app kill.
     private static Integer sessionMapType;
+    private static String sessionFontStyle;
+    private static String sessionDateFormat;
+    private static String sessionTimeFormat;
+    private static String sessionCombinedFormat;
 
     public static Context context() {
         return Companion.context();
@@ -170,6 +174,40 @@ public final class MyApplication extends Application {
 
     public static void clearSessionMapType() {
         sessionMapType = null;
+    }
+
+    public static void setSessionFontStyle(String fontStyle) {
+        sessionFontStyle = fontStyle;
+    }
+
+    public static String getSessionFontStyle() {
+        return sessionFontStyle;
+    }
+
+    public static void setSessionDateTimeFormats(
+            String dateFormat, String timeFormat, String combinedFormat) {
+        sessionDateFormat = dateFormat;
+        sessionTimeFormat = timeFormat;
+        sessionCombinedFormat = combinedFormat;
+    }
+
+    public static String getSessionDateFormat() {
+        return sessionDateFormat;
+    }
+
+    public static String getSessionTimeFormat() {
+        return sessionTimeFormat;
+    }
+
+    public static String getSessionCombinedFormat() {
+        return sessionCombinedFormat;
+    }
+
+    public static void clearSessionStampFormatting() {
+        sessionFontStyle = null;
+        sessionDateFormat = null;
+        sessionTimeFormat = null;
+        sessionCombinedFormat = null;
     }
 
     //For checking the internet

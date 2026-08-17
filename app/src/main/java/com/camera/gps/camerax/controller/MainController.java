@@ -18,6 +18,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.Camera;
+import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
 import androidx.camera.core.ZoomState;
@@ -216,14 +217,18 @@ public class MainController {
                                                TextView arrowView7, TextView arrowView8, TextView arrowView9,
                                                Context context) {
         if (camera != null) {
-            if (camera.getCameraInfo().getExposureState().isExposureCompensationSupported()) {
-                camera.getCameraControl().setExposureCompensationIndex(i);
-                setBtnExposureColor(i, textView, textView2, textView3, textView4, textView5, textView6,
-                        textView7, textView8, textView9, arrowView, arrowView2, arrowView3,
-                        arrowView4, arrowView5, arrowView6, arrowView7, arrowView8, arrowView9, context);
+            ExposureState exposureState = camera.getCameraInfo().getExposureState();
+            if (!exposureState.isExposureCompensationSupported()) {
+                imageButton.setVisibility(View.GONE);
                 return;
             }
-            imageButton.setVisibility(View.GONE);
+            if (!exposureState.getExposureCompensationRange().contains(i)) {
+                return;
+            }
+            camera.getCameraControl().setExposureCompensationIndex(i);
+            setBtnExposureColor(i, textView, textView2, textView3, textView4, textView5, textView6,
+                    textView7, textView8, textView9, arrowView, arrowView2, arrowView3,
+                    arrowView4, arrowView5, arrowView6, arrowView7, arrowView8, arrowView9, context);
         }
     }
 }

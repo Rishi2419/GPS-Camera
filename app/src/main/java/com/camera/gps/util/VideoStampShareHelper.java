@@ -10,6 +10,7 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -39,12 +40,17 @@ import java.util.concurrent.ConcurrentHashMap;
 @UnstableApi
 public final class VideoStampShareHelper {
 
+    private static final String TAG = "VideoStampShareHelper";
     private static final Set<Transformer> ACTIVE_TRANSFORMERS = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private VideoStampShareHelper() {
     }
 
     public static void shareVideoWithStamp(Context context, Photo photo, Bitmap stampBitmap) {
+        if (photo == null || photo.getImagePath() == null) {
+            Toast.makeText(context, R.string.error_in_creating_file, Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (stampBitmap == null || stampBitmap.getWidth() == 0 || stampBitmap.getHeight() == 0) {
             shareVideoOnly(context, photo);
             return;
@@ -97,10 +103,21 @@ public final class VideoStampShareHelper {
 
         transformerHolder[0] = transformer;
         ACTIVE_TRANSFORMERS.add(transformer);
-        transformer.start(editedMediaItem, outputFile.getAbsolutePath());
+        try {
+            transformer.start(editedMediaItem, outputFile.getAbsolutePath());
+        } catch (NoClassDefFoundError error) {
+            ACTIVE_TRANSFORMERS.remove(transformer);
+            if (outputFile.exists()) outputFile.delete();
+            Log.e(TAG, "Unable to start stamped video export", error);
+            shareVideoOnly(context, photo);
+        }
     }
 
     public static void shareVideoOnly(Context context, Photo photo) {
+        if (photo == null) {
+            Toast.makeText(context, R.string.error_in_creating_file, Toast.LENGTH_SHORT).show();
+            return;
+        }
         Uri mediaUri = SharedMediaStore.getContentUri(
                 context, photo.getMediaUri(), photo.getImagePath());
         if (mediaUri == null) {

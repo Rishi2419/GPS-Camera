@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -69,6 +70,7 @@ import androidx.camera.core.CameraInfo;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ExposureState;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
@@ -1030,6 +1032,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnRatio = findViewById(R.id.btnRatio);
         btnGrid = findViewById(R.id.btnGrid);
         gridLinesView = findViewById(R.id.gridLinesView);
+        currentGridType = SharedPrefsSettings.getGridType(this);
+        updateGridDisplay();
         btnWatermark = findViewById(R.id.btnWatermark);
         btnVideoresolution = findViewById(R.id.btnResolution);
         btnFps = findViewById(R.id.btnFps);
@@ -1860,8 +1864,45 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         cameraControl = camera.getCameraControl();
         cameraInfo = camera.getCameraInfo();
+        configureExposureControls();
         setZoomRatio(getZoomRatioForCurrentLens());
         updateZoomVisibility();
+    }
+
+    private void configureExposureControls() {
+        if (camera == null) {
+            return;
+        }
+
+        ExposureState exposureState = camera.getCameraInfo().getExposureState();
+        boolean isSupported = exposureState.isExposureCompensationSupported();
+        btnExposure.setVisibility(isSupported ? VISIBLE : GONE);
+
+        if (!isSupported) {
+            layoutExposure.setVisibility(GONE);
+            return;
+        }
+
+        Range<Integer> supportedRange = exposureState.getExposureCompensationRange();
+        setExposureOptionAvailability(btnExposure_4, arrowExposure_4, -4, supportedRange);
+        setExposureOptionAvailability(btnExposure_3, arrowExposure_3, -3, supportedRange);
+        setExposureOptionAvailability(btnExposure_2, arrowExposure_2, -2, supportedRange);
+        setExposureOptionAvailability(btnExposure_1, arrowExposure_1, -1, supportedRange);
+        setExposureOptionAvailability(btnExposure0, arrowExposure0, 0, supportedRange);
+        setExposureOptionAvailability(btnExposure1, arrowExposure1, 1, supportedRange);
+        setExposureOptionAvailability(btnExposure2, arrowExposure2, 2, supportedRange);
+        setExposureOptionAvailability(btnExposure3, arrowExposure3, 3, supportedRange);
+        setExposureOptionAvailability(btnExposure4, arrowExposure4, 4, supportedRange);
+    }
+
+    private void setExposureOptionAvailability(TextView optionView, TextView arrowView,
+                                               int compensationIndex,
+                                               Range<Integer> supportedRange) {
+        boolean isAvailable = supportedRange.contains(compensationIndex);
+        optionView.setVisibility(isAvailable ? VISIBLE : GONE);
+        if (!isAvailable) {
+            arrowView.setVisibility(GONE);
+        }
     }
 
     private void initializeImageCaptureWithRatio(int aspectRatio) {
@@ -2536,7 +2577,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             FastSave.getInstance().saveInt(MyApplication.STAMP_BG_COLOR, current_StampBgColor);
             FastSave.getInstance().saveInt(MyApplication.STAMP_TEXT_COLOR, current_TextColor);
             FastSave.getInstance().saveInt(MyApplication.STAMP_DATE_TIME_COLOR, current_DateTimeColor);
-            showWatermark = MyApplication.getShowWatermark();
         } else if (!hasSessionStampOverride) {
             StampTemplateDefaults.Settings defaults = StampTemplateDefaults.forTemplate(this, currentstamp_type);
             fontStyle = defaults.fontStyle;
@@ -2544,8 +2584,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             current_TextColor = defaults.textColor;
             current_DateTimeColor = defaults.dateTimeColor;
             current_map_type = defaults.mapType;
-            showWatermark = MyApplication.getShowWatermark();
         }
+
+        // Watermark is an app-wide preference and must remain independent of
+        // temporary font, date/time, and map overrides for the current session.
+        showWatermark = MyApplication.getShowWatermark();
 
         // A temporary map choice is owned by the current app session, not by
         // the selected template. Always resolve it after a stamp refresh.
@@ -3329,8 +3372,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         switchCamera.setChecked(showWatermark);
 
         switchCamera.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            hasSessionStampOverride = true;
             showWatermark = isChecked;
+            MyApplication.setShowWatermark(isChecked);
             updateStampContent();
         });
 

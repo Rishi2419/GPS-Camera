@@ -310,6 +310,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageButton btnCollection;
     private ImageButton btnTemplate;
     private ImageButton btnAddLocation;
+    private TextView btnSetCurrentLocationMain;
     private ActivityResultLauncher resultLauncher;
     private ActivityResultLauncher<IntentSenderRequest> enableLocationLauncher;
     private ActivityResultLauncher<Intent> internetSettingsLauncher;
@@ -446,6 +447,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             MyLocation receivedLocation = (MyLocation) locationExtra;
                             isLiveLocationMode = false;
                             activeSavedLocationId = receivedLocation.getId();
+                            updateLocationModeUi();
                             applyPremiumPreviewScreenshotProtection();
                             Log.d("Rishi_MainActivity", "Received Location Details:");
                             Log.d("Rishi_MainActivity", "ID: " + receivedLocation.getId());
@@ -481,23 +483,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             else {
                 Log.d("Rishi_MainActivity", "Result code is not RESULT_OK");
                 if (set_to_current_location) {
-                    // A saved/custom location disables live updates while it is selected.
-                    // Re-enable live mode before restarting the location request.
-                    isLiveLocationMode = true;
-                    activeSavedLocationId = null;
-                    currentAddress = null;
-                    currentTitle = null;
-                    currentDefaultTitle = "";
-                    currentLatitude = 0.0;
-                    currentLongitude = 0.0;
-                    savedDate = null;
-                    savedTime = null;
-                    applyPremiumPreviewScreenshotProtection();
-                    isLocationFetched = false;
-                    lastGeocodedLocation = null;
-                    lastAddressLookupTime = 0L;
-                    setupLocation();
-                    set_to_current_location = false;
+                    switchToCurrentLocation();
                     Log.d("Rishi_MainActivity", "Setting current location");
                 }
 
@@ -506,19 +492,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     viewModel.getLocationByTitle(currentTitle).observe(this, location -> {
                         if (location == null) {
-                            isLiveLocationMode = true;
-                            activeSavedLocationId = null;
-                            currentAddress = null;
-                            currentTitle = null;
-                            currentDefaultTitle = "";
-                            currentLatitude = 0.0;
-                            currentLongitude = 0.0;
-                            savedDate = null;
-                            savedTime = null;
-                            isLiveLocationMode = true;
-                            applyPremiumPreviewScreenshotProtection();
-                            isLocationFetched = false;
-                            setupLocation();
+                            switchToCurrentLocation();
                             //initAfterPermissionsGranted();
                             Log.d("Rishi_MainActivity", "Location with title '" + currentTitle + "' not exists");
                         } else {
@@ -1062,7 +1036,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnMap = findViewById(R.id.btnMap);
         btnCollection = findViewById(R.id.btnCollection);
         btnAddLocation = findViewById(R.id.btnAddLocation);
+        btnSetCurrentLocationMain = findViewById(R.id.btnSetCurrentLocationMain);
         btnTemplate = findViewById(R.id.btnTemplate);
+        updateLocationModeUi();
 
         // Zoom controls
         zoomLayout = findViewById(R.id.zoomLayout);
@@ -2685,20 +2661,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void updateStampTitle() {
-        if (currentTitle != null) {
-            txtTitle.setVisibility(VISIBLE);
-            txtTitle.setText(currentTitle);
-            txtTitle.setTextColor(current_TextColor);
-            txtTitle.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+        if (txtTitle == null) {
+            return;
         }
+
+        String title = StampMetadataUtils.optionalText(currentTitle);
+        if (title == null) {
+            txtTitle.setText(null);
+            txtTitle.setVisibility(GONE);
+            return;
+        }
+
+        txtTitle.setVisibility(VISIBLE);
+        txtTitle.setText(title);
+        txtTitle.setTextColor(current_TextColor);
+        txtTitle.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
     }
 
     private void updateStampLocation() {
         if (txtDefaultTitle != null) {
-            txtDefaultTitle.setText(currentDefaultTitle);
-            txtDefaultTitle.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
-            txtDefaultTitle.setTextColor(current_TextColor);
-            txtDefaultTitle.setVisibility(VISIBLE);
+            String defaultTitle = StampMetadataUtils.optionalText(currentDefaultTitle);
+            if (defaultTitle == null) {
+                txtDefaultTitle.setText(null);
+                txtDefaultTitle.setVisibility(GONE);
+            } else {
+                txtDefaultTitle.setText(defaultTitle);
+                txtDefaultTitle.setTypeface(mHelperClass.getFontStyle(this, fontStyle));
+                txtDefaultTitle.setTextColor(current_TextColor);
+                txtDefaultTitle.setVisibility(VISIBLE);
+            }
         }
         if (txtLocation != null) {
             txtLocation.setText(currentAddress);
@@ -3097,6 +3088,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         });
 
+        btnSetCurrentLocationMain.setOnClickListener(view -> switchToCurrentLocation());
+
 
         ivMyCapture.setOnClickListener(view -> {
             if (isPreviewLoading) {
@@ -3185,6 +3178,48 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     activeSavedLocationId);
         }
         resultLauncher.launch(intent);
+    }
+
+    private void switchToCurrentLocation() {
+        isLiveLocationMode = true;
+        activeSavedLocationId = null;
+        addressLookupGeneration++;
+        currentAddress = "Loading location...";
+        currentTitle = null;
+        currentDefaultTitle = "";
+        currentLatitude = 0.0;
+        currentLongitude = 0.0;
+        savedDate = null;
+        savedTime = null;
+        isLocationFetched = false;
+        lastGeocodedLocation = null;
+        lastAddressLookupTime = 0L;
+        set_to_current_location = false;
+
+        if (googleMap != null) {
+            googleMap.clear();
+        }
+        updateLocationModeUi();
+        applyPremiumPreviewScreenshotProtection();
+        updateStampContent();
+        setupLocation();
+    }
+
+    private void updateLocationModeUi() {
+        boolean customLocationActive = !isLiveLocationMode;
+        if (btnSetCurrentLocationMain != null) {
+            btnSetCurrentLocationMain.setVisibility(customLocationActive ? VISIBLE : GONE);
+        }
+        if (btnAddLocation != null) {
+            btnAddLocation.setBackgroundResource(customLocationActive
+                    ? R.drawable.bg_location_active
+                    : R.drawable.ripple_white2);
+            if (customLocationActive) {
+                btnAddLocation.setColorFilter(Color.BLACK);
+            } else {
+                btnAddLocation.clearColorFilter();
+            }
+        }
     }
 
 
@@ -3504,6 +3539,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         clearSessionStampOverrides();
         isLiveLocationMode = true;
         activeSavedLocationId = null;
+        updateLocationModeUi();
         addressLookupGeneration++;
         currentTitle = null;
         currentDefaultTitle = "";

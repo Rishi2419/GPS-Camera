@@ -98,7 +98,8 @@
                     android:maxLines="1"
                     android:text=""
                     android:textColor="@android:color/white"
-                    android:textSize="@dimen/_12ssp" />
+                    android:textSize="@dimen/_12ssp"
+                    android:visibility="gone" />
 
                 <!-- Fixed Size Table Container -->
                 <LinearLayout

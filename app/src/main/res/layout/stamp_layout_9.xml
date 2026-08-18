@@ -139,7 +139,8 @@
                         android:fontFamily="@font/sfprotextmedium"
                         android:text=""
                         android:textColor="@android:color/white"
-                        android:textSize="@dimen/_10ssp" />
+                        android:textSize="@dimen/_10ssp"
+                        android:visibility="gone" />
 
                     <!-- Location Address -->
                     <TextView

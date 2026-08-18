@@ -92,7 +92,8 @@
                     android:fontFamily="@font/sfprotextmedium"
                     android:text=""
                     android:textColor="@android:color/white"
-                    android:textSize="@dimen/_10ssp" />
+                    android:textSize="@dimen/_10ssp"
+                    android:visibility="gone" />
                 <TextView
                     android:id="@+id/txt_gps_stamp_location"
                     android:layout_width="match_parent"

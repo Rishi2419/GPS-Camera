@@ -607,7 +607,8 @@ public class PhotoGalleryAdapter extends FragmentStateAdapter {
 
         private void updateStampTitle() {
             if (txtTitle != null) {
-                if (title == null || title.isEmpty()) {
+                if (title == null || title.trim().isEmpty()) {
+                    txtTitle.setText(null);
                     txtTitle.setVisibility(View.GONE);
                 } else {
                     txtTitle.setVisibility(View.VISIBLE);

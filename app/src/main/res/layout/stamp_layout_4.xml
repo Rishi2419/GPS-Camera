@@ -110,7 +110,8 @@
                     android:layout_marginBottom="@dimen/_2sdp"
                     android:text=""
                     android:textColor="@android:color/white"
-                    android:textSize="@dimen/_12ssp" />
+                    android:textSize="@dimen/_12ssp"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/txt_gps_stamp_location"

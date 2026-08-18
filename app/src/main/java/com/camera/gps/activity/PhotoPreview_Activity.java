@@ -851,7 +851,8 @@ public final class PhotoPreview_Activity extends AppCompatActivity {
 
     private void updateStampTitle() {
         if (txtTitle != null) {
-            if (title == null || title.isEmpty()) {
+            if (title == null || title.trim().isEmpty()) {
+                txtTitle.setText(null);
                 txtTitle.setVisibility(GONE);
             } else {
                 txtTitle.setVisibility(VISIBLE);

@@ -109,8 +109,10 @@ public class RemoteConfigManager {
     }
     
     public boolean isShowAds() {
-        RemoteConfigResponse data = getRemoteConfigData();
-        return data != null && data.isShowAds();
+//        RemoteConfigResponse data = getRemoteConfigData();
+//        return data != null && data.isShowAds();
+
+        return false;
     }
     
     public boolean getHomeScreenAds() {

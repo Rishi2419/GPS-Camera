@@ -25,3 +25,7 @@
 # loaded on Android 9-11 (https://github.com/androidx/media/issues/2535).
 -keep class androidx.media3.transformer.** { *; }
 -dontwarn android.media.metrics.**
+
+# These models are populated from Firebase Remote Config JSON through Gson.
+# Keep them intact so R8 does not remove or rename their fields in release builds.
+-keep class com.camera.gps.model.Ads.** { *; }

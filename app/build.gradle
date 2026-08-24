@@ -14,7 +14,7 @@ android {
         applicationId "com.camera.gps"
         minSdk 28
         targetSdk 36
-        versionCode 5
+        versionCode 7
         versionName "1.0.2"
         multiDexEnabled true
 //        manifestPlaceholders = [
